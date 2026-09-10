@@ -18,6 +18,8 @@
 #include "app_11/wifi_analyzer_ui.h"
 #include "app_13/deauth_monitor.h"
 #include "app_13/deauth_ui.h"
+#include "app_14/ble_spam_monitor.h"
+#include "app_14/ble_spam_ui.h"
 
 /* Write an RGB565 framebuffer as a 24-bit BMP (bottom-up, BGR). */
 static int save_bmp565(const char* path, const uint16_t* fb, int W, int H)
@@ -98,7 +100,25 @@ int main(int argc, char** argv)
     };
     const int wn = 6;
 
-    if (scene && (!strcmp(scene, "deauth_clear") || !strcmp(scene, "deauth_alert"))) {
+    if (scene && (!strcmp(scene, "ble_clear") || !strcmp(scene, "ble_alert"))) {
+        static uint16_t hist[BleSpamMonitor::HIST];
+        bool alert = !strcmp(scene, "ble_alert");
+        for (int i = 0; i < BleSpamMonitor::HIST; i++) hist[i] = (i % 9 == 0) ? 2 : 0;
+        if (alert) { for (int i = 24; i < 30; i++) hist[i] = 18 + (i % 4) * 6; }
+        BleSpamUI::View v;
+        v.total   = alert ? 642 : 7;
+        v.rate    = alert ? 24 : 1;
+        v.peak    = alert ? 36 : 3;
+        v.alert   = alert;
+        v.running = true;
+        v.apple   = alert ? 410 : 4;
+        v.google  = alert ? 120 : 1;
+        v.ms      = alert ? 72  : 2;
+        v.samsung = alert ? 40  : 0;
+        v.hist = hist; v.histLen = BleSpamMonitor::HIST;
+        v.threshold = BleSpamMonitor::ALERT_THRESHOLD;
+        BleSpamUI::draw(canvas, v);
+    } else if (scene && (!strcmp(scene, "deauth_clear") || !strcmp(scene, "deauth_alert"))) {
         static uint16_t hist[DeauthMonitor::HIST];
         bool alert = !strcmp(scene, "deauth_alert");
         for (int i = 0; i < DeauthMonitor::HIST; i++)

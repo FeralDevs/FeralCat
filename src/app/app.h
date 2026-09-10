@@ -28,8 +28,8 @@
 #include "app_10/app_10.h"      /* MeowGotchi    */
 #include "app_11/app_11.h"      /* WiFi Analyzer */
 #include "app_12/app_12.h"      /* Flash Mode      */
-#include "app_13/app_13.h"      /* Deauth Detector */
-#include "app_14/app_14.h"
+#include "app_13/app_13.h"      /* Deauth Detector   */
+#include "app_14/app_14.h"      /* BLE Spam Detector */
 #include "app_15/app_15.h"
 
 #include <mooncake.h>
@@ -59,7 +59,7 @@ inline void registerAllApps(mooncake::Mooncake& mc, DEVICES* dev)
     mc.installApp(std::make_unique<MOONCAKE::APPS::App11>(dev));     /* app_11  WiFi Analyzer */
     mc.installApp(std::make_unique<MOONCAKE::APPS::App12>(dev));     /* app_12  Flash Mode   */
     mc.installApp(std::make_unique<MOONCAKE::APPS::App13>(dev));     /* app_13  Deauth Detect */
-    mc.installApp(std::make_unique<MOONCAKE::APPS::App14>(dev));     /* app_14  stub         */
+    mc.installApp(std::make_unique<MOONCAKE::APPS::App14>(dev));     /* app_14  BLE Spam Det. */
     mc.installApp(std::make_unique<MOONCAKE::APPS::App15>(dev));     /* app_15  stub (music) */
 }
 
@@ -83,7 +83,7 @@ static const void* const APP_BUILTIN_ICONS[] = {
     &ui_img_wifispam_png,    /* app_11  WiFi Analyzer */
     &ui_img_usb_msc_png,     /* app_12  Flash Mode  */
     &ui_img_webserial_png,   /* app_13  stub        */
-    &ui_img_aichat_png,      /* app_14  stub        */
+    &ui_img_ble_spam_png,    /* app_14  BLE Spam Det. */
     &ui_img_music_png,       /* app_15  stub (music)*/
 };
 static const int APP_BUILTIN_ICONS_COUNT =
