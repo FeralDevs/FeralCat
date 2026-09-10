@@ -7,9 +7,31 @@
 #include "esp_wifi.h"
 
 namespace {
+constexpr int     MAXATK   = 16;
 portMUX_TYPE      s_mux    = portMUX_INITIALIZER_UNLOCKED;
 volatile uint16_t s_cur    = 0;   /* frames in the current second */
 volatile uint32_t s_total  = 0;
+
+AttackerEntry     s_atk[MAXATK];
+int               s_atk_n = 0;
+
+/* Record one attacker frame (called inside the critical section). */
+inline void atk_record(const uint8_t* src, const uint8_t* dst, int8_t rssi, uint8_t ch)
+{
+    for (int i = 0; i < s_atk_n; i++) {
+        if (memcmp(s_atk[i].mac, src, 6) == 0) {
+            if (s_atk[i].count < 0xFFFF) s_atk[i].count++;
+            s_atk[i].rssi = rssi; s_atk[i].channel = ch;
+            memcpy(s_atk[i].victim, dst, 6);
+            return;
+        }
+    }
+    if (s_atk_n < MAXATK) {
+        AttackerEntry& e = s_atk[s_atk_n++];
+        memcpy(e.mac, src, 6); memcpy(e.victim, dst, 6);
+        e.count = 1; e.rssi = rssi; e.channel = ch;
+    }
+}
 
 void promisc_cb(void* buf, wifi_promiscuous_pkt_type_t type)
 {
@@ -23,6 +45,8 @@ void promisc_cb(void* buf, wifi_promiscuous_pkt_type_t type)
         portENTER_CRITICAL_ISR(&s_mux);
         s_cur++;
         s_total++;
+        atk_record(fr + 10 /*addr2 src*/, fr + 4 /*addr1 dst*/,
+                   (int8_t)pkt->rx_ctrl.rssi, (uint8_t)pkt->rx_ctrl.channel);
         portEXIT_CRITICAL_ISR(&s_mux);
     }
 }
@@ -39,7 +63,7 @@ void DeauthMonitor::begin()
     _last_tick = millis();
 
     portENTER_CRITICAL(&s_mux);
-    s_cur = 0; s_total = 0;
+    s_cur = 0; s_total = 0; s_atk_n = 0;
     portEXIT_CRITICAL(&s_mux);
 
     esp_wifi_set_promiscuous(false);
@@ -84,6 +108,19 @@ void DeauthMonitor::history(uint16_t* out) const
     /* Oldest..newest: ring starting at _hidx. */
     for (int i = 0; i < HIST; i++)
         out[i] = _hist[(_hidx + i) % HIST];
+}
+
+int DeauthMonitor::attackers(AttackerEntry* out, int max) const
+{
+    portENTER_CRITICAL(&s_mux);
+    int n = s_atk_n < max ? s_atk_n : max;
+    for (int i = 0; i < n; i++) out[i] = s_atk[i];
+    portEXIT_CRITICAL(&s_mux);
+    /* Sort by hit count desc (small table). */
+    for (int i = 0; i < n; i++)
+        for (int j = i + 1; j < n; j++)
+            if (out[j].count > out[i].count) { AttackerEntry t = out[i]; out[i] = out[j]; out[j] = t; }
+    return n;
 }
 
 void DeauthMonitor::_hop()

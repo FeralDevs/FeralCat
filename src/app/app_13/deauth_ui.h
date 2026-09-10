@@ -83,7 +83,51 @@ static inline void draw(LCD& lcd, const View& v)
     lcd.setCursor(gx, gy + gh + 3);
     lcd.printf("last %ds", v.histLen);
 
-    MK_TUI::drawFooter(lcd, v.running ? "Pause" : "Start", "Exit");
+    MK_TUI::drawFooter(lcd, v.running ? "Pause" : "Start", "Log");
+}
+
+/* ── Attacker log view (who is sending the deauths) ── */
+template<typename LCD>
+static inline void drawLog(LCD& lcd, const AttackerEntry* rows, int n, bool running)
+{
+    MK_TUI::clearScreen(lcd);
+    MK_TUI::drawHeader(lcd, "Attacker Log");
+    lcd.setFont(&fonts::efontCN_16);
+
+    if (n <= 0) {
+        lcd.setTextColor(MK_PAL::TEXT_SEC, MK_PAL::BLACK);
+        lcd.setCursor(MK_LAYOUT::PAD, 100);
+        lcd.printf("No deauth sources seen yet.");
+        lcd.setCursor(MK_LAYOUT::PAD, 122);
+        lcd.printf("RSSI shows attacker proximity.");
+        MK_TUI::drawFooter(lcd, running ? "Pause" : "Start", "Graph");
+        return;
+    }
+
+    int y = MK_LAYOUT::CONTENT_Y + 6;
+    const int rows_vis = 6;
+    char buf[40];
+    for (int i = 0; i < n && i < rows_vis; i++) {
+        const AttackerEntry& e = rows[i];
+        snprintf(buf, sizeof(buf), "%02X:%02X:%02X:%02X:%02X:%02X",
+                 e.mac[0], e.mac[1], e.mac[2], e.mac[3], e.mac[4], e.mac[5]);
+        lcd.setTextColor(MK_PAL::TEXT_PRI, MK_PAL::BLACK);
+        lcd.setCursor(MK_LAYOUT::PAD, y);
+        lcd.printf("%s", buf);
+        /* count + rssi (closer = brighter) */
+        uint32_t rc = e.rssi > -50 ? MK_PAL::ERR : e.rssi > -70 ? MK_PAL::WARN : MK_PAL::TEXT_SEC;
+        snprintf(buf, sizeof(buf), "x%u", e.count);
+        lcd.setTextColor(MK_PAL::ACCENT, MK_PAL::BLACK);
+        lcd.setCursor(MK_LAYOUT::W - 96, y);
+        lcd.printf("%s", buf);
+        snprintf(buf, sizeof(buf), "%ddBm", e.rssi);
+        lcd.setTextColor(rc, MK_PAL::BLACK);
+        lcd.setCursor(MK_LAYOUT::W - 56, y);
+        lcd.printf("%s", buf);
+        y += 20;
+    }
+
+    MK_TUI::drawFooter(lcd, running ? "Pause" : "Start", "Graph");
 }
 
 } /* namespace DeauthUI */

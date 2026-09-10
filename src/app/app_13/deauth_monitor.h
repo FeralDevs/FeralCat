@@ -17,6 +17,16 @@ struct DeauthStats {
     bool     alert   = false; /* a burst was seen in the last few sec  */
 };
 
+/* One attacker row: the source (usually the spoofed AP BSSID) of deauth frames.
+ * The RSSI is the *real* transmitter's signal — use it to locate the attacker. */
+struct AttackerEntry {
+    uint8_t  mac[6];      /* frame source (addr2) — the "attacker" id  */
+    uint8_t  victim[6];   /* last target (addr1)                       */
+    uint16_t count;
+    int8_t   rssi;        /* last seen signal (higher = closer)        */
+    uint8_t  channel;
+};
+
 class DeauthMonitor {
 public:
     static constexpr int  HIST      = 30;   /* seconds shown in the graph */
@@ -33,6 +43,9 @@ public:
     const DeauthStats& stats() const { return _stats; }
     /* Copy HIST per-second counts oldest..newest into out[HIST]. */
     void history(uint16_t* out) const;
+    /* Copy up to max attacker rows (sorted by hit count desc) into out;
+     * returns the number written. */
+    int  attackers(AttackerEntry* out, int max) const;
     uint32_t uptime_s() const;
 
 private:

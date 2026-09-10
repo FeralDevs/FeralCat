@@ -17,6 +17,12 @@ App13::App13(DEVICES* device) : _device(device)
 template<typename LCD>
 void App13::_render(LCD& lcd)
 {
+    if (_logView) {
+        int n = _mon.attackers(_atkbuf, 16);
+        DeauthUI::drawLog(lcd, _atkbuf, n, _mon.running());
+        return;
+    }
+
     const DeauthStats& s = _mon.stats();
     _mon.history(_histbuf);
 
@@ -70,6 +76,9 @@ void App13::onRunning()
     if (_device->button.A.pressed()) {
         if (_mon.running()) _mon.pause(); else _mon.resume();
         _dirty = true;
+    }
+    if (_device->button.B.pressed()) {   /* short B = toggle graph/log; hold B = exit */
+        _logView = !_logView; _dirty = true;
     }
 
     const uint32_t now = millis();

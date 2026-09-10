@@ -20,6 +20,8 @@
 #include "app_13/deauth_ui.h"
 #include "app_14/ble_spam_monitor.h"
 #include "app_14/ble_spam_ui.h"
+#include "app_15/beacon_flood.h"
+#include "app_15/rogue_ui.h"
 
 /* Write an RGB565 framebuffer as a 24-bit BMP (bottom-up, BGR). */
 static int save_bmp565(const char* path, const uint16_t* fb, int W, int H)
@@ -100,7 +102,35 @@ int main(int argc, char** argv)
     };
     const int wn = 6;
 
-    if (scene && (!strcmp(scene, "ble_clear") || !strcmp(scene, "ble_alert"))) {
+    if (scene && !strcmp(scene, "deauth_log")) {
+        static AttackerEntry atk[] = {
+            { {0x3c,0x84,0x6a,0x11,0x22,0x33}, {0xff,0xff,0xff,0xff,0xff,0xff}, 84, -41, 6 },
+            { {0xf4,0xca,0xe5,0xaa,0xbb,0xcc}, {0x12,0x34,0x56,0x78,0x9a,0xbc}, 37, -63, 11 },
+            { {0x00,0x1e,0x2a,0x44,0x55,0x66}, {0xde,0xad,0xbe,0xef,0x00,0x01}, 9,  -78, 1 },
+        };
+        DeauthUI::drawLog(canvas, atk, 3, true);
+    } else if (scene && !strcmp(scene, "twins")) {
+        static RogueUI::TwinRow tw[] = {
+            { "FreeCoffeeWiFi", 2, true,  true  },   /* open + secure = TWIN */
+            { "CorpNet",        3, false, true  },   /* multi */
+            { "HomeNet-5G",     1, false, true  },
+            { "xfinitywifi",    1, true,  false },
+        };
+        RogueUI::drawTwins(canvas, tw, 4, 0, 0, false, 1);
+    } else if (scene && (!strcmp(scene, "flood_clear") || !strcmp(scene, "flood_alert"))) {
+        static uint16_t hist[BeaconFlood::HIST];
+        bool alert = !strcmp(scene, "flood_alert");
+        for (int i = 0; i < BeaconFlood::HIST; i++) hist[i] = 3 + (i % 5);
+        if (alert) for (int i = 22; i < 30; i++) hist[i] = 30 + (i % 6) * 4;
+        RogueUI::FloodView v;
+        v.s.channel = 6; v.s.rate = alert ? 210 : 42;
+        v.s.uniq = alert ? 41 : 8; v.s.peak_uniq = alert ? 48 : 9;
+        v.s.proberesp = alert ? 120 : 3; v.s.alert = alert;
+        v.running = true;
+        v.hist = hist; v.histLen = BeaconFlood::HIST;
+        v.threshold = BeaconFlood::ALERT_UNIQ;
+        RogueUI::drawFlood(canvas, v);
+    } else if (scene && (!strcmp(scene, "ble_clear") || !strcmp(scene, "ble_alert"))) {
         static uint16_t hist[BleSpamMonitor::HIST];
         bool alert = !strcmp(scene, "ble_alert");
         for (int i = 0; i < BleSpamMonitor::HIST; i++) hist[i] = (i % 9 == 0) ? 2 : 0;

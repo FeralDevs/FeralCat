@@ -29,7 +29,9 @@ namespace MOONCAKE::APPS
 
         uint32_t _lastDraw = 0;
         bool     _dirty    = true;
+        bool     _logView  = false;   /* false = graph, true = attacker log */
         uint16_t _histbuf[DeauthMonitor::HIST];
+        AttackerEntry _atkbuf[16];
 
         template<typename LCD> void _render(LCD& lcd);
         void _present();
