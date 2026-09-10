@@ -109,7 +109,11 @@ int WiFi_Class::scan(WiFiAPInfo* buf, int max_count)
         buf[i].ssid[sizeof(buf[i].ssid) - 1] = '\0';
         buf[i].rssi      = (int8_t)WiFi.RSSI(i);
         buf[i].channel   = WiFi.channel(i);
-        buf[i].encrypted = (WiFi.encryptionType(i) != WIFI_AUTH_OPEN);
+        wifi_auth_mode_t auth = WiFi.encryptionType(i);
+        buf[i].encrypted = (auth != WIFI_AUTH_OPEN);
+        buf[i].auth      = (uint8_t)auth;
+        const uint8_t* b = WiFi.BSSID(i);
+        if (b) memcpy(buf[i].bssid, b, 6); else memset(buf[i].bssid, 0, 6);
     }
     WiFi.scanDelete();
     return count;

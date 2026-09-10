@@ -16,6 +16,8 @@ struct WiFiAPInfo {
     int8_t  rssi;
     uint8_t channel;
     bool    encrypted;
+    uint8_t bssid[6];
+    uint8_t auth;       /* wifi_auth_mode_t from the scan */
 };
 
 class WiFi_Class {

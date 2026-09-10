@@ -32,7 +32,7 @@ namespace MOONCAKE::APPS
         lgfx::LGFX_Sprite* _canvas = nullptr;
         bool     _haveCanvas = false;
 
-        enum class Page : uint8_t { Face, Menu } _page = Page::Face;
+        enum class Page : uint8_t { Face, Menu, Info } _page = Page::Face;
         int      _menuSel   = 0;
         static constexpr int MENU_ROWS = 3;   /* Start/Pause, Mode, Handshakes */
 
@@ -48,6 +48,7 @@ namespace MOONCAKE::APPS
         MeowGotchi::Mood _mood();
         template<typename LCD> void _renderFace(LCD& lcd);
         template<typename LCD> void _renderMenu(LCD& lcd);
-        void _present(bool face);
+        template<typename LCD> void _renderInfo(LCD& lcd);
+        void _present();   /* renders whichever page is active */
     };
 }

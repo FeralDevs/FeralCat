@@ -15,6 +15,7 @@
 
 #include "mk_tui.h"
 #include "app_10/meowgotchi_ui.h"
+#include "app_11/wifi_analyzer_ui.h"
 
 /* Write an RGB565 framebuffer as a 24-bit BMP (bottom-up, BGR). */
 static int save_bmp565(const char* path, const uint16_t* fb, int W, int H)
@@ -85,7 +86,21 @@ int main(int argc, char** argv)
         return 1;
     }
 
-    if (scene && !strcmp(scene, "menu")) {
+    static WifiAnalyzer::Row wrows[] = {
+        { "HomeNet-5G",        -42,  6, true,  4, {0x3c,0x84,0x6a,0x11,0x22,0x33} },
+        { "Freebox-8A2C1D",    -55, 11, true,  6, {0xf4,0xca,0xe5,0xaa,0xbb,0xcc} },
+        { "SFR_1A2B",          -68,  1, true,  3, {0x00,0x1e,0x2a,0x44,0x55,0x66} },
+        { "xfinitywifi",       -74,  6, false, 0, {0x12,0x34,0x56,0x78,0x9a,0xbc} },
+        { "un-ssid-tres-long", -80,  9, true,  7, {0xde,0xad,0xbe,0xef,0x00,0x01} },
+        { "",                  -85,  3, true,  2, {0xaa,0xaa,0xaa,0xaa,0xaa,0xaa} },
+    };
+    const int wn = 6;
+
+    if (scene && !strcmp(scene, "wlist")) {
+        WifiAnalyzer::drawList(canvas, wrows, wn, 1, 0, false);
+    } else if (scene && !strcmp(scene, "wdetail")) {
+        WifiAnalyzer::drawDetail(canvas, wrows[1]);
+    } else if (scene && !strcmp(scene, "menu")) {
         /* Preview of App10's start menu (mirrors _renderMenu). */
         MK_TUI::clearScreen(canvas);
         MK_TUI::drawHeader(canvas, "MeowGotchi");
