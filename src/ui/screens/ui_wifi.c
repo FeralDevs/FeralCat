@@ -447,6 +447,10 @@ static void _wifi_build_list(void)
         lv_obj_t * ssid_lbl = lv_label_create(row);
         lv_label_set_long_mode(ssid_lbl, LV_LABEL_LONG_DOT);
         lv_obj_set_width(ssid_lbl, 150);
+        // LV_LABEL_LONG_DOT only ellipsises when height is also constrained;
+        // with a content height a long SSID wraps to a second line and spills
+        // out of the 38 px row. Pin it to one line so it truncates with "…".
+        lv_obj_set_height(ssid_lbl, lv_font_get_line_height(&ui_font_name_14));
         lv_label_set_text(ssid_lbl, aps[i].ssid);
         lv_obj_set_style_text_color(ssid_lbl, lv_color_hex(0xFFFFFF), 0);
         lv_obj_set_style_text_font(ssid_lbl, &ui_font_name_14, 0);

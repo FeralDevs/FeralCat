@@ -5,6 +5,26 @@
 
 #include "ui.h"
 
+/* Draws a degree (°) mark as a small hollow ring just above-left of a "C"
+ * label. Used because the temperature font holds ASCII only and cannot render
+ * U+00B0. The ring is a child of the C label and aligns to it, so it follows
+ * the label wherever it sits. */
+static void ui_degree_mark(lv_obj_t * c_label)
+{
+    /* The label text carries a leading space; the ring is drawn raised over
+     * that space so it reads as a superscript "°" in front of the C without
+     * overlapping the glyph. */
+    lv_obj_t * ring = lv_obj_create(c_label);
+    lv_obj_remove_style_all(ring);
+    lv_obj_set_size(ring, 5, 5);
+    lv_obj_set_style_radius(ring, LV_RADIUS_CIRCLE, 0);
+    lv_obj_set_style_bg_opa(ring, LV_OPA_TRANSP, 0);
+    lv_obj_set_style_border_width(ring, 1, 0);
+    lv_obj_set_style_border_color(ring, lv_color_hex(0xFFFFFF), 0);
+    lv_obj_clear_flag(ring, LV_OBJ_FLAG_SCROLLABLE);
+    lv_obj_align(ring, LV_ALIGN_LEFT_MID, 0, -4);
+}
+
 void ui_PC_Monitor_screen_init(void)
 {
     ui_PC_Monitor = lv_obj_create(NULL);
@@ -77,10 +97,13 @@ void ui_PC_Monitor_screen_init(void)
     lv_obj_set_x(ui_symbol_1, 15);
     lv_obj_set_y(ui_symbol_1, -35);
     lv_obj_set_align(ui_symbol_1, LV_ALIGN_CENTER);
-    lv_label_set_text(ui_symbol_1, "°C");
+    // ui_font_name_14 is ASCII-only (-r 0x20-0x7A), so U+00B0 renders as a
+    // placeholder box. Show plain "C" and draw the degree mark as a ring.
+    lv_label_set_text(ui_symbol_1, " C");
     lv_obj_set_style_text_color(ui_symbol_1, lv_color_hex(0xFFFFFF), LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_text_opa(ui_symbol_1, 255, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_text_font(ui_symbol_1, &ui_font_name_14, LV_PART_MAIN | LV_STATE_DEFAULT);
+    ui_degree_mark(ui_symbol_1);
 
     ui_symbol_2 = lv_label_create(ui_PC_Monitor);
     lv_obj_set_width(ui_symbol_2, LV_SIZE_CONTENT);   /// 1
@@ -152,10 +175,11 @@ void ui_PC_Monitor_screen_init(void)
     lv_obj_set_x(ui_symbol_3, 130);
     lv_obj_set_y(ui_symbol_3, 65);
     lv_obj_set_align(ui_symbol_3, LV_ALIGN_CENTER);
-    lv_label_set_text(ui_symbol_3, "°C");
+    lv_label_set_text(ui_symbol_3, " C");
     lv_obj_set_style_text_color(ui_symbol_3, lv_color_hex(0xFFFFFF), LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_text_opa(ui_symbol_3, 255, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_text_font(ui_symbol_3, &ui_font_name_14, LV_PART_MAIN | LV_STATE_DEFAULT);
+    ui_degree_mark(ui_symbol_3);
 
     ui_symbol_4 = lv_label_create(ui_PC_Monitor);
     lv_obj_set_width(ui_symbol_4, LV_SIZE_CONTENT);   /// 1
