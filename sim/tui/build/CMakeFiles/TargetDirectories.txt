@@ -1,0 +1,3 @@
+/work/sim/tui/build/CMakeFiles/meowkit-tui.dir
+/work/sim/tui/build/CMakeFiles/edit_cache.dir
+/work/sim/tui/build/CMakeFiles/rebuild_cache.dir
