@@ -20,3 +20,6 @@ upload-log.txt
 .pio/
 sim/build/
 sim/shots/
+
+# TUI sim build
+sim/tui/build/
