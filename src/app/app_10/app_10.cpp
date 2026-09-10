@@ -115,6 +115,7 @@ void App10::onRunning()
 
     const uint32_t now = millis();
 
+    /* ── Input first (may change _page) ── */
     if (_page == Page::Face) {
         /* A = quick Start/Pause; short B = menu; hold B = exit (launcher). */
         if (_device->button.A.pressed()) {
@@ -123,10 +124,8 @@ void App10::onRunning()
         }
         if (_device->button.B.pressed()) { _page = Page::Menu; _dirty = true; }
         /* Brief eye-blink every ~3 s. */
-        if (!_blink && now - _blinkAt > 3000)        { _blink = true;  _blinkAt = now; _dirty = true; }
-        else if (_blink && now - _blinkAt > 150)     { _blink = false; _dirty = true; }
-
-        if (_dirty || now - _lastDraw >= 1000) { _present(true); _lastDraw = now; _dirty = false; }
+        if (!_blink && now - _blinkAt > 3000)    { _blink = true;  _blinkAt = now; _dirty = true; }
+        else if (_blink && now - _blinkAt > 150) { _blink = false; _dirty = true; }
     }
     else { /* Page::Menu */
         if (_device->button.Up.pressed())
@@ -145,7 +144,14 @@ void App10::onRunning()
             _dirty = true;
         }
         if (_device->button.B.pressed()) { _page = Page::Face; _dirty = true; }
+    }
 
+    /* ── Draw the CURRENT page (so a page switch this frame renders the new
+     *    page, not the old one — otherwise the switch's dirty flag is spent
+     *    drawing the page we just left). ── */
+    if (_page == Page::Face) {
+        if (_dirty || now - _lastDraw >= 1000) { _present(true); _lastDraw = now; _dirty = false; }
+    } else {
         if (_dirty) { _present(false); _dirty = false; }
     }
 
