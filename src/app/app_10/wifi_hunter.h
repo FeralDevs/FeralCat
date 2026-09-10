@@ -32,6 +32,11 @@ public:
     /** Leave promiscuous mode and restore normal STA operation. */
     void stop();
 
+    /** Suspend/resume sniffing without clearing the stats gathered so far. */
+    void pause();
+    void resume();
+    bool running() const { return _running; }
+
     /** Channel-hop tick + drain the handshake queue to SD. Call frequently. */
     void loop();
 

@@ -169,6 +169,21 @@ void WifiHunter::stop()
     s_owner = nullptr;
 }
 
+void WifiHunter::pause()
+{
+    if (!_running) return;
+    _running = false;
+    esp_wifi_set_promiscuous(false);   /* stop hopping/RX; keep stats */
+}
+
+void WifiHunter::resume()
+{
+    if (_running) return;
+    _running = true;
+    esp_wifi_set_promiscuous(true);
+    esp_wifi_set_channel(_stats.channel, WIFI_SECOND_CHAN_NONE);
+}
+
 uint32_t WifiHunter::uptime_s() const
 {
     return (millis() - _stats.start_ms) / 1000;

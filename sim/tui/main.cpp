@@ -85,12 +85,22 @@ int main(int argc, char** argv)
         return 1;
     }
 
-    const Scene* sel = &SCENES[0];
-    if (scene) {
-        for (int k = 0; k < SCENE_COUNT; k++)
-            if (!strcmp(SCENES[k].name, scene)) { sel = &SCENES[k]; break; }
+    if (scene && !strcmp(scene, "menu")) {
+        /* Preview of App10's start menu (mirrors _renderMenu). */
+        MK_TUI::clearScreen(canvas);
+        MK_TUI::drawHeader(canvas, "MeowGotchi");
+        MK_TUI::drawMenuItem(canvas, 0, "Hunt", "START", true);
+        MK_TUI::drawMenuItem(canvas, 1, "Mode", "passive", false);
+        MK_TUI::drawMenuItem(canvas, 2, "Handshakes", "0", false);
+        MK_TUI::drawFooter(canvas, "Select", "Back");
+    } else {
+        const Scene* sel = &SCENES[0];
+        if (scene) {
+            for (int k = 0; k < SCENE_COUNT; k++)
+                if (!strcmp(SCENES[k].name, scene)) { sel = &SCENES[k]; break; }
+        }
+        MeowGotchi::drawFace(canvas, sel->view);
     }
-    MeowGotchi::drawFace(canvas, sel->view);
 
     const uint16_t* fb = (const uint16_t*)canvas.getBuffer();
     return save_bmp565(out, fb, 320, 240);

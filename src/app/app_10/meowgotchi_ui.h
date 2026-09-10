@@ -36,6 +36,8 @@ struct View {
     bool        aggressive= false;
     bool        blink     = false;  /* eye-blink animation frame*/
     const char* line      = nullptr;/* speech; null → mood default */
+    const char* footA     = nullptr;/* footer [A] hint; null → "Menu" */
+    const char* footB     = nullptr;/* footer [B] hint; null → "Exit" */
 };
 
 static inline const char* moodLine(Mood m) {
@@ -198,7 +200,7 @@ static inline void drawFace(LCD& lcd, const View& v)
     lcd.setCursor(MK_LAYOUT::W - 120, 182);
     lcd.printf("%s", v.aggressive ? "AGGRESSIVE" : "passive");
 
-    MK_TUI::drawFooter(lcd, "Menu", "Exit");
+    MK_TUI::drawFooter(lcd, v.footA ? v.footA : "Menu", v.footB ? v.footB : "Exit");
 }
 
 } /* namespace MeowGotchi */

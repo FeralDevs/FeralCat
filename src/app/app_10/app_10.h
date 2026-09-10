@@ -5,6 +5,7 @@
  */
 #pragma once
 #include <mooncake.h>
+#include <LovyanGFX.hpp>
 #include "../../bsp/devices.h"
 #include "wifi_hunter.h"
 #include "meowgotchi_ui.h"
@@ -24,8 +25,14 @@ namespace MOONCAKE::APPS
         DEVICES*   _device = nullptr;
         WifiHunter _hunter;
 
+        /* Off-screen buffer — the whole frame is drawn here then blitted once,
+         * so the screen never flickers from a mid-frame clear. */
+        lgfx::LGFX_Sprite _canvas;
+        bool     _haveCanvas = false;
+
         enum class Page : uint8_t { Face, Menu } _page = Page::Face;
         int      _menuSel   = 0;
+        static constexpr int MENU_ROWS = 3;   /* Start/Pause, Mode, Handshakes */
 
         uint32_t _lastDraw  = 0;
         uint32_t _lastShake = 0;   /* millis of last new handshake  */
@@ -37,7 +44,8 @@ namespace MOONCAKE::APPS
         bool     _dirty     = true;
 
         MeowGotchi::Mood _mood();
-        void _drawFace();
-        void _drawMenu();
+        template<typename LCD> void _renderFace(LCD& lcd);
+        template<typename LCD> void _renderMenu(LCD& lcd);
+        void _present(bool face);
     };
 }

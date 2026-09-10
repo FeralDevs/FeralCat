@@ -1,6 +1,12 @@
 /**
  * @file  app_10.cpp
  * @brief MeowGotchi app — see app_10.h.
+ *
+ * Draws every frame into an off-screen sprite and blits once (no flicker).
+ * Opens to a menu (Start/Pause/Mode); hunting does not auto-start.
+ * Exit is the firmware-wide gesture: hold B (the launcher catches it and
+ * repaints the menu). The app never calls close() itself — doing so tears the
+ * app down without the launcher's repaint and leaves a blank screen.
  */
 #include "app_10.h"
 #include <Arduino.h>
@@ -16,12 +22,18 @@ App10::App10(DEVICES* device) : _device(device)
 
 void App10::onOpen()
 {
-    /* Ensure the radio is up, then start hunting passively. */
     _device->wifi.begin();
     _device->sd.begin();                 /* pcap capture needs the SD card */
-    _hunter.begin(_device->sd.isReady());
 
-    _page = Page::Face;
+    _canvas.setColorDepth(16);
+    _canvas.setPsram(true);
+    _haveCanvas = _canvas.createSprite(MK_LAYOUT::W, MK_LAYOUT::H);
+
+    _hunter.begin(_device->sd.isReady());
+    _hunter.pause();                     /* idle until the user presses Start */
+
+    _page       = Page::Face;            /* open on the main face screen */
+    _menuSel    = 0;
     _prevShakes = 0;
     _prevAct    = 0;
     _lastAct    = millis();
@@ -37,15 +49,16 @@ MeowGotchi::Mood App10::_mood()
     uint16_t act = s.aps + s.stas;
     if (act > _prevAct) { _prevAct = act; _lastAct = now; }
 
-    if (_lastShake && now - _lastShake < 5000)       return MeowGotchi::Mood::Excited;
-    if (_hunter.aggressive())                        return MeowGotchi::Mood::Cool;
-    if (!_hunter.sdReady() && s.eapol > 0)           return MeowGotchi::Mood::Sad;
+    if (_lastShake && now - _lastShake < 5000)        return MeowGotchi::Mood::Excited;
+    if (_hunter.aggressive())                         return MeowGotchi::Mood::Cool;
+    if (!_hunter.sdReady() && s.eapol > 0)            return MeowGotchi::Mood::Sad;
     if (_lastAct && now - _lastAct < 4000 && act > 0) return MeowGotchi::Mood::Hunt;
-    if (act > 0)                                     return MeowGotchi::Mood::Bored;
+    if (act > 0)                                      return MeowGotchi::Mood::Bored;
     return MeowGotchi::Mood::Sleep;
 }
 
-void App10::_drawFace()
+template<typename LCD>
+void App10::_renderFace(LCD& lcd)
 {
     const HunterStats& s = _hunter.stats();
     MeowGotchi::View v;
@@ -58,21 +71,35 @@ void App10::_drawFace()
     v.uptime_s   = _hunter.uptime_s();
     v.aggressive = _hunter.aggressive();
     v.blink      = _blink;
-    MeowGotchi::drawFace(_device->Lcd, v);
+    v.footA      = _hunter.running() ? "Pause" : "Start";
+    v.footB      = "Menu";
+    if (!_hunter.running()) v.line = "paused - [A] to start";
+    MeowGotchi::drawFace(lcd, v);
 }
 
-void App10::_drawMenu()
+template<typename LCD>
+void App10::_renderMenu(LCD& lcd)
 {
-    LGFX_Class& lcd = _device->Lcd;
     MK_TUI::clearScreen(lcd);
     MK_TUI::drawHeader(lcd, "MeowGotchi");
-    MK_TUI::drawMenuItem(lcd, 0, "Mode",
-                         _hunter.aggressive() ? "AGGRESSIVE" : "passive", _menuSel == 0);
+    MK_TUI::drawMenuItem(lcd, 0, "Hunt",
+                         _hunter.running() ? "PAUSE" : "START", _menuSel == 0);
+    MK_TUI::drawMenuItem(lcd, 1, "Mode",
+                         _hunter.aggressive() ? "AGGRESSIVE" : "passive", _menuSel == 1);
     char hs[24];
-    snprintf(hs, sizeof(hs), "%u saved", _hunter.stats().shakes);
-    MK_TUI::drawMenuItem(lcd, 1, "Handshakes", hs, _menuSel == 1);
-    MK_TUI::drawMenuItem(lcd, 2, "Exit", _hunter.sdReady() ? "" : "no SD", _menuSel == 2);
+    snprintf(hs, sizeof(hs), "%u", _hunter.stats().shakes);
+    MK_TUI::drawMenuItem(lcd, 2, "Handshakes", hs, _menuSel == 2);
     MK_TUI::drawFooter(lcd, "Select", "Back");
+}
+
+void App10::_present(bool face)
+{
+    if (_haveCanvas) {
+        if (face) _renderFace(_canvas); else _renderMenu(_canvas);
+        _canvas.pushSprite(&_device->Lcd, 0, 0);
+    } else {
+        if (face) _renderFace(_device->Lcd); else _renderMenu(_device->Lcd);
+    }
 }
 
 void App10::onRunning()
@@ -85,25 +112,37 @@ void App10::onRunning()
     const uint32_t now = millis();
 
     if (_page == Page::Face) {
-        if (_device->button.A.pressed()) { _page = Page::Menu; _menuSel = 0; _dirty = true; }
-        else if (_device->button.B.pressed()) { close(); return; }
+        /* A = quick Start/Pause; short B = menu; hold B = exit (launcher). */
+        if (_device->button.A.pressed()) {
+            if (_hunter.running()) _hunter.pause(); else _hunter.resume();
+            _dirty = true;
+        }
+        if (_device->button.B.pressed()) { _page = Page::Menu; _dirty = true; }
+        /* Brief eye-blink every ~3 s. */
+        if (!_blink && now - _blinkAt > 3000)        { _blink = true;  _blinkAt = now; _dirty = true; }
+        else if (_blink && now - _blinkAt > 150)     { _blink = false; _dirty = true; }
 
-        /* Blink briefly every ~3 s. */
-        if (now - _blinkAt > 3000)      { _blink = true;  _blinkAt = now; _dirty = true; }
-        else if (_blink && now - _blinkAt > 150) { _blink = false; _dirty = true; }
-
-        if (_dirty || now - _lastDraw > 500) { _drawFace(); _lastDraw = now; _dirty = false; }
+        if (_dirty || now - _lastDraw >= 1000) { _present(true); _lastDraw = now; _dirty = false; }
     }
     else { /* Page::Menu */
-        if (_device->button.Up.pressed())   { _menuSel = (_menuSel + 2) % 3; _dirty = true; }
-        if (_device->button.Down.pressed()) { _menuSel = (_menuSel + 1) % 3; _dirty = true; }
+        if (_device->button.Up.pressed())
+            { _menuSel = (_menuSel + MENU_ROWS - 1) % MENU_ROWS; _dirty = true; }
+        if (_device->button.Down.pressed())
+            { _menuSel = (_menuSel + 1) % MENU_ROWS; _dirty = true; }
         if (_device->button.A.pressed()) {
-            if (_menuSel == 0) { _hunter.setAggressive(!_hunter.aggressive()); _dirty = true; }
-            else if (_menuSel == 2) { close(); return; }
+            if (_menuSel == 0) {
+                if (_hunter.running()) _hunter.pause();
+                else { _hunter.resume(); _page = Page::Face; }
+            } else if (_menuSel == 1) {
+                _hunter.setAggressive(!_hunter.aggressive());
+            } else {
+                _page = Page::Face;
+            }
+            _dirty = true;
         }
         if (_device->button.B.pressed()) { _page = Page::Face; _dirty = true; }
 
-        if (_dirty) { _drawMenu(); _dirty = false; }
+        if (_dirty) { _present(false); _dirty = false; }
     }
 
     delay(20);
@@ -112,7 +151,8 @@ void App10::onRunning()
 void App10::onClose()
 {
     _hunter.stop();
-    _device->Lcd.fillScreen(TFT_BLACK);
+    if (_haveCanvas) { _canvas.deleteSprite(); _haveCanvas = false; }
+    /* No fillScreen: the launcher repaints the menu on exit (returnToUI). */
 }
 
 } // namespace MOONCAKE::APPS
