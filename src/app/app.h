@@ -27,7 +27,7 @@
 #include "app_09/infrared.h"    /* Infrared     */
 #include "app_10/app_10.h"      /* MeowGotchi    */
 #include "app_11/app_11.h"      /* WiFi Analyzer */
-#include "app_12/app_12.h"
+#include "app_12/app_12.h"      /* Flash Mode    */
 #include "app_13/app_13.h"
 #include "app_14/app_14.h"
 #include "app_15/app_15.h"
@@ -35,8 +35,9 @@
 #include <mooncake.h>
 #include <memory>
 
-/* Menu-tile icon defined in src/ui/images/ but not declared in ui.h. */
+/* Menu-tile icons defined in src/ui/images/ but not declared in ui.h. */
 extern "C" const lv_img_dsc_t ui_img_wifispam_png;
+extern "C" const lv_img_dsc_t ui_img_usb_msc_png;
 
 /**
  * @brief Register active apps into Mooncake (order determines menu slot index).
@@ -56,7 +57,7 @@ inline void registerAllApps(mooncake::Mooncake& mc, DEVICES* dev)
     mc.installApp(std::make_unique<MOONCAKE::APPS::App09>(dev));     /* app_09  Infrared     */
     mc.installApp(std::make_unique<MOONCAKE::APPS::App10>(dev));     /* app_10  MeowGotchi   */
     mc.installApp(std::make_unique<MOONCAKE::APPS::App11>(dev));     /* app_11  WiFi Analyzer */
-    mc.installApp(std::make_unique<MOONCAKE::APPS::App12>(dev));     /* app_12  stub         */
+    mc.installApp(std::make_unique<MOONCAKE::APPS::App12>(dev));     /* app_12  Flash Mode   */
     mc.installApp(std::make_unique<MOONCAKE::APPS::App13>(dev));     /* app_13  stub         */
     mc.installApp(std::make_unique<MOONCAKE::APPS::App14>(dev));     /* app_14  stub         */
     mc.installApp(std::make_unique<MOONCAKE::APPS::App15>(dev));     /* app_15  stub (music) */
@@ -80,7 +81,7 @@ static const void* const APP_BUILTIN_ICONS[] = {
     &ui_img_infrared_png,    /* app_09  Infrared    */
     &ui_img_wifi_killer_png, /* app_10  stub        */
     &ui_img_wifispam_png,    /* app_11  WiFi Analyzer */
-    &ui_img_smarthome_png,   /* app_12  stub        */
+    &ui_img_usb_msc_png,     /* app_12  Flash Mode  */
     &ui_img_webserial_png,   /* app_13  stub        */
     &ui_img_aichat_png,      /* app_14  stub        */
     &ui_img_music_png,       /* app_15  stub (music)*/

@@ -1,42 +1,87 @@
 /**
- * @file app_13.cpp
- * @brief App12 — stub placeholder (app_12 slot)
+ * @file  app_12.cpp
+ * @brief Flash Mode app — see app_12.h.
  */
 #include "app_12.h"
-#include "../../ui/ui.h"
+#include <Arduino.h>
+#include "esp_system.h"
+#include "soc/rtc_cntl_reg.h"
+#include "../app_common/mk_tui.h"
 
 namespace MOONCAKE::APPS
 {
-    App12::App12(DEVICES* device)
-        : _device(device)
-    {
-        setAppInfo().name = "app_12";
-    }
 
-    void App12::onOpen()
-    {
-        _scr = lv_obj_create(NULL);
-        lv_obj_set_style_bg_color(_scr, lv_color_hex(0x000000), 0);
-        lv_obj_clear_flag(_scr, LV_OBJ_FLAG_SCROLLABLE);
-        lv_obj_t* lbl = lv_label_create(_scr);
-        lv_label_set_text(lbl, "app_12");
-        lv_obj_set_style_text_font(lbl, &ui_font_name_14, 0);
-        lv_obj_set_style_text_color(lbl, lv_color_white(), 0);
-        lv_obj_center(lbl);
-        lv_disp_load_scr(_scr);
-        lv_timer_handler();
-    }
-
-    void App12::onRunning()
-    {
-        lv_timer_handler();
-    }
-
-    void App12::onClose()
-    {
-        if (_scr && lv_obj_is_valid(_scr)) {
-            lv_obj_del(_scr);
-            _scr = nullptr;
-        }
-    }
+App12::App12(DEVICES* device) : _device(device)
+{
+    setAppInfo().name = "FlashMode";
 }
+
+void App12::_drawConfirm()
+{
+    LGFX_Class& lcd = _device->Lcd;
+    MK_TUI::clearScreen(lcd);
+    MK_TUI::drawHeader(lcd, "Flash Mode");
+
+    lcd.setFont(&fonts::efontCN_16);
+    int y = MK_LAYOUT::CONTENT_Y + 14;
+    auto line = [&](const char* s, uint32_t c) {
+        lcd.setTextColor(c, (uint32_t)MK_PAL::BLACK);
+        lcd.setCursor(MK_LAYOUT::PAD, y);
+        lcd.printf("%s", s);
+        y += 22;
+    };
+    line("Reboot into USB download mode?", MK_PAL::TEXT_PRI);
+    y += 4;
+    line("For flashing new firmware from", MK_PAL::TEXT_SEC);
+    line("the browser - no BOOT button.", MK_PAL::TEXT_SEC);
+    y += 4;
+    line("The screen goes dark; that is", MK_PAL::TEXT_SEC);
+    line("normal. Power-cycle to return.", MK_PAL::TEXT_SEC);
+
+    MK_TUI::drawFooter(lcd, "Enter", "Cancel");
+}
+
+void App12::_enterDownloadMode()
+{
+    /* Show a brief acknowledgement, then force the next boot into the ROM
+     * serial-download mode and reset. The RTC flag survives the software reset;
+     * a power cycle clears it and boots the firmware normally again. */
+    LGFX_Class& lcd = _device->Lcd;
+    MK_TUI::clearScreen(lcd);
+    MK_TUI::drawHeader(lcd, "Flash Mode");
+    lcd.setFont(&fonts::efontCN_16);
+    lcd.setTextColor((uint32_t)MK_PAL::ACCENT, (uint32_t)MK_PAL::BLACK);
+    lcd.setCursor(MK_LAYOUT::PAD, 110);
+    lcd.printf("Entering download mode...");
+    delay(600);
+
+    REG_WRITE(RTC_CNTL_OPTION1_REG, RTC_CNTL_FORCE_DOWNLOAD_BOOT);
+    esp_restart();
+}
+
+void App12::onOpen()
+{
+    _drawn = false;
+}
+
+void App12::onRunning()
+{
+    _device->button.update();
+    _device->button.tick();
+
+    if (!_drawn) { _drawConfirm(); _drawn = true; }
+
+    /* A confirms (irreversible-ish reboot to download mode); hold B exits. */
+    if (_device->button.A.pressed()) {
+        _enterDownloadMode();          /* does not return */
+    }
+
+    delay(20);
+}
+
+void App12::onClose()
+{
+    /* Launcher repaints the menu on exit. */
+}
+
+} // namespace MOONCAKE::APPS

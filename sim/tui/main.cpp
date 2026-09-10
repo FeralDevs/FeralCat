@@ -96,7 +96,22 @@ int main(int argc, char** argv)
     };
     const int wn = 6;
 
-    if (scene && !strcmp(scene, "wlist")) {
+    if (scene && !strcmp(scene, "flashmode")) {
+        MK_TUI::clearScreen(canvas);
+        MK_TUI::drawHeader(canvas, "Flash Mode");
+        canvas.setFont(&fonts::efontCN_16);
+        int y = MK_LAYOUT::CONTENT_Y + 14;
+        auto line = [&](const char* s, uint32_t c) {
+            canvas.setTextColor(c, (uint32_t)MK_PAL::BLACK);
+            canvas.setCursor(MK_LAYOUT::PAD, y); canvas.printf("%s", s); y += 22;
+        };
+        line("Reboot into USB download mode?", MK_PAL::TEXT_PRI); y += 4;
+        line("For flashing new firmware from", MK_PAL::TEXT_SEC);
+        line("the browser - no BOOT button.", MK_PAL::TEXT_SEC); y += 4;
+        line("The screen goes dark; that is", MK_PAL::TEXT_SEC);
+        line("normal. Power-cycle to return.", MK_PAL::TEXT_SEC);
+        MK_TUI::drawFooter(canvas, "Enter", "Cancel");
+    } else if (scene && !strcmp(scene, "wlist")) {
         WifiAnalyzer::drawList(canvas, wrows, wn, 1, 0, false);
     } else if (scene && !strcmp(scene, "wdetail")) {
         WifiAnalyzer::drawDetail(canvas, wrows[1]);
