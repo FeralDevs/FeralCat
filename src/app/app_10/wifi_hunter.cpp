@@ -149,6 +149,9 @@ void WifiHunter::begin(bool sd_ready)
     _stats = HunterStats{};
     _stats.start_ms = millis();
 
+    _accum_ms  = 0;
+    _run_since = millis();
+
     s_owner = this;
     s_bssid_n = s_sta_n = 0;
     s_deauths_seen = s_eapol = s_shakes = 0;
@@ -172,6 +175,7 @@ void WifiHunter::stop()
 void WifiHunter::pause()
 {
     if (!_running) return;
+    _accum_ms += millis() - _run_since;   /* bank the elapsed run time */
     _running = false;
     esp_wifi_set_promiscuous(false);   /* stop hopping/RX; keep stats */
 }
@@ -179,6 +183,7 @@ void WifiHunter::pause()
 void WifiHunter::resume()
 {
     if (_running) return;
+    _run_since = millis();
     _running = true;
     esp_wifi_set_promiscuous(true);
     esp_wifi_set_channel(_stats.channel, WIFI_SECOND_CHAN_NONE);
@@ -186,7 +191,8 @@ void WifiHunter::resume()
 
 uint32_t WifiHunter::uptime_s() const
 {
-    return (millis() - _stats.start_ms) / 1000;
+    uint32_t ms = _accum_ms + (_running ? millis() - _run_since : 0);
+    return ms / 1000;
 }
 
 void WifiHunter::_hop()

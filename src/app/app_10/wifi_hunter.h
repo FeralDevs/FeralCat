@@ -46,7 +46,7 @@ public:
 
     const HunterStats& stats() const { return _stats; }
 
-    /** Seconds since begin(). */
+    /** Seconds spent actively hunting (excludes paused time). */
     uint32_t uptime_s() const;
 
 private:
@@ -55,6 +55,8 @@ private:
     bool          _running    = false;
     uint32_t      _last_hop   = 0;
     uint32_t      _last_deauth= 0;
+    uint32_t      _accum_ms   = 0;   /* hunting time banked while paused   */
+    uint32_t      _run_since  = 0;   /* millis() of the current run window */
     HunterStats   _stats;
 
     void _hop();
