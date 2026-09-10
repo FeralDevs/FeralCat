@@ -9,6 +9,9 @@
 #include "../../system/usb_msc.h"
 #include "../../system/usb_manager.h"
 #include "../../system/settings_bridge.h"
+#include "../../bsp/config.h"
+#include "esp_mac.h"
+#include "esp_system.h"
 
 static lv_obj_t   * s_wifi_lbl          = NULL;
 static lv_obj_t   * s_wifi_dot          = NULL;
@@ -64,10 +67,71 @@ static void ui_event_msc_button_click(lv_event_t * e)
     }
 }
 
+static void about_close_cb(lv_event_t * e)
+{
+    lv_obj_del((lv_obj_t *)lv_event_get_user_data(e));   /* delete the overlay */
+}
+
+/* Info button → a modal "About" panel with live device info (distinct from the
+ * gear/settings button next to it, which opens the settings tabs). */
 static void ui_event_info_button_click(lv_event_t * e)
 {
     if(lv_event_get_code(e) != LV_EVENT_CLICKED) return;
-    _ui_screen_change(&ui_tabview, LV_SCR_LOAD_ANIM_FADE_ON, 350, 0, &ui_tabview_screen_init);
+
+    uint8_t mac[6] = {0};
+    esp_read_mac(mac, ESP_MAC_WIFI_STA);
+    uint32_t heap_kb = esp_get_free_heap_size() / 1024;
+
+    char body[256];
+    lv_snprintf(body, sizeof(body),
+        "Firmware: MeowKit %s\n"
+        "SoC: ESP32-S3  N16R8\n"
+        "Flash 16MB DIO  PSRAM 8MB\n"
+        "MAC %02X:%02X:%02X:%02X:%02X:%02X\n"
+        "Free heap: %u KB\n"
+        "SD card: %s",
+        BSP_VERSION,
+        mac[0], mac[1], mac[2], mac[3], mac[4], mac[5],
+        (unsigned)heap_kb,
+        ui_sd_present() ? "ready" : "none");
+
+    /* Full-screen dim overlay on the top layer so it floats above everything. */
+    lv_obj_t * ov = lv_obj_create(lv_layer_top());
+    lv_obj_remove_style_all(ov);
+    lv_obj_set_size(ov, 320, 240);
+    lv_obj_center(ov);
+    lv_obj_set_style_bg_color(ov, lv_color_hex(0x000000), 0);
+    lv_obj_set_style_bg_opa(ov, LV_OPA_60, 0);
+    lv_obj_clear_flag(ov, LV_OBJ_FLAG_SCROLLABLE);
+
+    lv_obj_t * panel = lv_obj_create(ov);
+    lv_obj_set_size(panel, 280, 190);
+    lv_obj_center(panel);
+    lv_obj_set_style_bg_color(panel, lv_color_hex(0x111111), 0);
+    lv_obj_set_style_border_color(panel, lv_color_hex(0xBBE700), 0);
+    lv_obj_set_style_border_width(panel, 2, 0);
+    lv_obj_set_style_radius(panel, 8, 0);
+    lv_obj_clear_flag(panel, LV_OBJ_FLAG_SCROLLABLE);
+
+    lv_obj_t * title = lv_label_create(panel);
+    lv_label_set_text(title, "About");
+    lv_obj_set_style_text_color(title, lv_color_hex(0xBBE700), 0);
+    lv_obj_align(title, LV_ALIGN_TOP_LEFT, 0, 0);
+
+    lv_obj_t * lbl = lv_label_create(panel);
+    lv_label_set_text(lbl, body);
+    lv_obj_set_style_text_color(lbl, lv_color_hex(0xFFFFFF), 0);   /* white — readable on dark */
+    lv_obj_align(lbl, LV_ALIGN_TOP_LEFT, 0, 22);
+
+    lv_obj_t * close = lv_btn_create(panel);
+    lv_obj_set_size(close, 90, 30);
+    lv_obj_align(close, LV_ALIGN_BOTTOM_MID, 0, 4);
+    lv_obj_set_style_bg_color(close, lv_color_hex(0xBBE700), 0);
+    lv_obj_t * cl = lv_label_create(close);
+    lv_label_set_text(cl, "Close");
+    lv_obj_set_style_text_color(cl, lv_color_hex(0x000000), 0);
+    lv_obj_center(cl);
+    lv_obj_add_event_cb(close, about_close_cb, LV_EVENT_CLICKED, ov);
 }
 
 // ── NVS persist callbacks ─────────────────────────────────────────────────
