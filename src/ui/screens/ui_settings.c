@@ -64,6 +64,12 @@ static void ui_event_msc_button_click(lv_event_t * e)
     }
 }
 
+static void ui_event_info_button_click(lv_event_t * e)
+{
+    if(lv_event_get_code(e) != LV_EVENT_CLICKED) return;
+    _ui_screen_change(&ui_tabview, LV_SCR_LOAD_ANIM_FADE_ON, 350, 0, &ui_tabview_screen_init);
+}
+
 // ── NVS persist callbacks ─────────────────────────────────────────────────
 
 static void brightness_slider_cb(lv_event_t * e)
@@ -326,6 +332,7 @@ void ui_settings_screen_init(void)
     lv_obj_add_event_cb(ui_settings, ui_event_settings, LV_EVENT_ALL, NULL);
     lv_obj_add_event_cb(ui_settings_button, ui_event_settings_button_click, LV_EVENT_CLICKED, NULL);
     lv_obj_add_event_cb(ui_msc_button, ui_event_msc_button_click, LV_EVENT_CLICKED, NULL);
+    lv_obj_add_event_cb(ui_info_button, ui_event_info_button_click, LV_EVENT_CLICKED, NULL);
 
     /* 左栏(ui_brightness_slider, x=42)=音量（正向）
      * 右栏(ui_volume_slider, x=100)=亮度（正向：top=最亮） */
