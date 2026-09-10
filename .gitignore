@@ -16,3 +16,7 @@ Thumbs.db
 # Local release artifacts
 dist/
 upload-log.txt
+# build artifacts
+.pio/
+sim/build/
+sim/shots/
