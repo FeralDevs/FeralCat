@@ -8,10 +8,19 @@
 #include "esp_gap_ble_api.h"
 
 namespace {
+constexpr int     MAXMAC = 96;
 portMUX_TYPE      s_mux = portMUX_INITIALIZER_UNLOCKED;
-volatile uint16_t s_cur = 0;      /* spam adverts in the current second */
 volatile uint32_t s_total = 0;
 volatile uint16_t s_apple = 0, s_google = 0, s_ms = 0, s_samsung = 0;
+
+/* Distinct advertiser MACs seen this second — the real spam signal is MANY
+ * different (random) MACs, not a high advert count from a few real devices. */
+uint8_t  s_mac[MAXMAC][6];
+int      s_mac_n = 0;
+inline void mac_add(const uint8_t* m) {
+    for (int i = 0; i < s_mac_n; i++) if (memcmp(s_mac[i], m, 6) == 0) return;
+    if (s_mac_n < MAXMAC) memcpy(s_mac[s_mac_n++], m, 6);
+}
 
 /* Passive scan: listen only, don't send scan requests. */
 esp_ble_scan_params_t s_scan_params = {
@@ -37,32 +46,39 @@ void gap_cb(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param_t* p)
             uint8_t mlen = 0;
             uint8_t* md = esp_ble_resolve_adv_data(
                 adv, ESP_BLE_AD_MANUFACTURER_SPECIFIC_TYPE, &mlen);
-            if (md && mlen >= 2) {
+            bool apple = false, ms = false, samsung = false;
+            if (md && mlen >= 3) {
                 uint16_t cid = (uint16_t)md[0] | ((uint16_t)md[1] << 8);
-                portENTER_CRITICAL_ISR(&s_mux);
-                if      (cid == 0x004C) { s_apple++;   is_spam = true; }
-                else if (cid == 0x0006) { s_ms++;      is_spam = true; }
-                else if (cid == 0x0075) { s_samsung++; is_spam = true; }
-                portEXIT_CRITICAL_ISR(&s_mux);
+                uint8_t  atype = md[2];   /* Apple/MS payload sub-type */
+                if (cid == 0x004C) {
+                    /* Only the popup-spam types; skip 0x10 nearby-info etc.
+                     * 0x0F Nearby Action, 0x07 Proximity Pairing (AirPods). */
+                    if (atype == 0x0F || atype == 0x07) apple = true;
+                } else if (cid == 0x0006) {
+                    if (atype == 0x03) ms = true;         /* SwiftPair scenario */
+                } else if (cid == 0x0075) {
+                    samsung = true;                       /* Samsung EasySetup  */
+                }
             }
 
+            bool google = false;
             uint8_t slen = 0;
             uint8_t* sd = esp_ble_resolve_adv_data(
                 adv, ESP_BLE_AD_TYPE_SERVICE_DATA, &slen);
             if (sd && slen >= 2) {
                 uint16_t uuid = (uint16_t)sd[0] | ((uint16_t)sd[1] << 8);
-                if (uuid == 0xFE2C) {                   /* Google FastPair */
-                    portENTER_CRITICAL_ISR(&s_mux);
-                    s_google++;
-                    portEXIT_CRITICAL_ISR(&s_mux);
-                    is_spam = true;
-                }
+                if (uuid == 0xFE2C) google = true;        /* Google FastPair */
             }
 
+            is_spam = apple || ms || samsung || google;
             if (is_spam) {
                 portENTER_CRITICAL_ISR(&s_mux);
-                s_cur++;
+                if (apple)   s_apple++;
+                if (ms)      s_ms++;
+                if (samsung) s_samsung++;
+                if (google)  s_google++;
                 s_total++;
+                mac_add(p->scan_rst.bda);                 /* distinct-MAC count */
                 portEXIT_CRITICAL_ISR(&s_mux);
             }
             break;
@@ -83,8 +99,8 @@ void BleSpamMonitor::begin()
     _last_tick = millis();
 
     portENTER_CRITICAL(&s_mux);
-    s_cur = s_apple = s_google = s_ms = s_samsung = 0;
-    s_total = 0;
+    s_apple = s_google = s_ms = s_samsung = 0;
+    s_total = 0; s_mac_n = 0;
     portEXIT_CRITICAL(&s_mux);
 
     BLEDevice::deinit(false);
@@ -139,20 +155,21 @@ void BleSpamMonitor::loop()
     const uint32_t now = millis();
     if (now - _last_tick >= 1000) {
         _last_tick += 1000;
-        uint16_t cur;
+        uint16_t distinct;
         uint32_t total;
         portENTER_CRITICAL(&s_mux);
-        cur = s_cur; s_cur = 0; total = s_total;
+        distinct = (uint16_t)s_mac_n; s_mac_n = 0;   /* distinct spam MACs/sec */
+        total = s_total;
         _stats.apple = s_apple; _stats.google = s_google;
         _stats.ms = s_ms; _stats.samsung = s_samsung;
         portEXIT_CRITICAL(&s_mux);
 
-        _hist[_hidx] = cur;
+        _hist[_hidx] = distinct;
         _hidx = (_hidx + 1) % HIST;
-        _stats.rate  = cur;
+        _stats.rate  = distinct;
         _stats.total = total;
-        if (cur > _stats.peak) _stats.peak = cur;
-        if (cur >= ALERT_THRESHOLD) _alert_until = now + 4000;
+        if (distinct > _stats.peak) _stats.peak = distinct;
+        if (distinct >= ALERT_THRESHOLD) _alert_until = now + 4000;
     }
     _stats.alert = (now < _alert_until);
 }

@@ -5,7 +5,7 @@
 #include "app_12.h"
 #include <Arduino.h>
 #include "esp_system.h"
-#include "soc/rtc_cntl_reg.h"
+#include "esp32-hal-tinyusb.h"     /* usb_persist_restart / restart_type_t */
 #include "../app_common/mk_tui.h"
 
 namespace MOONCAKE::APPS
@@ -55,7 +55,11 @@ void App12::_enterDownloadMode()
     lcd.printf("Entering download mode...");
     delay(600);
 
-    REG_WRITE(RTC_CNTL_OPTION1_REG, RTC_CNTL_FORCE_DOWNLOAD_BOOT);
+    /* arduino-esp32's native-USB-aware reboot into the ROM serial bootloader:
+     * it sets the download flag AND releases the USB PHY so the ROM can present
+     * the download port (a plain esp_restart keeps USB in app mode = no port). */
+    usb_persist_restart(RESTART_BOOTLOADER);
+    /* Fallback if the above returns (older cores): force-download via RTC + reset. */
     esp_restart();
 }
 
