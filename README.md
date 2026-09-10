@@ -31,6 +31,18 @@ Based on the open‑source [`mingolucky/meowkit-s3-firmware`](https://github.com
 Built entirely in Docker (nothing installed on the host). Full technical guide:
 **[`docs/CUSTOM-FIRMWARE.md`](docs/CUSTOM-FIRMWARE.md)**.
 
+## Screenshots
+
+<sub>Desktop‑simulator renders (mock data); on device these show live readings.</sub>
+
+| | |
+|:--:|:--:|
+| **MeowGotchi** — WiFi hunter <br> <img src="docs/screenshots/meowgotchi.png" width="280"> | **WiFi Analyzer** <br> <img src="docs/screenshots/wifi-analyzer.png" width="280"> |
+| **Deauth Detector** <br> <img src="docs/screenshots/deauth-detector.png" width="280"> | **Attacker Log** (who's attacking + RSSI) <br> <img src="docs/screenshots/attacker-log.png" width="280"> |
+| **BLE Spam Detector** <br> <img src="docs/screenshots/ble-spam-detector.png" width="280"> | **Rogue Radar** — Evil‑Twin scan <br> <img src="docs/screenshots/rogue-evil-twin.png" width="280"> |
+| **Rogue Radar** — Beacon Flood / Karma <br> <img src="docs/screenshots/rogue-beacon-flood.png" width="280"> | **Flash Mode** (no BOOT button) <br> <img src="docs/screenshots/flash-mode.png" width="280"> |
+| **Settings ▸ About** (the fixed info button) <br> <img src="docs/screenshots/about-panel.png" width="280"> | |
+
 ## Download & flash
 
 Prebuilt image: **[`releases/meowgotchi-merged-0x0.bin`](releases/meowgotchi-merged-0x0.bin)**

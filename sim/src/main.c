@@ -110,6 +110,54 @@ static const screen_entry_t SCREENS[] = {
 };
 #define SCREEN_COUNT ((int)(sizeof(SCREENS) / sizeof(SCREENS[0])))
 
+/* Build the Settings "About" modal overlay (mock data) for a screenshot. */
+static void build_about_overlay(void)
+{
+    const char *body =
+        "Firmware: MeowKit v1.0\n"
+        "SoC: ESP32-S3  N16R8\n"
+        "Flash 16MB DIO  PSRAM 8MB\n"
+        "MAC 3C:84:6A:11:22:33\n"
+        "Free heap: 210 KB\n"
+        "SD card: ready";
+
+    lv_obj_t *ov = lv_obj_create(lv_layer_top());
+    lv_obj_remove_style_all(ov);
+    lv_obj_set_size(ov, 320, 240);
+    lv_obj_center(ov);
+    lv_obj_set_style_bg_color(ov, lv_color_hex(0x000000), 0);
+    lv_obj_set_style_bg_opa(ov, LV_OPA_60, 0);
+    lv_obj_clear_flag(ov, LV_OBJ_FLAG_SCROLLABLE);
+
+    lv_obj_t *panel = lv_obj_create(ov);
+    lv_obj_set_size(panel, 280, 190);
+    lv_obj_center(panel);
+    lv_obj_set_style_bg_color(panel, lv_color_hex(0x111111), 0);
+    lv_obj_set_style_border_color(panel, lv_color_hex(0xBBE700), 0);
+    lv_obj_set_style_border_width(panel, 2, 0);
+    lv_obj_set_style_radius(panel, 8, 0);
+    lv_obj_clear_flag(panel, LV_OBJ_FLAG_SCROLLABLE);
+
+    lv_obj_t *title = lv_label_create(panel);
+    lv_label_set_text(title, "About");
+    lv_obj_set_style_text_color(title, lv_color_hex(0xBBE700), 0);
+    lv_obj_align(title, LV_ALIGN_TOP_LEFT, 0, 0);
+
+    lv_obj_t *lbl = lv_label_create(panel);
+    lv_label_set_text(lbl, body);
+    lv_obj_set_style_text_color(lbl, lv_color_hex(0xFFFFFF), 0);
+    lv_obj_align(lbl, LV_ALIGN_TOP_LEFT, 0, 22);
+
+    lv_obj_t *close = lv_btn_create(panel);
+    lv_obj_set_size(close, 90, 30);
+    lv_obj_align(close, LV_ALIGN_BOTTOM_MID, 0, 4);
+    lv_obj_set_style_bg_color(close, lv_color_hex(0xBBE700), 0);
+    lv_obj_t *cl = lv_label_create(close);
+    lv_label_set_text(cl, "Close");
+    lv_obj_set_style_text_color(cl, lv_color_hex(0x000000), 0);
+    lv_obj_center(cl);
+}
+
 int main(int argc, char **argv)
 {
     const char *shot_path   = NULL;
@@ -161,6 +209,13 @@ int main(int argc, char **argv)
     lv_indev_drv_register(&indev_drv);
 
     ui_init();
+
+    if (screen_name && strcmp(screen_name, "about") == 0) {
+        if (ui_settings == NULL) ui_settings_screen_init();
+        lv_disp_load_scr(ui_settings);
+        build_about_overlay();
+        screen_name = NULL;   /* handled — skip the screen table lookup */
+    }
 
     if (screen_name) {
         const screen_entry_t *sel = NULL;
