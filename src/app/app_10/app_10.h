@@ -26,8 +26,10 @@ namespace MOONCAKE::APPS
         WifiHunter _hunter;
 
         /* Off-screen buffer — the whole frame is drawn here then blitted once,
-         * so the screen never flickers from a mid-frame clear. */
-        lgfx::LGFX_Sprite _canvas;
+         * so the screen never flickers from a mid-frame clear. Allocated in
+         * onOpen (NOT a value member): constructing an LGFX_Sprite at boot, when
+         * the app registry is built, hangs startup. */
+        lgfx::LGFX_Sprite* _canvas = nullptr;
         bool     _haveCanvas = false;
 
         enum class Page : uint8_t { Face, Menu } _page = Page::Face;

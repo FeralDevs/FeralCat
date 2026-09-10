@@ -25,9 +25,13 @@ void App10::onOpen()
     _device->wifi.begin();
     _device->sd.begin();                 /* pcap capture needs the SD card */
 
-    _canvas.setColorDepth(16);
-    _canvas.setPsram(true);
-    _haveCanvas = _canvas.createSprite(MK_LAYOUT::W, MK_LAYOUT::H);
+    _haveCanvas = false;
+    _canvas = new lgfx::LGFX_Sprite(&_device->Lcd);
+    if (_canvas) {
+        _canvas->setColorDepth(16);
+        _canvas->setPsram(true);
+        _haveCanvas = _canvas->createSprite(MK_LAYOUT::W, MK_LAYOUT::H);
+    }
 
     _hunter.begin(_device->sd.isReady());
     _hunter.pause();                     /* idle until the user presses Start */
@@ -95,8 +99,8 @@ void App10::_renderMenu(LCD& lcd)
 void App10::_present(bool face)
 {
     if (_haveCanvas) {
-        if (face) _renderFace(_canvas); else _renderMenu(_canvas);
-        _canvas.pushSprite(&_device->Lcd, 0, 0);
+        if (face) _renderFace(*_canvas); else _renderMenu(*_canvas);
+        _canvas->pushSprite(&_device->Lcd, 0, 0);
     } else {
         if (face) _renderFace(_device->Lcd); else _renderMenu(_device->Lcd);
     }
@@ -151,7 +155,8 @@ void App10::onRunning()
 void App10::onClose()
 {
     _hunter.stop();
-    if (_haveCanvas) { _canvas.deleteSprite(); _haveCanvas = false; }
+    if (_canvas) { _canvas->deleteSprite(); delete _canvas; _canvas = nullptr; }
+    _haveCanvas = false;
     /* No fillScreen: the launcher repaints the menu on exit (returnToUI). */
 }
 
