@@ -25,7 +25,7 @@
 #include "app_07/ble_spam.h"    /* BLE Spam     */
 #include "app_08/badusb.h"      /* Bad USB      */
 #include "app_09/infrared.h"    /* Infrared     */
-#include "app_10/app_10.h"
+#include "app_10/app_10.h"      /* MeowGotchi   */
 #include "app_11/app_11.h"
 #include "app_12/app_12.h"
 #include "app_13/app_13.h"
@@ -51,7 +51,7 @@ inline void registerAllApps(mooncake::Mooncake& mc, DEVICES* dev)
     mc.installApp(std::make_unique<MOONCAKE::APPS::App07>(dev));     /* app_07  BLE Spam     */
     mc.installApp(std::make_unique<MOONCAKE::APPS::AppBadUSB>(dev)); /* app_08  Bad USB      */
     mc.installApp(std::make_unique<MOONCAKE::APPS::App09>(dev));     /* app_09  Infrared     */
-    mc.installApp(std::make_unique<MOONCAKE::APPS::App10>(dev));     /* app_10  stub         */
+    mc.installApp(std::make_unique<MOONCAKE::APPS::App10>(dev));     /* app_10  MeowGotchi   */
     mc.installApp(std::make_unique<MOONCAKE::APPS::App11>(dev));     /* app_11  stub         */
     mc.installApp(std::make_unique<MOONCAKE::APPS::App12>(dev));     /* app_12  stub         */
     mc.installApp(std::make_unique<MOONCAKE::APPS::App13>(dev));     /* app_13  stub         */

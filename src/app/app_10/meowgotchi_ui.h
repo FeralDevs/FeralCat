@@ -10,7 +10,7 @@
 #pragma once
 #include <LovyanGFX.hpp>
 #include <cstdio>
-#include "mk_tui.h"
+#include "../app_common/mk_tui.h"
 
 namespace MeowGotchi {
 
