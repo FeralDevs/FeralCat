@@ -16,6 +16,8 @@
 #include "mk_tui.h"
 #include "app_10/meowgotchi_ui.h"
 #include "app_11/wifi_analyzer_ui.h"
+#include "app_13/deauth_monitor.h"
+#include "app_13/deauth_ui.h"
 
 /* Write an RGB565 framebuffer as a 24-bit BMP (bottom-up, BGR). */
 static int save_bmp565(const char* path, const uint16_t* fb, int W, int H)
@@ -96,7 +98,23 @@ int main(int argc, char** argv)
     };
     const int wn = 6;
 
-    if (scene && !strcmp(scene, "flashmode")) {
+    if (scene && (!strcmp(scene, "deauth_clear") || !strcmp(scene, "deauth_alert"))) {
+        static uint16_t hist[DeauthMonitor::HIST];
+        bool alert = !strcmp(scene, "deauth_alert");
+        for (int i = 0; i < DeauthMonitor::HIST; i++)
+            hist[i] = (i % 7 == 0) ? 1 : 0;                 /* quiet background */
+        if (alert) { hist[26]=9; hist[27]=14; hist[28]=11; hist[29]=7; }
+        DeauthUI::View v;
+        v.channel = alert ? 6 : 11;
+        v.total   = alert ? 128 : 3;
+        v.rate    = alert ? 7 : 0;
+        v.peak    = alert ? 14 : 1;
+        v.alert   = alert;
+        v.running = true;
+        v.hist = hist; v.histLen = DeauthMonitor::HIST;
+        v.threshold = DeauthMonitor::ALERT_THRESHOLD;
+        DeauthUI::draw(canvas, v);
+    } else if (scene && !strcmp(scene, "flashmode")) {
         MK_TUI::clearScreen(canvas);
         MK_TUI::drawHeader(canvas, "Flash Mode");
         canvas.setFont(&fonts::efontCN_16);
