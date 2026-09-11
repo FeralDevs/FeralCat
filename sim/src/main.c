@@ -114,7 +114,7 @@ static const screen_entry_t SCREENS[] = {
 static void build_about_overlay(void)
 {
     const char *body =
-        "MeowGotchi v0.2.0\n"
+        "MeowGotchi v0.3.0\n"
         "Fork: Janud\n"
         "SoC: ESP32-S3  N16R8\n"
         "Flash 16MB DIO  PSRAM 8MB\n"
