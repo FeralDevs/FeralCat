@@ -1,0 +1,10 @@
+# MeowKit v1.0 — 16 MB Flash, DUAL OTA (for SD-card / self updates)
+# Two ~7.94 MB app slots (app is ~6.9 MB). SPIFFS dropped (it was unused) to
+# make room. Boots ota_0; the SD-Update app writes the new image to ota_1 and
+# switches the boot partition. Lets you update firmware without a computer.
+# Name,   Type, SubType, Offset,   Size,     Flags
+nvs,      data, nvs,     0x9000,   0x5000,
+otadata,  data, ota,     0xe000,   0x2000,
+app0,     app,  ota_0,   0x10000,  0x7F0000,
+app1,     app,  ota_1,   0x800000, 0x7F0000,
+coredump, data, coredump,0xFF0000, 0x10000,

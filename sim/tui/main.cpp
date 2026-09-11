@@ -164,21 +164,26 @@ int main(int argc, char** argv)
         v.hist = hist; v.histLen = DeauthMonitor::HIST;
         v.threshold = DeauthMonitor::ALERT_THRESHOLD;
         DeauthUI::draw(canvas, v);
-    } else if (scene && !strcmp(scene, "flashmode")) {
+    } else if (scene && !strcmp(scene, "firmware_menu")) {
         MK_TUI::clearScreen(canvas);
-        MK_TUI::drawHeader(canvas, "Flash Mode");
+        MK_TUI::drawHeader(canvas, "Firmware");
+        MK_TUI::drawMenuItem(canvas, 0, "Update from SD",    "firmware.bin", true);
+        MK_TUI::drawMenuItem(canvas, 1, "USB Download Mode",  "flash via PC", false);
+        MK_TUI::drawFooter(canvas, "Select", "Exit");
+    } else if (scene && !strcmp(scene, "sd_progress")) {
+        MK_TUI::clearScreen(canvas);
+        MK_TUI::drawHeader(canvas, "SD Update");
         canvas.setFont(&fonts::efontCN_16);
-        int y = MK_LAYOUT::CONTENT_Y + 14;
-        auto line = [&](const char* s, uint32_t c) {
-            canvas.setTextColor(c, (uint32_t)MK_PAL::BLACK);
-            canvas.setCursor(MK_LAYOUT::PAD, y); canvas.printf("%s", s); y += 22;
-        };
-        line("Reboot into USB download mode?", MK_PAL::TEXT_PRI); y += 4;
-        line("For flashing new firmware from", MK_PAL::TEXT_SEC);
-        line("the browser - no BOOT button.", MK_PAL::TEXT_SEC); y += 4;
-        line("The screen goes dark; that is", MK_PAL::TEXT_SEC);
-        line("normal. Power-cycle to return.", MK_PAL::TEXT_SEC);
-        MK_TUI::drawFooter(canvas, "Enter", "Cancel");
+        canvas.setTextColor((uint32_t)MK_PAL::TEXT_PRI, (uint32_t)MK_PAL::BLACK);
+        canvas.setCursor(MK_LAYOUT::PAD, MK_LAYOUT::CONTENT_Y + 16);
+        canvas.printf("Writing firmware...");
+        canvas.setTextColor((uint32_t)MK_PAL::ERR, (uint32_t)MK_PAL::BLACK);
+        canvas.setCursor(MK_LAYOUT::PAD, MK_LAYOUT::CONTENT_Y + 38);
+        canvas.printf("Do NOT power off.");
+        MK_TUI::drawProgress(canvas, MK_LAYOUT::CONTENT_Y + 80, 62, nullptr);
+        canvas.setTextColor((uint32_t)MK_PAL::ACCENT, (uint32_t)MK_PAL::BLACK);
+        canvas.setCursor(MK_LAYOUT::W - 60, MK_LAYOUT::CONTENT_Y + 78);
+        canvas.printf("%3d%%", 62);
     } else if (scene && !strcmp(scene, "wlist")) {
         WifiAnalyzer::drawList(canvas, wrows, wn, 1, 0, false);
     } else if (scene && !strcmp(scene, "wdetail")) {
