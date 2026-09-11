@@ -1,2 +1,2 @@
-c650f90ecb58d7227a807eb357c60153d17acdb3b3183954b98f88165465b3d6  releases/meowgotchi-OTA-merged-0x0.bin
-23272754df6aad6bbee0e1ec395084d9187979a745e9c6334d9bd0ea7e51120e  releases/firmware.bin
+f3c2786d900b866180bb422de975d22b02ee610d29da82e9f60e594f5f73b349  releases/meowgotchi-OTA-merged-0x0.bin
+f858dec4693dd7a83bc51fcdcc4593722531ce6c0f8c976392b6e4445db59559  releases/firmware.bin
