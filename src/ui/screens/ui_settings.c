@@ -84,13 +84,14 @@ static void ui_event_info_button_click(lv_event_t * e)
 
     char body[256];
     lv_snprintf(body, sizeof(body),
-        "Firmware: MeowKit %s\n"
+        "MeowGotchi %s\n"
+        "Fork: Janud\n"
         "SoC: ESP32-S3  N16R8\n"
         "Flash 16MB DIO  PSRAM 8MB\n"
         "MAC %02X:%02X:%02X:%02X:%02X:%02X\n"
         "Free heap: %u KB\n"
         "SD card: %s",
-        BSP_VERSION,
+        MEOWGOTCHI_FW_VERSION,
         mac[0], mac[1], mac[2], mac[3], mac[4], mac[5],
         (unsigned)heap_kb,
         ui_sd_present() ? "ready" : "none");

@@ -1,1 +1,1 @@
-84ea57910d1bd35fb489fcb5195173f9ac6b0b7d0018a353ac24508fce79aaf8  releases/meowgotchi-merged-0x0.bin
+2f8e0cf000eaafdd89fd615ae91d04c559e0c04dced22af26e30871234c6849d  releases/meowgotchi-merged-0x0.bin
