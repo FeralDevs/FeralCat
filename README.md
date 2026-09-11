@@ -40,22 +40,31 @@ Built entirely in Docker (nothing installed on the host). Full technical guide:
 | **MeowGotchi** — WiFi hunter <br> <img src="docs/screenshots/meowgotchi.png" width="280"> | **WiFi Analyzer** <br> <img src="docs/screenshots/wifi-analyzer.png" width="280"> |
 | **Deauth Detector** <br> <img src="docs/screenshots/deauth-detector.png" width="280"> | **Attacker Log** (who's attacking + RSSI) <br> <img src="docs/screenshots/attacker-log.png" width="280"> |
 | **BLE Spam Detector** <br> <img src="docs/screenshots/ble-spam-detector.png" width="280"> | **Rogue Radar** — Evil‑Twin scan <br> <img src="docs/screenshots/rogue-evil-twin.png" width="280"> |
-| **Rogue Radar** — Beacon Flood / Karma <br> <img src="docs/screenshots/rogue-beacon-flood.png" width="280"> | **Flash Mode** (no BOOT button) <br> <img src="docs/screenshots/flash-mode.png" width="280"> |
-| **Settings ▸ About** (the fixed info button) <br> <img src="docs/screenshots/about-panel.png" width="280"> | |
+| **Rogue Radar** — Beacon Flood / Karma <br> <img src="docs/screenshots/rogue-beacon-flood.png" width="280"> | **Firmware** — SD update / USB download <br> <img src="docs/screenshots/firmware-menu.png" width="280"> |
+| **SD firmware update** (no computer) <br> <img src="docs/screenshots/sd-update.png" width="280"> | **Settings ▸ About** (the fixed info button) <br> <img src="docs/screenshots/about-panel.png" width="280"> |
 
 ## Download & flash
 
-Prebuilt image: **[`releases/meowgotchi-merged-0x0.bin`](releases/meowgotchi-merged-0x0.bin)**
-(checksums in [`releases/SHA256SUMS.txt`](releases/SHA256SUMS.txt)).
+Two artifacts in [`releases/`](releases/) (checksums in
+[`SHA256SUMS.txt`](releases/SHA256SUMS.txt)):
+- **`meowgotchi-OTA-merged-0x0.bin`** — the complete image, flashed **once** over USB.
+- **`firmware.bin`** — the app image used for **SD‑card updates** afterwards.
 
-1. Enter download mode — open the **Flash Mode** app and press **A**, or power
-   off, hold **BOOT**, plug USB, hold ~3 s, release.
-2. In a Web‑Serial flasher (Chrome/Edge, e.g. <https://esp.huhn.me>): **Connect**
-   → add `meowgotchi-merged-0x0.bin` at offset **`0x0`** → **Program** →
-   power‑cycle. (An "Erase Flash" first is safe.)
+**First time (USB):**
+1. Enter download mode — open **Firmware → USB Download Mode → A**, or power off,
+   hold **BOOT**, plug USB, hold ~3 s, release.
+2. Web‑Serial flasher (Chrome/Edge, e.g. <https://esp.huhn.me>): **Connect** →
+   add `meowgotchi-OTA-merged-0x0.bin` at offset **`0x0`** → **Program** →
+   power‑cycle. Do an **Erase Flash** first (it's a partition‑layout change).
 
-> The image is built **DIO** flash mode to match the hardware. A QIO build boots
-> once then crash‑loops — see the changelog.
+**Updates after that — no computer:** copy `firmware.bin` to the SD‑card root as
+`firmware.bin` → **Firmware → Update from SD → A**. Full guide:
+[`docs/SD-UPDATE.md`](docs/SD-UPDATE.md).
+
+> Built **DIO** flash mode to match the hardware (a QIO build boots once then
+> crash‑loops). The flash uses a **dual‑OTA** layout (two ~7.9 MB app slots) so
+> it can safely self‑update — a failed/interrupted write rolls back to the
+> current firmware.
 
 ## Building it yourself
 
@@ -87,7 +96,7 @@ Docker only — see [`docs/CUSTOM-FIRMWARE.md` §3](docs/CUSTOM-FIRMWARE.md).
 |---|---|---|
 | 10 | **MeowGotchi** | Pwnagotchi‑style cat‑face WiFi hunter: sniff, channel hop, AP/client discovery, WPA‑handshake capture to SD (`.pcap`), opt‑in deauth. |
 | 11 | **WiFi Analyzer** | 2.4 GHz scan → AP list (channel/quality/lock) → per‑AP detail (BSSID, dBm+%, security). |
-| 12 | **Flash Mode** | Reboots into USB download mode from software (`usb_persist_restart(RESTART_BOOTLOADER)`) — flash without the BOOT button. |
+| 12 | **Firmware** | Update from an SD‑card `firmware.bin` (dual‑OTA, no computer) or reboot into USB download mode (`usb_persist_restart(RESTART_BOOTLOADER)`) — no BOOT button. |
 | 13 | **Deauth Detector** | Passive deauth/disassoc monitor (CLEAR/ALERT + 30 s graph) with an **Attacker Log** (source MAC, count, RSSI to locate the attacker). |
 | 14 | **BLE Spam Detector** | Passive BLE scan for Apple/Google/MS/Samsung spam‑popup floods; alerts on distinct advertiser MACs/sec, per‑vector breakdown. |
 | 15 | **Rogue Radar** | **Evil‑Twin** scan (open+secure same SSID) + **Beacon Flood / Karma** monitor (distinct APs/sec). |
