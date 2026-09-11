@@ -78,8 +78,6 @@ static inline void drawCat(LCD& lcd, int cx, int cy, Mood mood, bool blink)
 
     /* Eyes — position */
     const int ex = 17, ey = -2;
-    auto eyeL = [&](void){ };  /* placeholder to keep symmetry readable */
-    (void)eyeL;
 
     if (blink && mood != Mood::Sleep) {
         lcd.drawFastHLine(cx-ex-8, cy+ey, 16, blk);
