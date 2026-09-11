@@ -71,8 +71,18 @@ void App12::_sdUpdate()
 {
     LGFX_Class& lcd = _device->Lcd;
 
-    _device->sd.begin();
-    if (!_device->sd.isReady()) { _modal("No SD card", "Insert a card and retry", MK_PAL::ERR); return; }
+    /* Robust SD probe (same approach as ui_sd_present): open "/", remount on
+     * failure. The launcher mounts the global SD_MMC, so use that directly —
+     * _device->sd is a separate instance whose cached state is stale here. */
+    File root = SD_MMC.open("/");
+    if (!root) {
+        SD_MMC.end();
+        if (!SD_MMC.begin("/sdcard", true, false, 10000) || !(root = SD_MMC.open("/"))) {
+            _modal("No SD card", "Insert a card and retry", MK_PAL::ERR);
+            return;
+        }
+    }
+    root.close();
 
     File f = SD_MMC.open("/firmware.bin", FILE_READ);
     if (!f || f.isDirectory()) { if (f) f.close();
