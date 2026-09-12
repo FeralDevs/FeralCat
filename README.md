@@ -82,6 +82,11 @@ Docker only — see [`docs/CUSTOM-FIRMWARE.md` §3](docs/CUSTOM-FIRMWARE.md).
 
 ## Changelog — all changes vs. stock
 
+### v0.5.1 — Fix: empty apps menu
+- The apps menu is created once at boot **before** the app list is loaded, so the
+  v0.5.0 menu‑rebuild left it empty on device. Tile building now also runs when
+  the list loads (`build_tiles()` from both `screen_init` and `load_apps`).
+
 ### v0.5.0 — Two new detectors, on‑device screenshots, WiFi time sync
 - **Tracker Detector** (app 17) — passively scans BLE for **AirTag / Find My,
   Tile, and Samsung SmartTag** item trackers and flags any that stay near you

@@ -114,7 +114,7 @@ static const screen_entry_t SCREENS[] = {
 static void build_about_overlay(void)
 {
     const char *body =
-        "MeowGotchi v0.5.0\n"
+        "MeowGotchi v0.5.1\n"
         "Fork: Janud\n"
         "SoC: ESP32-S3  N16R8\n"
         "Flash 16MB DIO  PSRAM 8MB\n"
@@ -232,9 +232,10 @@ int main(int argc, char **argv)
             strncpy(e[i].name, nm[i], sizeof(e[i].name) - 1);
             e[i].icon = ic[i % 6];
         }
+        /* Mirror the device: ui_init() already built the (empty) menu at startup,
+         * so load_apps() must populate the existing container — no re-init. */
+        if (ui_apps_menu == NULL) ui_apps_menu_screen_init();
         ui_apps_menu_load_apps(e, 17);
-        ui_apps_menu_screen_destroy();   /* drop any pre-built empty menu */
-        ui_apps_menu_screen_init();      /* rebuild tiles from the entries */
         lv_disp_load_scr(ui_apps_menu);
         screen_name = NULL;
     }

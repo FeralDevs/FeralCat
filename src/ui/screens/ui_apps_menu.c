@@ -41,6 +41,62 @@ void ui_apps_menu_clear_selected(void)
     s_selected_id[0] = '\0';
 }
 
+/* 3 fixed column X positions */
+static const lv_coord_t _col_x[3] = { 35, 125, 215 };
+
+/* (Re)build the grid tiles from the loaded entry list into _scroll_cont. Safe to
+ * call repeatedly (clears existing tiles first); a no-op until the container
+ * exists. Called from both screen_init and load_apps because the menu is created
+ * once at boot BEFORE the app list is loaded — so load_apps must populate it. */
+static void build_tiles(void)
+{
+    if (!_scroll_cont) return;
+    for (int i = 0; i < APPS_MENU_MAX_APPS; i++) {
+        if (s_btn[i]) { lv_obj_del(s_btn[i]); s_btn[i] = NULL; }
+        if (s_lbl[i]) { lv_obj_del(s_lbl[i]); s_lbl[i] = NULL; }
+    }
+    for (int i = 0; i < s_entry_count && i < APPS_MENU_MAX_APPS; i++) {
+        int        col = i % 3;
+        int        row = i / 3;
+        lv_coord_t bx  = _col_x[col];
+        lv_coord_t by  = (lv_coord_t)(30 + row * 105);
+
+        lv_obj_t * btn = lv_btn_create(_scroll_cont);
+        lv_obj_set_width(btn, 70);
+        lv_obj_set_height(btn, 70);
+        lv_obj_set_x(btn, bx);
+        lv_obj_set_y(btn, by);
+        lv_obj_add_flag(btn, LV_OBJ_FLAG_SCROLL_ON_FOCUS);     /// Flags
+        lv_obj_clear_flag(btn, LV_OBJ_FLAG_SCROLLABLE);      /// Flags
+        lv_obj_set_style_radius(btn, 35, LV_PART_MAIN | LV_STATE_DEFAULT);
+        lv_obj_set_style_bg_color(btn, lv_color_hex(0xBEE700), LV_PART_MAIN | LV_STATE_DEFAULT);
+        lv_obj_set_style_bg_opa(btn, 255, LV_PART_MAIN | LV_STATE_DEFAULT);
+        if (s_entries[i].icon)
+            lv_obj_set_style_bg_img_src(btn, s_entries[i].icon, LV_PART_MAIN | LV_STATE_DEFAULT);
+        lv_obj_set_style_shadow_color(btn, lv_color_hex(0x000000), LV_PART_MAIN | LV_STATE_DEFAULT);
+        lv_obj_set_style_shadow_opa(btn, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
+        lv_obj_set_style_outline_color(btn, lv_color_hex(0x9DDE00), LV_PART_MAIN | LV_STATE_PRESSED);
+        lv_obj_set_style_outline_opa(btn, 255, LV_PART_MAIN | LV_STATE_PRESSED);
+        lv_obj_set_style_outline_width(btn, 10, LV_PART_MAIN | LV_STATE_PRESSED);
+        lv_obj_set_style_outline_pad(btn, 0, LV_PART_MAIN | LV_STATE_PRESSED);
+        lv_obj_set_style_border_width(btn, 0, LV_PART_MAIN | LV_STATE_FOCUSED);
+        lv_obj_set_style_outline_width(btn, 0, LV_PART_MAIN | LV_STATE_FOCUSED);
+        lv_obj_set_style_outline_pad(btn, 0, LV_PART_MAIN | LV_STATE_FOCUSED);
+        lv_obj_add_event_cb(btn, on_app_click, LV_EVENT_CLICKED, (void *)(uintptr_t)i);
+        s_btn[i] = btn;
+
+        lv_obj_t * lbl = lv_label_create(_scroll_cont);
+        lv_obj_set_width(lbl, LV_SIZE_CONTENT);
+        lv_obj_set_height(lbl, LV_SIZE_CONTENT);
+        lv_label_set_text(lbl, s_entries[i].name);
+        lv_obj_set_style_text_color(lbl, lv_color_hex(0xFFFFFF), LV_PART_MAIN | LV_STATE_DEFAULT);
+        lv_obj_set_style_text_opa(lbl, 255, LV_PART_MAIN | LV_STATE_DEFAULT);
+        lv_obj_set_style_text_font(lbl, &ui_font_name_14, LV_PART_MAIN | LV_STATE_DEFAULT);
+        lv_obj_align_to(lbl, btn, LV_ALIGN_OUT_BOTTOM_MID, 0, 5);  /* center below btn */
+        s_lbl[i] = lbl;
+    }
+}
+
 void ui_apps_menu_load_apps(const AppMenuEntry_t * entries, int count)
 {
     if (!entries || count <= 0) return;
@@ -48,12 +104,8 @@ void ui_apps_menu_load_apps(const AppMenuEntry_t * entries, int count)
     memcpy(s_entries, entries, sizeof(AppMenuEntry_t) * (size_t)count);
     s_entry_count = count;
     s_selected_id[0] = '\0';
-    /* Tiles are (re)built from s_entries by ui_apps_menu_screen_init, which
-     * runs each time the menu is opened — so real names/icons always show. */
+    build_tiles();   /* menu already exists (built at boot) — populate it now */
 }
-
-/* 3 fixed column X positions */
-static const lv_coord_t _col_x[3] = { 35, 125, 215 };
 
 /* ── Screen-level event (left swipe → home) ─────────────────────── */
 
@@ -110,49 +162,9 @@ void ui_apps_menu_screen_init(void)
     lv_obj_set_style_bg_opa(_scroll_cont, 255,
                              LV_PART_SCROLLBAR | LV_STATE_DEFAULT);
 
-    /* Build one tile per loaded app entry (real name + icon from the launcher),
-     * 3 columns, scrolling vertically for more than five rows. */
-    for (int i = 0; i < s_entry_count && i < APPS_MENU_MAX_APPS; i++) {
-        int        col = i % 3;
-        int        row = i / 3;
-        lv_coord_t bx  = _col_x[col];
-        lv_coord_t by  = (lv_coord_t)(30 + row * 105);
-
-        lv_obj_t * btn = lv_btn_create(_scroll_cont);
-        lv_obj_set_width(btn, 70);
-        lv_obj_set_height(btn, 70);
-        lv_obj_set_x(btn, bx);
-        lv_obj_set_y(btn, by);
-        lv_obj_add_flag(btn, LV_OBJ_FLAG_SCROLL_ON_FOCUS);     /// Flags
-        lv_obj_clear_flag(btn, LV_OBJ_FLAG_SCROLLABLE);      /// Flags
-        lv_obj_set_style_radius(btn, 35, LV_PART_MAIN | LV_STATE_DEFAULT);
-        lv_obj_set_style_bg_color(btn, lv_color_hex(0xBEE700), LV_PART_MAIN | LV_STATE_DEFAULT);
-        lv_obj_set_style_bg_opa(btn, 255, LV_PART_MAIN | LV_STATE_DEFAULT);
-        if (s_entries[i].icon)
-            lv_obj_set_style_bg_img_src(btn, s_entries[i].icon, LV_PART_MAIN | LV_STATE_DEFAULT);
-        lv_obj_set_style_shadow_color(btn, lv_color_hex(0x000000), LV_PART_MAIN | LV_STATE_DEFAULT);
-        lv_obj_set_style_shadow_opa(btn, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
-        lv_obj_set_style_outline_color(btn, lv_color_hex(0x9DDE00), LV_PART_MAIN | LV_STATE_PRESSED);
-        lv_obj_set_style_outline_opa(btn, 255, LV_PART_MAIN | LV_STATE_PRESSED);
-        lv_obj_set_style_outline_width(btn, 10, LV_PART_MAIN | LV_STATE_PRESSED);
-        lv_obj_set_style_outline_pad(btn, 0, LV_PART_MAIN | LV_STATE_PRESSED);
-        lv_obj_set_style_border_width(btn, 0, LV_PART_MAIN | LV_STATE_FOCUSED);
-        lv_obj_set_style_outline_width(btn, 0, LV_PART_MAIN | LV_STATE_FOCUSED);
-        lv_obj_set_style_outline_pad(btn, 0, LV_PART_MAIN | LV_STATE_FOCUSED);
-        lv_obj_add_event_cb(btn, on_app_click, LV_EVENT_CLICKED, (void *)(uintptr_t)i);
-        s_btn[i] = btn;
-
-        lv_obj_t * lbl = lv_label_create(_scroll_cont);
-        lv_obj_set_width(lbl, LV_SIZE_CONTENT);
-        lv_obj_set_height(lbl, LV_SIZE_CONTENT);
-        lv_label_set_text(lbl, s_entries[i].name);
-        lv_obj_set_style_text_color(lbl, lv_color_hex(0xFFFFFF), LV_PART_MAIN | LV_STATE_DEFAULT);
-        lv_obj_set_style_text_opa(lbl, 255, LV_PART_MAIN | LV_STATE_DEFAULT);
-        lv_obj_set_style_text_font(lbl, &ui_font_name_14, LV_PART_MAIN | LV_STATE_DEFAULT);
-        /* Center label horizontally below button */
-        lv_obj_align_to(lbl, btn, LV_ALIGN_OUT_BOTTOM_MID, 0, 5);
-        s_lbl[i] = lbl;
-    }
+    /* Populate the grid from whatever's loaded (empty at boot; load_apps calls
+     * build_tiles() again once the real app list arrives). */
+    build_tiles();
 
     lv_obj_add_event_cb(ui_apps_menu, ui_event_apps_menu, LV_EVENT_ALL, NULL);
 }
