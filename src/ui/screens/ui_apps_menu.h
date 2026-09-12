@@ -17,18 +17,10 @@ extern void ui_event_apps_menu(lv_event_t * e);
 extern lv_obj_t * ui_apps_menu;
 extern lv_obj_t * ui_apps_menu_bg;
 extern lv_obj_t * ui_left;
-extern lv_obj_t * ui_app_01;  extern lv_obj_t * ui_app_02;  extern lv_obj_t * ui_app_03;
-extern lv_obj_t * ui_app_04;  extern lv_obj_t * ui_app_05;  extern lv_obj_t * ui_app_06;
-extern lv_obj_t * ui_app_07;  extern lv_obj_t * ui_app_08;  extern lv_obj_t * ui_app_09;
-extern lv_obj_t * ui_app_10;  extern lv_obj_t * ui_app_11;  extern lv_obj_t * ui_app_12;
-extern lv_obj_t * ui_app_13;  extern lv_obj_t * ui_app_14;  extern lv_obj_t * ui_app_15;
-extern lv_obj_t * ui_name_01; extern lv_obj_t * ui_name_02; extern lv_obj_t * ui_name_03;
-extern lv_obj_t * ui_name_04; extern lv_obj_t * ui_name_05; extern lv_obj_t * ui_name_06;
-extern lv_obj_t * ui_name_07; extern lv_obj_t * ui_name_08; extern lv_obj_t * ui_name_09;
-extern lv_obj_t * ui_name_10; extern lv_obj_t * ui_name_11; extern lv_obj_t * ui_name_12;
-extern lv_obj_t * ui_name_13; extern lv_obj_t * ui_name_14; extern lv_obj_t * ui_name_15;
+/* App tiles + labels are created dynamically from the loaded entry list
+ * (see ui_apps_menu_load_apps); they are no longer individual globals. */
 /* ── Dynamic app loading API ─────────────────────────────────────── */
-#define APPS_MENU_MAX_APPS  15
+#define APPS_MENU_MAX_APPS  18
 
 typedef struct {
     char         id[32];

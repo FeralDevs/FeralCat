@@ -114,7 +114,7 @@ static const screen_entry_t SCREENS[] = {
 static void build_about_overlay(void)
 {
     const char *body =
-        "MeowGotchi v0.4.0\n"
+        "MeowGotchi v0.5.0\n"
         "Fork: Janud\n"
         "SoC: ESP32-S3  N16R8\n"
         "Flash 16MB DIO  PSRAM 8MB\n"
@@ -216,6 +216,37 @@ int main(int argc, char **argv)
         lv_disp_load_scr(ui_settings);
         build_about_overlay();
         screen_name = NULL;   /* handled — skip the screen table lookup */
+    }
+
+    /* Apps menu populated with 17 entries to verify the dynamic grid + scroll. */
+    if (screen_name && strcmp(screen_name, "apps17") == 0) {
+        static AppMenuEntry_t e[17];
+        static const char * nm[17] = {
+            "Dino","Matrix Rain","VU Meter","Retro TV","PC Monitor","Air Mouse",
+            "BLE Spam","BadUSB","Infrared","MeowGotchi","WiFi Analyzer","Firmware",
+            "DeauthDetect","BLE SpamDet","Rogue Radar","ProbeSniffer","TrackerDetect" };
+        const void * ic[6] = {
+            &ui_img_dino_png, &ui_img_matrix_rain_png, &ui_img_vu_meter_png,
+            &ui_img_retro_tv_png, &ui_img_air_mouse_png, &ui_img_badusb_png };
+        for (int i = 0; i < 17; i++) {
+            strncpy(e[i].name, nm[i], sizeof(e[i].name) - 1);
+            e[i].icon = ic[i % 6];
+        }
+        ui_apps_menu_load_apps(e, 17);
+        ui_apps_menu_screen_destroy();   /* drop any pre-built empty menu */
+        ui_apps_menu_screen_init();      /* rebuild tiles from the entries */
+        lv_disp_load_scr(ui_apps_menu);
+        screen_name = NULL;
+    }
+
+    /* The tabview opens on the Display tab; jump to Time (index 3) so the
+     * "Sync over WiFi" button is visible in the shot. */
+    if (screen_name && strcmp(screen_name, "time_tab") == 0) {
+        extern lv_obj_t * ui_tabview_settings;
+        if (ui_tabview == NULL) ui_tabview_screen_init();
+        lv_disp_load_scr(ui_tabview);
+        lv_tabview_set_act(ui_tabview_settings, 3, LV_ANIM_OFF);
+        screen_name = NULL;
     }
 
     if (screen_name) {

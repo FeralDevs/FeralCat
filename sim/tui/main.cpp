@@ -22,6 +22,10 @@
 #include "app_14/ble_spam_ui.h"
 #include "app_15/beacon_flood.h"
 #include "app_15/rogue_ui.h"
+#include "app_16/probe_monitor.h"
+#include "app_16/probe_ui.h"
+#include "app_17/tracker_monitor.h"
+#include "app_17/tracker_ui.h"
 
 /* Write an RGB565 framebuffer as a 24-bit BMP (bottom-up, BGR). */
 static int save_bmp565(const char* path, const uint16_t* fb, int W, int H)
@@ -164,6 +168,32 @@ int main(int argc, char** argv)
         v.hist = hist; v.histLen = DeauthMonitor::HIST;
         v.threshold = DeauthMonitor::ALERT_THRESHOLD;
         DeauthUI::draw(canvas, v);
+    } else if (scene && !strcmp(scene, "probe_list")) {
+        static uint16_t hist[ProbeMonitor::HIST];
+        for (int i = 0; i < ProbeMonitor::HIST; i++) hist[i] = 1 + (i % 4);
+        static ProbeEntry dev[] = {
+            { {0x3c,0x84,0x6a,0x11,0x22,0x33}, "HomeNet-5G",   38, -47, 6 },
+            { {0xa4,0x83,0xe7,0x9a,0xbc,0xde}, "Starbucks",    21, -61, 1 },
+            { {0xf0,0x18,0x98,0x44,0x55,0x66}, "",             15, -70, 11 },
+            { {0x00,0x1e,0x2a,0x77,0x88,0x99}, "iPhone-Tom",    7, -78, 9 },
+        };
+        ProbeUI::View v;
+        v.channel = 6; v.total = 812; v.rate = 14; v.peak = 33;
+        v.devices = 4; v.running = true;
+        v.hist = hist; v.histLen = ProbeMonitor::HIST;
+        ProbeUI::drawList(canvas, v, dev, 4);
+    } else if (scene && (!strcmp(scene, "tracker_list") || !strcmp(scene, "tracker_alert"))) {
+        bool alert = !strcmp(scene, "tracker_alert");
+        uint32_t now = 200000;
+        static TrackerEntry trk[] = {
+            { {0x4c,0x00,0x12,0xaa,0xbb,0xcc}, TRK_APPLE,   -46, 220, now - 140000, now - 2000 },
+            { {0xfe,0xed,0x00,0x11,0x22,0x33}, TRK_TILE,    -68,  40, now - 30000,  now - 5000 },
+            { {0xfd,0x5a,0x00,0x44,0x55,0x66}, TRK_SAMSUNG, -80,  12, now - 12000,  now - 8000 },
+        };
+        TrackerUI::View v;
+        v.nearby = 3; v.persistent = alert ? 1 : 0; v.alert = alert;
+        v.running = true; v.now_ms = now;
+        TrackerUI::drawList(canvas, v, trk, 3);
     } else if (scene && !strcmp(scene, "firmware_menu")) {
         MK_TUI::clearScreen(canvas);
         MK_TUI::drawHeader(canvas, "Firmware");

@@ -43,6 +43,7 @@ Built entirely in Docker (nothing installed on the host). Full technical guide:
 | **Rogue Radar** — Beacon Flood / Karma <br> <img src="docs/screenshots/rogue-beacon-flood.png" width="280"> | **Firmware** — SD update / USB download <br> <img src="docs/screenshots/firmware-menu.png" width="280"> |
 | **SD firmware update** (no computer) <br> <img src="docs/screenshots/sd-update.png" width="280"> | **Settings ▸ About** (the fixed info button) <br> <img src="docs/screenshots/about-panel.png" width="280"> |
 | **Update over WiFi** — checks GitHub for a newer release <br> <img src="docs/screenshots/wifi-update.png" width="280"> | **…then downloads it to the SD card** <br> <img src="docs/screenshots/wifi-download.png" width="280"> |
+| **Probe Sniffer** — nearby devices + the SSIDs they leak <br> <img src="docs/screenshots/probe-sniffer.png" width="280"> | **Tracker Detector** — AirTag/Tile/SmartTag "FOLLOWED!" <br> <img src="docs/screenshots/tracker-detector.png" width="280"> |
 
 ## Download & flash
 
@@ -81,6 +82,27 @@ Docker only — see [`docs/CUSTOM-FIRMWARE.md` §3](docs/CUSTOM-FIRMWARE.md).
 
 ## Changelog — all changes vs. stock
 
+### v0.5.0 — Two new detectors, on‑device screenshots, WiFi time sync
+- **Tracker Detector** (app 17) — passively scans BLE for **AirTag / Find My,
+  Tile, and Samsung SmartTag** item trackers and flags any that stay near you
+  long enough to suggest you're being followed (`FOLLOWED!`). *Find My rotates
+  its MAC ~every 15 min, so persistence timing is best‑effort, not forensic.*
+- **Probe Sniffer** (app 16) — logs the 802.11 **probe‑request** frames nearby
+  phones/laptops broadcast, showing each device's MAC, signal, and the network
+  names it leaks.
+- **On‑device screenshots** — hold the joystick **Up+Down** inside MeowGotchi or
+  any detector to save the screen to `/screenshots/shot_NNNN.bmp` on the SD card.
+  (Captures the LovyanGFX app screens via their off‑screen buffer; the panel has
+  no read line so the LVGL system screens aren't captured on device.)
+- **WiFi Time Sync** — **Settings ▸ Time ▸ Sync over WiFi**: NTP for UTC +
+  IP‑geolocation for your timezone → sets the clock **and** the RTC, no manual
+  timezone. The clock is also now restored from the RTC at boot, so it's correct
+  offline after a reboot.
+- **Apps menu rebuilt** — the grid is now generated from the live app list
+  (scrolls for >15 apps), which fixes the stale tile labels (the WiFi/BLE apps
+  had shown leftover "NFC / smarthome / webserial / aichat" names) and dropped
+  four unused icon assets.
+
 ### v0.4.0 — Self‑update over WiFi
 - **Firmware ▸ Update over WiFi.** The device reconnects to the WiFi saved in
   **Settings ▸ WiFi**, reads this repo's latest release tag (via GitHub's
@@ -118,9 +140,12 @@ Docker only — see [`docs/CUSTOM-FIRMWARE.md` §3](docs/CUSTOM-FIRMWARE.md).
 | 13 | **Deauth Detector** | Passive deauth/disassoc monitor (CLEAR/ALERT + 30 s graph) with an **Attacker Log** (source MAC, count, RSSI to locate the attacker). |
 | 14 | **BLE Spam Detector** | Passive BLE scan for Apple/Google/MS/Samsung spam‑popup floods; alerts on distinct advertiser MACs/sec, per‑vector breakdown. |
 | 15 | **Rogue Radar** | **Evil‑Twin** scan (open+secure same SSID) + **Beacon Flood / Karma** monitor (distinct APs/sec). |
+| 16 | **Probe Sniffer** | Passive 802.11 probe‑request log: which devices are nearby and the SSIDs they leak (MAC, signal, requested network); list ↔ rate graph. |
+| 17 | **Tracker Detector** | Passive BLE scan for **AirTag/Find My, Tile, Samsung SmartTag**; lists each with proximity and how long it's been near you, alerting when one persists (`FOLLOWED!`). |
 
 Controls everywhere: **A** = action, **short B** = toggle/secondary,
-**hold B** = exit.
+**hold B** = exit. In MeowGotchi and the detectors, **hold Up+Down** saves a
+screenshot to the SD card.
 
 ### Tooling added
 - Containerized PlatformIO build + a single merged flash‑at‑`0x0` image.

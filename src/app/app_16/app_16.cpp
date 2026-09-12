@@ -1,8 +1,8 @@
 /**
- * @file  app_13.cpp
- * @brief Deauth Detector app — see app_13.h.
+ * @file  app_16.cpp
+ * @brief Probe Sniffer app — see app_16.h.
  */
-#include "app_13.h"
+#include "app_16.h"
 #include <Arduino.h>
 #include "../app_common/mk_tui.h"
 #include "../../system/screenshot.h"
@@ -10,38 +10,36 @@
 namespace MOONCAKE::APPS
 {
 
-App13::App13(DEVICES* device) : _device(device)
+App16::App16(DEVICES* device) : _device(device)
 {
-    setAppInfo().name = "DeauthDetect";
+    setAppInfo().name = "ProbeSniffer";
 }
 
 template<typename LCD>
-void App13::_render(LCD& lcd)
+void App16::_render(LCD& lcd)
 {
-    if (_logView) {
-        int n = _mon.attackers(_atkbuf, 16);
-        DeauthUI::drawLog(lcd, _atkbuf, n, _mon.running());
-        return;
-    }
-
-    const DeauthStats& s = _mon.stats();
+    const ProbeStats& s = _mon.stats();
     _mon.history(_histbuf);
 
-    DeauthUI::View v;
-    v.channel   = s.channel;
-    v.total     = s.total;
-    v.rate      = s.rate;
-    v.peak      = s.peak;
-    v.alert     = s.alert;
-    v.running   = _mon.running();
-    v.uptime_s  = _mon.uptime_s();
-    v.hist      = _histbuf;
-    v.histLen   = DeauthMonitor::HIST;
-    v.threshold = DeauthMonitor::ALERT_THRESHOLD;
-    DeauthUI::draw(lcd, v);
+    ProbeUI::View v;
+    v.channel = s.channel;
+    v.total   = s.total;
+    v.rate    = s.rate;
+    v.peak    = s.peak;
+    v.devices = s.devices;
+    v.running = _mon.running();
+    v.hist    = _histbuf;
+    v.histLen = ProbeMonitor::HIST;
+
+    if (_graphView) {
+        ProbeUI::drawGraph(lcd, v);
+    } else {
+        int n = _mon.devices(_devbuf, ProbeMonitor::MAXDEV);
+        ProbeUI::drawList(lcd, v, _devbuf, n);
+    }
 }
 
-void App13::_present()
+void App16::_present()
 {
     if (_haveCanvas) {
         _render(*_canvas);
@@ -51,7 +49,7 @@ void App13::_present()
     }
 }
 
-void App13::onOpen()
+void App16::onOpen()
 {
     _device->wifi.begin();
 
@@ -63,11 +61,11 @@ void App13::onOpen()
         _haveCanvas = _canvas->createSprite(MK_LAYOUT::W, MK_LAYOUT::H);
     }
 
-    _mon.begin();          /* a monitor: starts watching immediately */
+    _mon.begin();
     _dirty = true;
 }
 
-void App13::onRunning()
+void App16::onRunning()
 {
     _device->button.update();
     _device->button.tick();
@@ -78,19 +76,18 @@ void App13::onRunning()
         if (_mon.running()) _mon.pause(); else _mon.resume();
         _dirty = true;
     }
-    if (_device->button.B.pressed()) {   /* short B = toggle graph/log; hold B = exit */
-        _logView = !_logView; _dirty = true;
+    if (_device->button.B.pressed()) {   /* short B = list/graph; hold B = exit */
+        _graphView = !_graphView; _dirty = true;
     }
 
     const uint32_t now = millis();
-    /* Refresh ~2 Hz so the rate/graph animate; the 1 Hz engine tick feeds it. */
     if (_dirty || now - _lastDraw >= 500) { _present(); _lastDraw = now; _dirty = false; }
 
     if (_haveCanvas) screenshot_tui_tick(_device, _canvas);   /* Up+Down = save to SD */
     delay(20);
 }
 
-void App13::onClose()
+void App16::onClose()
 {
     _mon.stop();
     if (_canvas) { _canvas->deleteSprite(); delete _canvas; _canvas = nullptr; }

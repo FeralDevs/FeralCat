@@ -54,6 +54,7 @@
 #include "../../system/usb_msc.h"
 #include "../../system/usb_manager.h"
 #include "../../system/settings_bridge.h"  /* includes persist internally */
+#include "../../system/time_sync.h"         /* WiFi NTP + IP-timezone clock sync */
 #include "../../system/power_mgmt.h"
 #include "../../system/mk_events.h"
 #include <Arduino.h>
@@ -201,7 +202,12 @@ void Launcher::onCreate()
 /* Expose RTC to generated C UI screens (clock / pickers) */
     ui_rtc_bridge_register(&_device->rtc);
 
-    
+    /* Time sync (WiFi NTP + IP timezone): give it the devices, and seed the
+     * system clock from the RTC so time() is correct offline after a reboot. */
+    time_sync_attach(_device);
+    time_sync_restore_from_rtc();
+
+
     Serial.println("[Launcher] [2/5] installApps...");
     installApps();
 

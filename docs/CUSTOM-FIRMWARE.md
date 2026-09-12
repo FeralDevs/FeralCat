@@ -50,8 +50,13 @@ Slots 10–15 shipped empty (or stubs); all are now real apps. Common controls:
 | 13 | **Deauth Detector** | Passive deauth/disassoc counter with CLEAR/ALERT banner + 30 s graph. **Attacker Log** view lists source MAC, hit count and **RSSI** (proximity to locate the attacker). | A = pause/resume · short B = graph↔log · hold B = exit |
 | 14 | **BLE Spam Detector** | Passive BLE scan for Apple/Google/MS/Samsung spam‑popup floods; alerts on **distinct advertiser MACs/sec** (not on legit devices), with a per‑vector breakdown. | A = pause/resume · hold B = exit |
 | 15 | **Rogue Radar** | **Evil‑Twin scan** (flags SSIDs advertised as *both open and secured*) + **Beacon Flood / Karma** monitor (distinct APs/sec, promiscuous). | short B = twins↔flood · A = rescan/pause · hold B = exit |
+| 16 | **Probe Sniffer** | Passive 802.11 probe‑request capture: source MAC + requested SSID + signal per nearby device; distinct‑device count and per‑second rate. | A = pause · short B = list↔graph · hold B = exit |
+| 17 | **Tracker Detector** | Passive BLE scan classifying **Apple Find My / Tile / Samsung SmartTag**; per‑tracker proximity + dwell time, alerts when one persists (`FOLLOWED!`). MAC rotation makes dwell best‑effort. | A = pause · hold B = exit |
 
-All detectors draw into an off‑screen sprite and blit once (no flicker).
+All detectors draw into an off‑screen sprite and blit once (no flicker). In any
+of them (and MeowGotchi) **hold the joystick Up+Down** to save the current sprite
+to `/screenshots/shot_NNNN.bmp` on the SD card — the panel has no read line, so
+this sprite path is the only way to grab those LovyanGFX screens on device.
 
 ---
 

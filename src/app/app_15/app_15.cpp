@@ -7,6 +7,7 @@
 #include <algorithm>
 #include <cstring>
 #include "../app_common/mk_tui.h"
+#include "../../system/screenshot.h"
 
 namespace MOONCAKE::APPS
 {
@@ -133,6 +134,7 @@ void App15::onRunning()
         if (_dirty || now - _lastDraw >= 500) { _present(); _lastDraw = now; _dirty = false; }
     }
 
+    if (_haveCanvas) screenshot_tui_tick(_device, _canvas);   /* Up+Down = save to SD */
     delay(20);
 }
 

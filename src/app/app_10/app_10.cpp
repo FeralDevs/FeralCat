@@ -11,6 +11,7 @@
 #include "app_10.h"
 #include <Arduino.h>
 #include "../app_common/mk_tui.h"
+#include "../../system/screenshot.h"
 
 namespace MOONCAKE::APPS
 {
@@ -192,6 +193,7 @@ void App10::onRunning()
         if (_dirty) { _present(); _dirty = false; }
     }
 
+    if (_haveCanvas) screenshot_tui_tick(_device, _canvas);   /* Up+Down = save to SD */
     delay(20);
 }
 

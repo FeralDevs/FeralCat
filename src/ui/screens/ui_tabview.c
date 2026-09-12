@@ -7,6 +7,7 @@
 #include "../ui_sd_bridge.h"
 #include "../ui_wifi_bridge.h"
 #include "../../system/settings_bridge.h"
+#include "../../system/time_sync.h"
 #include "../../system/persist.h"
 #include <time.h>
 #include <esp_system.h>
@@ -473,6 +474,42 @@ static void _tab_set_time_cb(lv_event_t * e)
                       &ui_time_picker_screen_init);
 }
 
+static void _sync_result_close_cb(lv_event_t * e)
+{
+    lv_msgbox_close(lv_event_get_current_target(e));
+}
+
+/* Time Sync button: NTP (UTC) + IP-geolocation (timezone) → RTC + clock, no
+ * manual timezone. Blocking a few seconds; a modal shows progress then result. */
+static void _tab_time_sync_cb(lv_event_t * e)
+{
+    if(lv_event_get_code(e) != LV_EVENT_CLICKED) return;
+
+    lv_obj_t * busy = lv_msgbox_create(lv_scr_act(), "Time Sync",
+                                       "Syncing over WiFi...", NULL, false);
+    lv_obj_set_style_bg_color(busy,     lv_color_hex(TV_CARD), LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_border_color(busy, lv_color_hex(TV_LIME), LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_border_width(busy, 2,                     LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_center(busy);
+    lv_refr_now(NULL);                 /* paint the modal before we block */
+
+    char status[64] = {0};
+    bool ok = time_sync_now(status, sizeof(status));
+    lv_msgbox_close(busy);
+
+    char msg[96];
+    lv_snprintf(msg, sizeof(msg), ok ? "Clock set to\n%s" : "%s", status);
+    static const char * okb[] = { "OK", "" };
+    lv_obj_t * res = lv_msgbox_create(lv_scr_act(), "Time Sync", msg, okb, false);
+    lv_obj_set_style_bg_color(res,     lv_color_hex(TV_CARD),                LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_border_color(res, lv_color_hex(ok ? TV_LIME : TV_DANGER), LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_border_width(res, 2,                                    LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_center(res);
+    lv_obj_add_event_cb(res, _sync_result_close_cb, LV_EVENT_VALUE_CHANGED, NULL);
+
+    tab_time_refresh(NULL);            /* reflect the new time immediately */
+}
+
 // ── Tab page builders ─────────────────────────────────────────────────────
 
 static void build_tab_display(lv_obj_t * page)
@@ -639,14 +676,16 @@ static void build_tab_time(lv_obj_t * page)
     lv_obj_set_style_radius(tim_div,      0, 0);
     lv_obj_set_style_pad_all(tim_div,     0, 0);
 
-    mk_lbl(page, "Date", TAB_MARG, 40, TV_MUTED, &ui_font_name_14);
-    s_lbl_date = mk_lbl(page, "--/--/----", TAB_MARG, 60, TV_TEXT, &ui_font_name_24);
+    mk_lbl(page, "Date", TAB_MARG, 38, TV_MUTED, &ui_font_name_14);
+    s_lbl_date = mk_lbl(page, "--/--/----", TAB_MARG, 56, TV_TEXT, &ui_font_name_24);
 
-    mk_lbl(page, "Time", TAB_MARG, 110, TV_MUTED, &ui_font_name_14);
-    s_lbl_time_str = mk_lbl(page, "--- --:--", TAB_MARG, 130, TV_TEXT, &ui_font_name_24);
+    mk_lbl(page, "Time", TAB_MARG, 90, TV_MUTED, &ui_font_name_14);
+    s_lbl_time_str = mk_lbl(page, "--- --:--", TAB_MARG, 108, TV_TEXT, &ui_font_name_24);
 
-    mk_outline_btn(page, TAB_MARG,           170, 108, 30, "Set Date", TV_LIME,  _tab_set_date_cb);
-    mk_outline_btn(page, TAB_MARG + 114,     170, 108, 30, "Set Time", TV_MUTED, _tab_set_time_cb);
+    mk_outline_btn(page, TAB_MARG,           142, 108, 28, "Set Date", TV_LIME,  _tab_set_date_cb);
+    mk_outline_btn(page, TAB_MARG + 114,     142, 108, 28, "Set Time", TV_MUTED, _tab_set_time_cb);
+    mk_outline_btn(page, TAB_MARG,           174, TAB_PG_W - 2*TAB_MARG, 28,
+                   "Sync over WiFi", TV_LIME, _tab_time_sync_cb);
 
     tab_time_refresh(NULL);
 

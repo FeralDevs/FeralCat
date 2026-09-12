@@ -31,6 +31,8 @@
 #include "app_13/app_13.h"      /* Deauth Detector   */
 #include "app_14/app_14.h"      /* BLE Spam Detector */
 #include "app_15/app_15.h"      /* Rogue Radar       */
+#include "app_16/app_16.h"      /* Probe Sniffer     */
+#include "app_17/app_17.h"      /* Tracker Detector  */
 
 #include <mooncake.h>
 #include <memory>
@@ -61,6 +63,8 @@ inline void registerAllApps(mooncake::Mooncake& mc, DEVICES* dev)
     mc.installApp(std::make_unique<MOONCAKE::APPS::App13>(dev));     /* app_13  Deauth Detect */
     mc.installApp(std::make_unique<MOONCAKE::APPS::App14>(dev));     /* app_14  BLE Spam Det. */
     mc.installApp(std::make_unique<MOONCAKE::APPS::App15>(dev));     /* app_15  Rogue Radar  */
+    mc.installApp(std::make_unique<MOONCAKE::APPS::App16>(dev));     /* app_16  Probe Sniffer */
+    mc.installApp(std::make_unique<MOONCAKE::APPS::App17>(dev));     /* app_17  Tracker Det. */
 }
 
 /**
@@ -85,6 +89,8 @@ static const void* const APP_BUILTIN_ICONS[] = {
     &ui_img_webserial_png,   /* app_13  stub        */
     &ui_img_ble_spam_png,    /* app_14  BLE Spam Det. */
     &ui_img_wifi_killer_png, /* app_15  Rogue Radar */
+    &ui_img_wifispam_png,    /* app_16  Probe Sniffer */
+    &ui_img_ble_spam_png,    /* app_17  Tracker Detector */
 };
 static const int APP_BUILTIN_ICONS_COUNT =
     (int)(sizeof(APP_BUILTIN_ICONS) / sizeof(APP_BUILTIN_ICONS[0]));

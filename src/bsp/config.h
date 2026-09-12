@@ -17,7 +17,7 @@
 #define PROJECT_NAME                "MeowKit"
 
 /* Custom firmware (this fork) version — shown in Settings > About. */
-#define MEOWGOTCHI_FW_VERSION       "v0.4.0"
+#define MEOWGOTCHI_FW_VERSION       "v0.5.0"
 
 /* ═══════════════════════════════════════════════════════════════
  *  Hardware Board Test (BBT) — set 1 to enable, 0 to disable

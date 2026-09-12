@@ -1,8 +1,8 @@
 /**
- * @file  app_14.cpp
- * @brief BLE Spam Detector app — see app_14.h.
+ * @file  app_17.cpp
+ * @brief Tracker Detector app — see app_17.h.
  */
-#include "app_14.h"
+#include "app_17.h"
 #include <Arduino.h>
 #include "../app_common/mk_tui.h"
 #include "../../system/screenshot.h"
@@ -10,34 +10,27 @@
 namespace MOONCAKE::APPS
 {
 
-App14::App14(DEVICES* device) : _device(device)
+App17::App17(DEVICES* device) : _device(device)
 {
-    setAppInfo().name = "BleSpamDetect";
+    setAppInfo().name = "TrackerDetect";
 }
 
 template<typename LCD>
-void App14::_render(LCD& lcd)
+void App17::_render(LCD& lcd)
 {
-    const BleSpamStats& s = _mon.stats();
-    _mon.history(_histbuf);
+    const TrackerStats& s = _mon.stats();
+    int n = _mon.trackers(_trkbuf, TrackerMonitor::MAXTRK);
 
-    BleSpamUI::View v;
-    v.total   = s.total;
-    v.rate    = s.rate;
-    v.peak    = s.peak;
-    v.alert   = s.alert;
-    v.running = _mon.running();
-    v.apple   = s.apple;
-    v.google  = s.google;
-    v.ms      = s.ms;
-    v.samsung = s.samsung;
-    v.hist    = _histbuf;
-    v.histLen = BleSpamMonitor::HIST;
-    v.threshold = BleSpamMonitor::ALERT_THRESHOLD;
-    BleSpamUI::draw(lcd, v);
+    TrackerUI::View v;
+    v.nearby     = s.nearby;
+    v.persistent = s.persistent;
+    v.alert      = s.alert;
+    v.running    = _mon.running();
+    v.now_ms     = millis();
+    TrackerUI::drawList(lcd, v, _trkbuf, n);
 }
 
-void App14::_present()
+void App17::_present()
 {
     if (_haveCanvas) {
         _render(*_canvas);
@@ -47,7 +40,7 @@ void App14::_present()
     }
 }
 
-void App14::onOpen()
+void App17::onOpen()
 {
     _haveCanvas = false;
     _canvas = new lgfx::LGFX_Sprite(&_device->Lcd);
@@ -61,14 +54,14 @@ void App14::onOpen()
     _dirty = true;
 }
 
-void App14::onRunning()
+void App17::onRunning()
 {
     _device->button.update();
     _device->button.tick();
 
     _mon.loop();
 
-    if (_device->button.A.pressed()) {
+    if (_device->button.A.pressed()) {   /* short B = exit is launcher-handled */
         if (_mon.running()) _mon.pause(); else _mon.resume();
         _dirty = true;
     }
@@ -80,7 +73,7 @@ void App14::onRunning()
     delay(20);
 }
 
-void App14::onClose()
+void App17::onClose()
 {
     _mon.stop();
     if (_canvas) { _canvas->deleteSprite(); delete _canvas; _canvas = nullptr; }

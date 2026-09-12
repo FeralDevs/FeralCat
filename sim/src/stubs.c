@@ -71,6 +71,13 @@ bool ui_rtc_bridge_set_date(uint16_t y, uint8_t m, uint8_t d) { (void)y;(void)m;
 bool ui_rtc_bridge_set_time(uint8_t h, uint8_t m, uint8_t s)  { (void)h;(void)m;(void)s; return true; }
 bool ui_rtc_bridge_set_weekday(uint8_t w)                     { (void)w; return true; }
 
+/* time_sync (src/system/time_sync.cpp — not built in the sim) */
+bool time_sync_now(char *status, int status_len)
+{
+    if (status && status_len > 0) snprintf(status, status_len, "14:32  (UTC+2)");
+    return true;
+}
+
 /* ── Carte SD ───────────────────────────────────────────────────────── */
 int ui_sd_present(void) { return 1; }
 

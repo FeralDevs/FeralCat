@@ -9,16 +9,10 @@
 lv_obj_t * ui_apps_menu;
 lv_obj_t * ui_apps_menu_bg;
 lv_obj_t * ui_left;
-lv_obj_t * ui_app_01;  lv_obj_t * ui_app_02;  lv_obj_t * ui_app_03;
-lv_obj_t * ui_app_04;  lv_obj_t * ui_app_05;  lv_obj_t * ui_app_06;
-lv_obj_t * ui_app_07;  lv_obj_t * ui_app_08;  lv_obj_t * ui_app_09;
-lv_obj_t * ui_app_10;  lv_obj_t * ui_app_11;  lv_obj_t * ui_app_12;
-lv_obj_t * ui_app_13;  lv_obj_t * ui_app_14;  lv_obj_t * ui_app_15;
-lv_obj_t * ui_name_01; lv_obj_t * ui_name_02; lv_obj_t * ui_name_03;
-lv_obj_t * ui_name_04; lv_obj_t * ui_name_05; lv_obj_t * ui_name_06;
-lv_obj_t * ui_name_07; lv_obj_t * ui_name_08; lv_obj_t * ui_name_09;
-lv_obj_t * ui_name_10; lv_obj_t * ui_name_11; lv_obj_t * ui_name_12;
-lv_obj_t * ui_name_13; lv_obj_t * ui_name_14; lv_obj_t * ui_name_15;
+
+/* App tiles are built dynamically from the loaded entry list. */
+static lv_obj_t * s_btn[APPS_MENU_MAX_APPS] = {0};
+static lv_obj_t * s_lbl[APPS_MENU_MAX_APPS] = {0};
 
 static lv_obj_t * _scroll_cont = NULL;
 
@@ -54,57 +48,9 @@ void ui_apps_menu_load_apps(const AppMenuEntry_t * entries, int count)
     memcpy(s_entries, entries, sizeof(AppMenuEntry_t) * (size_t)count);
     s_entry_count = count;
     s_selected_id[0] = '\0';
-
-    lv_obj_t ** app_ptrs[15] = {
-        &ui_app_01, &ui_app_02, &ui_app_03, &ui_app_04, &ui_app_05,
-        &ui_app_06, &ui_app_07, &ui_app_08, &ui_app_09, &ui_app_10,
-        &ui_app_11, &ui_app_12, &ui_app_13, &ui_app_14, &ui_app_15,
-    };
-    lv_obj_t ** name_ptrs[15] = {
-        &ui_name_01, &ui_name_02, &ui_name_03, &ui_name_04, &ui_name_05,
-        &ui_name_06, &ui_name_07, &ui_name_08, &ui_name_09, &ui_name_10,
-        &ui_name_11, &ui_name_12, &ui_name_13, &ui_name_14, &ui_name_15,
-    };
-
-    for (int i = 0; i < 15; i++) {
-        lv_obj_t * btn = *app_ptrs[i];
-        lv_obj_t * lbl = *name_ptrs[i];
-        if (!btn || !lbl) continue;
-        if (i < count) {
-            lv_obj_clear_flag(btn, LV_OBJ_FLAG_HIDDEN);
-            lv_obj_clear_flag(lbl, LV_OBJ_FLAG_HIDDEN);
-            if (entries[i].icon)
-                lv_obj_set_style_bg_img_src(btn, entries[i].icon, LV_PART_MAIN | LV_STATE_DEFAULT);
-            lv_label_set_text(lbl, entries[i].name);
-        } else {
-            lv_obj_add_flag(btn, LV_OBJ_FLAG_HIDDEN);
-            lv_obj_add_flag(lbl, LV_OBJ_FLAG_HIDDEN);
-        }
-    }
+    /* Tiles are (re)built from s_entries by ui_apps_menu_screen_init, which
+     * runs each time the menu is opened — so real names/icons always show. */
 }
-
-/* ── App metadata table ──────────────────────────────────────────── */
-/* One unique icon per app — replace placeholder .c files with SquareLine exports */
-static const struct {
-    const lv_img_dsc_t * icon;
-    const char *         name;
-} _app_info[15] = {
-    { &ui_img_dino_png,        "Dino"        },
-    { &ui_img_matrix_rain_png, "Matrix Rain" },
-    { &ui_img_vu_meter_png,    "VU Meter"    },
-    { &ui_img_retro_tv_png,    "Retro TV"    },
-    { &ui_img_pc_montior_png,  "PC Monitor"  },
-    { &ui_img_air_mouse_png,   "Air Mouse"   },
-    { &ui_img_music_png,       "Music"       },
-    { &ui_img_ble_spam_png,    "BLE Spam"    },
-    { &ui_img_wifi_killer_png, "WiFi Killer" },
-    { &ui_img_badusb_png,      "BadUSB"      },
-    { &ui_img_infrared_png,    "Infrared"    },
-    { &ui_img_nfc_png,         "app_12"      },
-    { &ui_img_smarthome_png,   "app_13"      },
-    { &ui_img_webserial_png,   "app_14"      },
-    { &ui_img_aichat_png,      "app_15"      },
-};
 
 /* 3 fixed column X positions */
 static const lv_coord_t _col_x[3] = { 35, 125, 215 };
@@ -164,19 +110,9 @@ void ui_apps_menu_screen_init(void)
     lv_obj_set_style_bg_opa(_scroll_cont, 255,
                              LV_PART_SCROLLBAR | LV_STATE_DEFAULT);
 
-    /* Pointer arrays map loop index → named global variable */
-    lv_obj_t ** app_ptrs[15] = {
-        &ui_app_01, &ui_app_02, &ui_app_03, &ui_app_04, &ui_app_05,
-        &ui_app_06, &ui_app_07, &ui_app_08, &ui_app_09, &ui_app_10,
-        &ui_app_11, &ui_app_12, &ui_app_13, &ui_app_14, &ui_app_15,
-    };
-    lv_obj_t ** name_ptrs[15] = {
-        &ui_name_01, &ui_name_02, &ui_name_03, &ui_name_04, &ui_name_05,
-        &ui_name_06, &ui_name_07, &ui_name_08, &ui_name_09, &ui_name_10,
-        &ui_name_11, &ui_name_12, &ui_name_13, &ui_name_14, &ui_name_15,
-    };
-
-    for (int i = 0; i < 15; i++) {
+    /* Build one tile per loaded app entry (real name + icon from the launcher),
+     * 3 columns, scrolling vertically for more than five rows. */
+    for (int i = 0; i < s_entry_count && i < APPS_MENU_MAX_APPS; i++) {
         int        col = i % 3;
         int        row = i / 3;
         lv_coord_t bx  = _col_x[col];
@@ -192,7 +128,8 @@ void ui_apps_menu_screen_init(void)
         lv_obj_set_style_radius(btn, 35, LV_PART_MAIN | LV_STATE_DEFAULT);
         lv_obj_set_style_bg_color(btn, lv_color_hex(0xBEE700), LV_PART_MAIN | LV_STATE_DEFAULT);
         lv_obj_set_style_bg_opa(btn, 255, LV_PART_MAIN | LV_STATE_DEFAULT);
-        lv_obj_set_style_bg_img_src(btn, _app_info[i].icon, LV_PART_MAIN | LV_STATE_DEFAULT);
+        if (s_entries[i].icon)
+            lv_obj_set_style_bg_img_src(btn, s_entries[i].icon, LV_PART_MAIN | LV_STATE_DEFAULT);
         lv_obj_set_style_shadow_color(btn, lv_color_hex(0x000000), LV_PART_MAIN | LV_STATE_DEFAULT);
         lv_obj_set_style_shadow_opa(btn, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
         lv_obj_set_style_outline_color(btn, lv_color_hex(0x9DDE00), LV_PART_MAIN | LV_STATE_PRESSED);
@@ -203,18 +140,18 @@ void ui_apps_menu_screen_init(void)
         lv_obj_set_style_outline_width(btn, 0, LV_PART_MAIN | LV_STATE_FOCUSED);
         lv_obj_set_style_outline_pad(btn, 0, LV_PART_MAIN | LV_STATE_FOCUSED);
         lv_obj_add_event_cb(btn, on_app_click, LV_EVENT_CLICKED, (void *)(uintptr_t)i);
-        *app_ptrs[i] = btn;
+        s_btn[i] = btn;
 
         lv_obj_t * lbl = lv_label_create(_scroll_cont);
         lv_obj_set_width(lbl, LV_SIZE_CONTENT);
         lv_obj_set_height(lbl, LV_SIZE_CONTENT);
-        lv_label_set_text(lbl, _app_info[i].name);
+        lv_label_set_text(lbl, s_entries[i].name);
         lv_obj_set_style_text_color(lbl, lv_color_hex(0xFFFFFF), LV_PART_MAIN | LV_STATE_DEFAULT);
         lv_obj_set_style_text_opa(lbl, 255, LV_PART_MAIN | LV_STATE_DEFAULT);
         lv_obj_set_style_text_font(lbl, &ui_font_name_14, LV_PART_MAIN | LV_STATE_DEFAULT);
         /* Center label horizontally below button */
         lv_obj_align_to(lbl, btn, LV_ALIGN_OUT_BOTTOM_MID, 0, 5);
-        *name_ptrs[i] = lbl;
+        s_lbl[i] = lbl;
     }
 
     lv_obj_add_event_cb(ui_apps_menu, ui_event_apps_menu, LV_EVENT_ALL, NULL);
@@ -230,14 +167,5 @@ void ui_apps_menu_screen_destroy(void)
     ui_apps_menu_bg = NULL;
     ui_left         = NULL;
     _scroll_cont    = NULL;
-    ui_app_01  = NULL; ui_app_02  = NULL; ui_app_03  = NULL;
-    ui_app_04  = NULL; ui_app_05  = NULL; ui_app_06  = NULL;
-    ui_app_07  = NULL; ui_app_08  = NULL; ui_app_09  = NULL;
-    ui_app_10  = NULL; ui_app_11  = NULL; ui_app_12  = NULL;
-    ui_app_13  = NULL; ui_app_14  = NULL; ui_app_15  = NULL;
-    ui_name_01 = NULL; ui_name_02 = NULL; ui_name_03 = NULL;
-    ui_name_04 = NULL; ui_name_05 = NULL; ui_name_06 = NULL;
-    ui_name_07 = NULL; ui_name_08 = NULL; ui_name_09 = NULL;
-    ui_name_10 = NULL; ui_name_11 = NULL; ui_name_12 = NULL;
-    ui_name_13 = NULL; ui_name_14 = NULL; ui_name_15 = NULL;
+    for (int i = 0; i < APPS_MENU_MAX_APPS; i++) { s_btn[i] = NULL; s_lbl[i] = NULL; }
 }
