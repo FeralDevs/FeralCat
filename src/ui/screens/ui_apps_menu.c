@@ -41,6 +41,13 @@ void ui_apps_menu_clear_selected(void)
     s_selected_id[0] = '\0';
 }
 
+void ui_apps_menu_request_open(const char * id)
+{
+    if (!id) return;
+    strncpy(s_selected_id, id, sizeof(s_selected_id) - 1);
+    s_selected_id[sizeof(s_selected_id) - 1] = '\0';
+}
+
 /* 3 fixed column X positions */
 static const lv_coord_t _col_x[3] = { 35, 125, 215 };
 

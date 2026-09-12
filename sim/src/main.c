@@ -114,7 +114,7 @@ static const screen_entry_t SCREENS[] = {
 static void build_about_overlay(void)
 {
     const char *body =
-        "MeowGotchi v0.5.1\n"
+        "MeowGotchi v0.5.2\n"
         "Fork: Janud\n"
         "SoC: ESP32-S3  N16R8\n"
         "Flash 16MB DIO  PSRAM 8MB\n"
@@ -247,6 +247,13 @@ int main(int argc, char **argv)
         if (ui_tabview == NULL) ui_tabview_screen_init();
         lv_disp_load_scr(ui_tabview);
         lv_tabview_set_act(ui_tabview_settings, 3, LV_ANIM_OFF);
+        screen_name = NULL;
+    }
+    if (screen_name && strcmp(screen_name, "system_tab") == 0) {
+        extern lv_obj_t * ui_tabview_settings;
+        if (ui_tabview == NULL) ui_tabview_screen_init();
+        lv_disp_load_scr(ui_tabview);
+        lv_tabview_set_act(ui_tabview_settings, 4, LV_ANIM_OFF);   /* System tab */
         screen_name = NULL;
     }
 

@@ -44,6 +44,7 @@ Built entirely in Docker (nothing installed on the host). Full technical guide:
 | **SD firmware update** (no computer) <br> <img src="docs/screenshots/sd-update.png" width="280"> | **Settings ▸ About** (the fixed info button) <br> <img src="docs/screenshots/about-panel.png" width="280"> |
 | **Update over WiFi** — checks GitHub for a newer release <br> <img src="docs/screenshots/wifi-update.png" width="280"> | **…then downloads it to the SD card** <br> <img src="docs/screenshots/wifi-download.png" width="280"> |
 | **Probe Sniffer** — nearby devices + the SSIDs they leak <br> <img src="docs/screenshots/probe-sniffer.png" width="280"> | **Tracker Detector** — AirTag/Tile/SmartTag "FOLLOWED!" <br> <img src="docs/screenshots/tracker-detector.png" width="280"> |
+| **Firmware update in Settings** — SD / GitHub / USB <br> <img src="docs/screenshots/settings-firmware.png" width="280"> | |
 
 ## Download & flash
 
@@ -81,6 +82,12 @@ Docker only — see [`docs/CUSTOM-FIRMWARE.md` §3](docs/CUSTOM-FIRMWARE.md).
 ---
 
 ## Changelog — all changes vs. stock
+
+### v0.5.2 — Firmware update in Settings
+- **Settings ▸ System ▸ Firmware ▸ Open** launches the Firmware app (SD‑card /
+  GitHub‑WiFi / USB update) straight from Settings. It opens the app by name via
+  the launcher, so it's reachable **even if the apps grid is unavailable** — a
+  recovery path for the kind of menu problem v0.5.1 fixed.
 
 ### v0.5.1 — Fix: empty apps menu
 - The apps menu is created once at boot **before** the app list is loaded, so the

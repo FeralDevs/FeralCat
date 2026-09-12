@@ -128,6 +128,14 @@ static void tab_reboot_cb(lv_event_t * e)
     esp_restart();
 }
 
+/* Open the Firmware app (SD / WiFi‑GitHub / USB update) from Settings — works
+ * even if the apps grid is unavailable, since the launcher opens it by name. */
+static void tab_fw_update_cb(lv_event_t * e)
+{
+    if(lv_event_get_code(e) != LV_EVENT_CLICKED) return;
+    ui_apps_menu_request_open("Firmware");
+}
+
 static void _fr_msgbox_cb(lv_event_t * e)
 {
     lv_obj_t * mbox = lv_event_get_current_target(e);
@@ -781,6 +789,16 @@ static void build_tab_system(lv_obj_t * page)
         s_sys_bat_timer = lv_timer_create(_sys_bat_refresh, 1000, NULL);
     }
     y += 70 + 8;
+
+    // ── FIRMWARE (prominent: also the recovery path if the apps grid fails) ──
+    mk_lbl(sc, "FIRMWARE", TAB_MARG, y, TV_MUTED, &ui_font_name_14);
+    y += 20;
+
+    lv_obj_t * c_fw = mk_card(sc, y, 66);
+    mk_lbl(c_fw, "Update", 0, 0, TV_TEXT, &ui_font_name_14);
+    mk_lbl(c_fw, "SD card / GitHub / USB", 0, 30, TV_MUTED, &ui_font_name_14);
+    mk_outline_btn(c_fw, CARD_INN - 90, 7, 90, 36, "Open", 0xBEE700, tab_fw_update_cb);
+    y += 66 + 8;
 
     lv_obj_t * c_rb = mk_card(sc, y, 66);
     mk_lbl(c_rb, "Reboot", 0, 0, TV_TEXT, &ui_font_name_14);
