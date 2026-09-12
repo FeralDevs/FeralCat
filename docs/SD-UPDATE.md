@@ -1,10 +1,10 @@
-# SD‑card firmware updates (dual‑OTA) — `sd-ota` branch
+# Firmware updates (dual‑OTA): over WiFi or from SD
 
-This branch repartitions the flash into **two app slots** so the device can
-update its own firmware from a `.bin` on the microSD card — no computer, no
-BOOT button. It's a work‑in‑progress variant kept off `main`.
+The flash is partitioned into **two app slots** so the device can update its own
+firmware — no computer, no BOOT button. Updates can be pulled **over WiFi** from
+this repo's GitHub releases, or flashed from a `firmware.bin` on the microSD card.
 
-<img src="screenshots/firmware-menu.png" width="300"> <img src="screenshots/sd-update.png" width="300">
+<img src="screenshots/firmware-menu.png" width="300"> <img src="screenshots/wifi-update.png" width="300">
 
 ## How it works
 
@@ -19,6 +19,10 @@ otadata 0x0e000            ← records which slot to boot
 ```
 
 The **Firmware** app (app slot 12) offers:
+- **Update over WiFi** — reconnects to the WiFi saved in **Settings ▸ WiFi**,
+  checks this repo's latest GitHub release, and if the tag differs from the
+  running build, downloads `firmware.bin` to the SD card, then hands off to the
+  same OTA path below. (Details under *Updating over WiFi*.)
 - **Update from SD** — reads `/firmware.bin` from the card, streams it into the
   *spare* OTA slot via the Arduino `Update` API, sets it as the boot partition,
   and reboots. If anything fails or power is lost mid‑write, the current slot is
@@ -48,7 +52,28 @@ That lays down the dual‑OTA layout + firmware.
 > Use `firmware.bin` (the app partition image) for SD updates — **not** the
 > `…-merged-0x0.bin` (that one is only for the USB switch‑over).
 
-## Reverting to the single‑slot layout
+## Updating over WiFi
 
-Flash the `main` branch's `releases/meowgotchi-merged-0x0.bin` at `0x0` over USB
-(erase first). That restores the non‑OTA partition table.
+Prerequisite: connect once in **Settings ▸ WiFi** (the SSID/password are saved
+to NVS and reused by the updater).
+
+1. Open the **Firmware** app → **Update over WiFi** → **A**.
+2. It joins the saved network and reads the latest release tag from
+   `github.com/janud/MeowKitCustomFW/releases/latest` (via the redirect header —
+   no API token, no rate limit). If it matches the running version you get
+   *"Up to date"*; otherwise a *"vX → vY / Download"* prompt.
+3. On **Download**, it streams `firmware.bin` to the SD card
+   (`firmware.bin.part` → renamed to `firmware.bin` only on a complete,
+   size‑checked transfer, so a dropped download never leaves a half‑file), then
+   offers **"Flash it now?"** → the same dual‑OTA write as above.
+
+Notes:
+- A device must already be running a build that *has* this feature, so the first
+  hop to it is still a manual SD or USB flash; after that it self‑updates.
+- TLS uses `setInsecure()` (no certificate pinning). The transferred image is
+  still validated by the OTA layer on flash, and a bad write rolls back.
+
+## Reverting to the single‑slot / factory layout
+
+Run the official installer at <https://meowkit.cc/pages/download> over USB — it
+writes the factory image (single app slot) and restores stock behaviour.

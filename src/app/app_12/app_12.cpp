@@ -23,8 +23,9 @@ void App12::_drawMenu()
     LGFX_Class& lcd = _device->Lcd;
     MK_TUI::clearScreen(lcd);
     MK_TUI::drawHeader(lcd, "Firmware");
-    MK_TUI::drawMenuItem(lcd, 0, "Update from SD",   "firmware.bin", _sel == 0);
-    MK_TUI::drawMenuItem(lcd, 1, "USB Download Mode", "flash via PC", _sel == 1);
+    MK_TUI::drawMenuItem(lcd, 0, "Update over WiFi", "from GitHub",  _sel == 0);
+    MK_TUI::drawMenuItem(lcd, 1, "Update from SD",   "firmware.bin", _sel == 1);
+    MK_TUI::drawMenuItem(lcd, 2, "USB Download Mode", "flash via PC", _sel == 2);
     MK_TUI::drawFooter(lcd, "Select", "Exit");
 }
 
@@ -121,7 +122,7 @@ void App12::_sdUpdate()
             MK_TUI::drawProgress(lcd, MK_LAYOUT::CONTENT_Y + 80, pct, nullptr);
             lcd.setFont(&fonts::efontCN_16);
             lcd.setTextColor((uint32_t)MK_PAL::ACCENT, (uint32_t)MK_PAL::BLACK);
-            lcd.setCursor(MK_LAYOUT::W - 60, MK_LAYOUT::CONTENT_Y + 78);
+            lcd.setCursor(MK_LAYOUT::W - 60, MK_LAYOUT::CONTENT_Y + 96);
             lcd.printf("%3d%%", pct);
         }
     }
@@ -145,7 +146,11 @@ void App12::onRunning()
     if (_device->button.Up.pressed())   { _sel = (_sel + ROWS - 1) % ROWS; _dirty = true; }
     if (_device->button.Down.pressed()) { _sel = (_sel + 1) % ROWS; _dirty = true; }
     if (_device->button.A.pressed()) {
-        if (_sel == 0) _sdUpdate(); else _usbDownload();
+        switch (_sel) {
+            case 0: _wifiUpdate();  break;
+            case 1: _sdUpdate();    break;
+            default: _usbDownload();  break;
+        }
     }
 
     if (_dirty) { _drawMenu(); _dirty = false; }

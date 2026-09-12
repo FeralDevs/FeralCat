@@ -167,9 +167,32 @@ int main(int argc, char** argv)
     } else if (scene && !strcmp(scene, "firmware_menu")) {
         MK_TUI::clearScreen(canvas);
         MK_TUI::drawHeader(canvas, "Firmware");
-        MK_TUI::drawMenuItem(canvas, 0, "Update from SD",    "firmware.bin", true);
-        MK_TUI::drawMenuItem(canvas, 1, "USB Download Mode",  "flash via PC", false);
+        MK_TUI::drawMenuItem(canvas, 0, "Update over WiFi",   "from GitHub",  true);
+        MK_TUI::drawMenuItem(canvas, 1, "Update from SD",     "firmware.bin", false);
+        MK_TUI::drawMenuItem(canvas, 2, "USB Download Mode",  "flash via PC", false);
         MK_TUI::drawFooter(canvas, "Select", "Exit");
+    } else if (scene && !strcmp(scene, "wifi_download")) {
+        MK_TUI::clearScreen(canvas);
+        MK_TUI::drawHeader(canvas, "WiFi Update");
+        canvas.setFont(&fonts::efontCN_16);
+        canvas.setTextColor((uint32_t)MK_PAL::TEXT_PRI, (uint32_t)MK_PAL::BLACK);
+        canvas.setCursor(MK_LAYOUT::PAD, MK_LAYOUT::CONTENT_Y + 16);
+        canvas.printf("Downloading v0.4.0");
+        MK_TUI::drawProgress(canvas, MK_LAYOUT::CONTENT_Y + 80, 47, nullptr);
+        canvas.setTextColor((uint32_t)MK_PAL::ACCENT, (uint32_t)MK_PAL::BLACK);
+        canvas.setCursor(MK_LAYOUT::W - 60, MK_LAYOUT::CONTENT_Y + 96);
+        canvas.printf("%3d%%", 47);
+    } else if (scene && !strcmp(scene, "wifi_avail")) {
+        MK_TUI::clearScreen(canvas);
+        MK_TUI::drawHeader(canvas, "WiFi Update");
+        canvas.setFont(&fonts::efontCN_16);
+        canvas.setTextColor((uint32_t)MK_PAL::TEXT_PRI, (uint32_t)MK_PAL::BLACK);
+        canvas.setCursor(MK_LAYOUT::PAD, 96);
+        canvas.printf("New version available");
+        canvas.setTextColor((uint32_t)MK_PAL::ACCENT, (uint32_t)MK_PAL::BLACK);
+        canvas.setCursor(MK_LAYOUT::PAD, 118);
+        canvas.printf("v0.3.0  ->  v0.4.0");
+        MK_TUI::drawFooter(canvas, "Download", "Cancel");
     } else if (scene && !strcmp(scene, "sd_progress")) {
         MK_TUI::clearScreen(canvas);
         MK_TUI::drawHeader(canvas, "SD Update");
@@ -182,7 +205,7 @@ int main(int argc, char** argv)
         canvas.printf("Do NOT power off.");
         MK_TUI::drawProgress(canvas, MK_LAYOUT::CONTENT_Y + 80, 62, nullptr);
         canvas.setTextColor((uint32_t)MK_PAL::ACCENT, (uint32_t)MK_PAL::BLACK);
-        canvas.setCursor(MK_LAYOUT::W - 60, MK_LAYOUT::CONTENT_Y + 78);
+        canvas.setCursor(MK_LAYOUT::W - 60, MK_LAYOUT::CONTENT_Y + 96);
         canvas.printf("%3d%%", 62);
     } else if (scene && !strcmp(scene, "wlist")) {
         WifiAnalyzer::drawList(canvas, wrows, wn, 1, 0, false);

@@ -46,7 +46,7 @@ Slots 10–15 shipped empty (or stubs); all are now real apps. Common controls:
 |---|---|---|---|
 | 10 | **MeowGotchi** | Pwnagotchi‑style cat‑face WiFi hunter: promiscuous sniff, channel hop, AP/client discovery, WPA‑handshake (EAPOL) capture to `/handshakes/*.pcap` on SD, opt‑in deauth. Mood face + live stats. | A = Start/Pause · short B = menu (Mode/Handshakes) · hold B = exit |
 | 11 | **WiFi Analyzer** | Scans 2.4 GHz, lists APs by signal (channel, quality %, lock), per‑AP detail (BSSID, dBm+%, security). | A = detail · short B = rescan · hold B = exit |
-| 12 | **Flash Mode** | Reboots into the ROM USB serial‑download bootloader from software (`usb_persist_restart(RESTART_BOOTLOADER)`) — flash new firmware **without the BOOT button**. | A = enter (confirm) · hold B = cancel |
+| 12 | **Firmware** | **Update over WiFi** (reconnects to the saved WiFi, pulls this repo's latest GitHub release `firmware.bin` to the SD, then flashes it), **Update from SD** (dual‑OTA write of `/firmware.bin` to the spare slot, safe rollback), or **USB Download Mode** (`usb_persist_restart(RESTART_BOOTLOADER)` — reflash without the BOOT button). | A = select · hold B = exit |
 | 13 | **Deauth Detector** | Passive deauth/disassoc counter with CLEAR/ALERT banner + 30 s graph. **Attacker Log** view lists source MAC, hit count and **RSSI** (proximity to locate the attacker). | A = pause/resume · short B = graph↔log · hold B = exit |
 | 14 | **BLE Spam Detector** | Passive BLE scan for Apple/Google/MS/Samsung spam‑popup floods; alerts on **distinct advertiser MACs/sec** (not on legit devices), with a per‑vector breakdown. | A = pause/resume · hold B = exit |
 | 15 | **Rogue Radar** | **Evil‑Twin scan** (flags SSIDs advertised as *both open and secured*) + **Beacon Flood / Karma** monitor (distinct APs/sec, promiscuous). | short B = twins↔flood · A = rescan/pause · hold B = exit |
@@ -76,7 +76,7 @@ docker run --rm -v meowkit-pio:/root/.platformio \
 docker run --rm --entrypoint bash -v meowkit-pio:/root/.platformio \
   -v "$PWD/firmware-upstream":/work -w /work meowkit-pio:local -c '
   BA=$(find /root/.platformio -name boot_app0.bin | head -1)
-  python -m esptool --chip esp32s3 merge-bin -o dist/meowgotchi-merged-0x0.bin \
+  python -m esptool --chip esp32s3 merge-bin -o dist/meowgotchi-OTA-merged-0x0.bin \
     --flash-mode dio --flash-size 16MB \
     0x0 .pio/build/esp32s3box/bootloader.bin \
     0x8000 .pio/build/esp32s3box/partitions.bin \
@@ -84,7 +84,7 @@ docker run --rm --entrypoint bash -v meowkit-pio:/root/.platformio \
     0x10000 .pio/build/esp32s3box/firmware.bin'
 ```
 
-Result: **`dist/meowgotchi-merged-0x0.bin`**, flashed at offset `0x0`.
+Result: **`dist/meowgotchi-OTA-merged-0x0.bin`**, flashed at offset `0x0`.
 
 ---
 
@@ -92,10 +92,11 @@ Result: **`dist/meowgotchi-merged-0x0.bin`**, flashed at offset `0x0`.
 
 Docker on macOS can't reach USB, so flash from a browser (Chrome/Edge, Web Serial):
 
-1. **Enter download mode** — either open the **Flash Mode** app and press **A**,
-   or (fallback) power off, hold **BOOT**, plug USB, hold ~3 s, release.
+1. **Enter download mode** — either open the **Firmware** app → **USB Download
+   Mode** → **A**, or (fallback) power off, hold **BOOT**, plug USB, hold ~3 s,
+   release.
 2. In **esp.huhn.me** (or ESP‑Launchpad DIY): **Connect** → add
-   `dist/meowgotchi-merged-0x0.bin` at **`0x0`** → **Program**.
+   `dist/meowgotchi-OTA-merged-0x0.bin` at **`0x0`** → **Program**.
 3. Power‑cycle.
 
 Because it's a complete image at `0x0`, an "Erase Flash" first is safe (and cures
