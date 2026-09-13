@@ -14,6 +14,7 @@
  */
 #include "ui_wifi_bridge.h"
 #include "../system/persist.h"
+#include "../system/config_sd.h"
 #include <Arduino.h>
 #include <WiFi.h>
 #include <freertos/FreeRTOS.h>
@@ -285,6 +286,7 @@ void ui_wifi_bridge_connect(const char *ssid, const char *pass)
 
     persist_set_str(kKeySsid, ssid);
     persist_set_str(kKeyPass, pass ? pass : "");
+    config_sd_backup();   /* mirror new WiFi creds to SD (survives a reflash) */
 }
 
 void ui_wifi_bridge_connect_saved(const char *ssid)
@@ -373,6 +375,7 @@ void ui_wifi_bridge_forget(const char *ssid)
     if (strcmp(ssid, saved) == 0) {
         persist_set_str(kKeySsid, "");
         persist_set_str(kKeyPass, "");
+        config_sd_backup();   /* clear the SD backup too, so it won't resurrect */
         WiFi.disconnect(false);
         s_status = WIFI_BRIDGE_IDLE;
         s_current_ssid[0] = '\0';

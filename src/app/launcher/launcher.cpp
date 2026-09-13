@@ -55,6 +55,7 @@
 #include "../../system/usb_manager.h"
 #include "../../system/settings_bridge.h"  /* includes persist internally */
 #include "../../system/time_sync.h"         /* WiFi NTP + IP-timezone clock sync */
+#include "../../system/config_sd.h"         /* SD backup/restore of settings */
 #include "../../system/power_mgmt.h"
 #include "../../system/mk_events.h"
 #include <Arduino.h>
@@ -199,6 +200,12 @@ void Launcher::onCreate()
 
     Serial.println("[Launcher] [1/5] initSD...");
     initSD();
+
+    /* Restore settings from the SD backup if NVS was wiped by a reflash — must
+     * run after SD mount + NVS init (settings_init above), before WiFi/settings
+     * are read below. */
+    config_sd_restore();
+
 /* Expose RTC to generated C UI screens (clock / pickers) */
     ui_rtc_bridge_register(&_device->rtc);
 

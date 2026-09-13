@@ -20,6 +20,10 @@ extern lv_obj_t * ui_TabPage2;
 extern lv_obj_t * ui_TabPage3;
 extern lv_obj_t * ui_TabPage4;
 extern lv_obj_t * ui_TabPage5;
+extern lv_obj_t * ui_TabPage6;
+extern lv_obj_t * ui_TabPage7;
+/* Select a settings tab by index (updates the scrollable rail + page). */
+extern void ui_tabview_select_tab(int idx);
 extern lv_obj_t * ui_tab_key_prompts_bg;
 extern lv_obj_t * ui_tab_key_a_bg;
 extern lv_obj_t * ui_tab_key_b_bg;

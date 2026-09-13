@@ -8,7 +8,12 @@
 #include "../ui_wifi_bridge.h"
 #include "../../system/settings_bridge.h"
 #include "../../system/time_sync.h"
+#include "../../system/config_sd.h"
 #include "../../system/persist.h"
+#include "../../bsp/config.h"          /* MEOWKIT_DEBUG_TAB */
+#if MEOWKIT_DEBUG_TAB
+#include "../../system/input_monitor.h"
+#endif
 #include <time.h>
 #include <esp_system.h>
 #include "../../system/recovery.h"
@@ -46,6 +51,8 @@ lv_obj_t * ui_TabPage2;
 lv_obj_t * ui_TabPage3;
 lv_obj_t * ui_TabPage4;
 lv_obj_t * ui_TabPage5;
+lv_obj_t * ui_TabPage6;
+lv_obj_t * ui_TabPage7;
 lv_obj_t * ui_tab_key_prompts_bg;
 lv_obj_t * ui_tab_key_a_bg;
 lv_obj_t * ui_tab_key_b_bg;
@@ -55,6 +62,14 @@ lv_obj_t * ui_tab_key_a_back;
 static lv_obj_t  * s_lbl_date     = NULL;
 static lv_obj_t  * s_lbl_time_str = NULL;
 static lv_timer_t * s_time_timer  = NULL;
+#if MEOWKIT_DEBUG_TAB
+static lv_timer_t * s_dbg_timer  = NULL;
+static lv_obj_t *   s_dbg_last   = NULL;   /* "LAST PRESSED" big readout   */
+static lv_obj_t *   s_dbg_log    = NULL;   /* recent-press history (multiline) */
+static bool         s_dbg_prev[16] = {0};  /* previous active state per input  */
+static char         s_dbg_hist[6][24];     /* recent presses, newest first     */
+static int          s_dbg_hist_n = 0;
+#endif
 
 /* ── System tab: battery live data ──────────────────────────────── */
 static lv_obj_t  * s_sys_bat_pct_lbl = NULL;
@@ -136,6 +151,86 @@ static void tab_fw_update_cb(lv_event_t * e)
     ui_apps_menu_request_open("Firmware");
 }
 
+/* ── Backup / Restore (Backup tab) ───────────────────────────────────────── */
+
+static void _info_msgbox_close_cb(lv_event_t * e)
+{
+    lv_msgbox_close(lv_event_get_current_target(e));
+}
+
+/* Dark card msgbox with readable (light) title/body/buttons. Without this the
+ * title + text fall back to the theme default and render gray-on-gray. */
+static void _style_msgbox(lv_obj_t * m, uint32_t border)
+{
+    lv_obj_set_style_bg_color(m,     lv_color_hex(TV_CARD), LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_border_color(m, lv_color_hex(border),  LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_border_width(m, 2,                     LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_center(m);
+
+    lv_obj_t * ttl = lv_msgbox_get_title(m);
+    if (ttl) lv_obj_set_style_text_color(ttl, lv_color_hex(TV_LIME), 0);
+    lv_obj_t * txt = lv_msgbox_get_text(m);
+    if (txt) lv_obj_set_style_text_color(txt, lv_color_hex(TV_TEXT), 0);
+
+    lv_obj_t * btns = lv_msgbox_get_btns(m);
+    if (btns) {
+        lv_obj_set_style_bg_color(btns,   lv_color_hex(TV_TRACK), LV_PART_ITEMS | LV_STATE_DEFAULT);
+        lv_obj_set_style_bg_opa(btns,     LV_OPA_COVER,           LV_PART_ITEMS | LV_STATE_DEFAULT);
+        lv_obj_set_style_text_color(btns, lv_color_hex(TV_TEXT),  LV_PART_ITEMS | LV_STATE_DEFAULT);
+        lv_obj_set_style_bg_color(btns,   lv_color_hex(TV_LIME),  LV_PART_ITEMS | LV_STATE_PRESSED);
+        lv_obj_set_style_text_color(btns, lv_color_hex(TV_INK),   LV_PART_ITEMS | LV_STATE_PRESSED);
+    }
+}
+
+static void _info_msgbox(const char * title, const char * body)
+{
+    static const char * okb[] = { "OK", "" };
+    lv_obj_t * m = lv_msgbox_create(lv_scr_act(), title, body, okb, false);
+    _style_msgbox(m, TV_LIME);
+    lv_obj_add_event_cb(m, _info_msgbox_close_cb, LV_EVENT_VALUE_CHANGED, NULL);
+}
+
+static void tab_backup_now_cb(lv_event_t * e)
+{
+    if(lv_event_get_code(e) != LV_EVENT_CLICKED) return;
+    config_sd_backup();
+    _info_msgbox("Backup", config_sd_has_backup()
+                 ? "Settings saved to SD card." : "No SD card found.");
+}
+
+/* Restore: confirm, apply the chosen scope to NVS, then reboot to apply. */
+static int s_restore_mode = -1;   /* 0=all, 1=wifi, 2=settings */
+
+static void _restore_msgbox_cb(lv_event_t * e)
+{
+    lv_obj_t * mbox = lv_event_get_current_target(e);
+    if (lv_msgbox_get_active_btn(mbox) == 0) {          /* "Restore" */
+        if      (s_restore_mode == 0) config_sd_restore_all();
+        else if (s_restore_mode == 1) config_sd_restore_wifi();
+        else if (s_restore_mode == 2) config_sd_restore_settings();
+        lv_msgbox_close(mbox);
+        esp_restart();                                  /* reboot to apply */
+    } else {
+        lv_msgbox_close(mbox);
+    }
+}
+
+static void _restore_confirm(int mode, const char * what)
+{
+    if (!config_sd_has_backup()) { _info_msgbox("Restore", "No backup on the SD card."); return; }
+    s_restore_mode = mode;
+    static const char * btns[] = { "Restore", "Cancel", "" };
+    char msg[96];
+    lv_snprintf(msg, sizeof(msg), "Restore %s\nfrom SD and reboot?", what);
+    lv_obj_t * mbox = lv_msgbox_create(lv_scr_act(), "Restore", msg, btns, false);
+    _style_msgbox(mbox, TV_ORANGE);
+    lv_obj_add_event_cb(mbox, _restore_msgbox_cb, LV_EVENT_VALUE_CHANGED, NULL);
+}
+
+static void tab_restore_all_cb(lv_event_t * e)      { if(lv_event_get_code(e)==LV_EVENT_CLICKED) _restore_confirm(0, "all settings + WiFi"); }
+static void tab_restore_wifi_cb(lv_event_t * e)     { if(lv_event_get_code(e)==LV_EVENT_CLICKED) _restore_confirm(1, "WiFi credentials"); }
+static void tab_restore_settings_cb(lv_event_t * e) { if(lv_event_get_code(e)==LV_EVENT_CLICKED) _restore_confirm(2, "settings (not WiFi)"); }
+
 static void _fr_msgbox_cb(lv_event_t * e)
 {
     lv_obj_t * mbox = lv_event_get_current_target(e);
@@ -156,10 +251,7 @@ static void tab_factory_reset_cb(lv_event_t * e)
         "Factory Reset",
         "Erase ALL settings?\nThis cannot be undone.",
         btns, false);
-    lv_obj_set_style_bg_color(mbox,    lv_color_hex(TV_CARD),  LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_border_color(mbox, lv_color_hex(TV_DANGER), LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_border_width(mbox, 2,                      LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_center(mbox);
+    _style_msgbox(mbox, TV_DANGER);
     lv_obj_add_event_cb(mbox, _fr_msgbox_cb, LV_EVENT_VALUE_CHANGED, NULL);
 }
 
@@ -495,10 +587,7 @@ static void _tab_time_sync_cb(lv_event_t * e)
 
     lv_obj_t * busy = lv_msgbox_create(lv_scr_act(), "Time Sync",
                                        "Syncing over WiFi...", NULL, false);
-    lv_obj_set_style_bg_color(busy,     lv_color_hex(TV_CARD), LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_border_color(busy, lv_color_hex(TV_LIME), LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_border_width(busy, 2,                     LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_center(busy);
+    _style_msgbox(busy, TV_LIME);
     lv_refr_now(NULL);                 /* paint the modal before we block */
 
     char status[64] = {0};
@@ -509,10 +598,7 @@ static void _tab_time_sync_cb(lv_event_t * e)
     lv_snprintf(msg, sizeof(msg), ok ? "Clock set to\n%s" : "%s", status);
     static const char * okb[] = { "OK", "" };
     lv_obj_t * res = lv_msgbox_create(lv_scr_act(), "Time Sync", msg, okb, false);
-    lv_obj_set_style_bg_color(res,     lv_color_hex(TV_CARD),                LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_border_color(res, lv_color_hex(ok ? TV_LIME : TV_DANGER), LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_border_width(res, 2,                                    LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_center(res);
+    _style_msgbox(res, ok ? TV_LIME : TV_DANGER);
     lv_obj_add_event_cb(res, _sync_result_close_cb, LV_EVENT_VALUE_CHANGED, NULL);
 
     tab_time_refresh(NULL);            /* reflect the new time immediately */
@@ -884,6 +970,216 @@ static void build_tab_system(lv_obj_t * page)
 
 }
 
+static void build_tab_backup(lv_obj_t * page)
+{
+    lv_obj_set_style_bg_opa(page,       LV_OPA_TRANSP, 0);
+    lv_obj_set_style_pad_all(page,      0, 0);
+    lv_obj_set_style_border_width(page, 0, 0);
+    lv_obj_set_scroll_dir(page,         LV_DIR_NONE);
+
+    mk_lbl(page, "BACKUP", TAB_MARG, 4, TV_LIME, &ui_font_name_24);
+    lv_obj_t * bk_div = lv_obj_create(page);
+    lv_obj_set_size(bk_div, TAB_PG_W - 2*TAB_MARG, 1);
+    lv_obj_set_pos(bk_div, TAB_MARG, 34);
+    lv_obj_set_style_bg_color(bk_div, lv_color_hex(TV_LIME), 0);
+    lv_obj_set_style_bg_opa(bk_div,   LV_OPA_30, 0);
+    lv_obj_set_style_border_width(bk_div, 0, 0);
+    lv_obj_set_style_radius(bk_div,   0, 0);
+    lv_obj_set_style_pad_all(bk_div,  0, 0);
+
+    lv_obj_t * sc = lv_obj_create(page);
+    lv_obj_set_size(sc, TAB_PG_W, 241 - 38);
+    lv_obj_set_pos(sc, 0, 38);
+    lv_obj_set_scroll_dir(sc, LV_DIR_VER);
+    lv_obj_set_scrollbar_mode(sc, LV_SCROLLBAR_MODE_AUTO);
+    lv_obj_set_style_bg_opa(sc,        LV_OPA_TRANSP, 0);
+    lv_obj_set_style_pad_all(sc,       0, 0);
+    lv_obj_set_style_pad_bottom(sc,    40, 0);
+    lv_obj_set_style_border_width(sc,  0, 0);
+    lv_obj_set_style_radius(sc,        0, 0);
+
+    int y = 4;
+    mk_lbl(sc, "SD CARD  -  WiFi pass in plaintext", TAB_MARG, y, TV_MUTED, &ui_font_name_14);
+    y += 20;
+
+    lv_obj_t * c_b = mk_card(sc, y, 66);
+    mk_lbl(c_b, "Backup now", 0, 0, TV_TEXT, &ui_font_name_14);
+    mk_lbl(c_b, "save all to SD", 0, 30, TV_MUTED, &ui_font_name_14);
+    mk_outline_btn(c_b, CARD_INN - 90, 7, 90, 36, "Save", 0xBEE700, tab_backup_now_cb);
+    y += 66 + 8;
+
+    lv_obj_t * c_ra = mk_card(sc, y, 66);
+    mk_lbl(c_ra, "Restore all", 0, 0, TV_TEXT, &ui_font_name_14);
+    mk_lbl(c_ra, "settings + WiFi, reboots", 0, 30, TV_MUTED, &ui_font_name_14);
+    mk_outline_btn(c_ra, CARD_INN - 90, 7, 90, 36, "Restore", 0xBEE700, tab_restore_all_cb);
+    y += 66 + 8;
+
+    lv_obj_t * c_rw = mk_card(sc, y, 66);
+    mk_lbl(c_rw, "Restore WiFi only", 0, 0, TV_TEXT, &ui_font_name_14);
+    mk_lbl(c_rw, "credentials, reboots", 0, 30, TV_MUTED, &ui_font_name_14);
+    mk_outline_btn(c_rw, CARD_INN - 90, 7, 90, 36, "Restore", 0xBEE700, tab_restore_wifi_cb);
+    y += 66 + 8;
+
+    lv_obj_t * c_rs = mk_card(sc, y, 66);
+    mk_lbl(c_rs, "Restore settings only", 0, 0, TV_TEXT, &ui_font_name_14);
+    mk_lbl(c_rs, "everything but WiFi", 0, 30, TV_MUTED, &ui_font_name_14);
+    mk_outline_btn(c_rs, CARD_INN - 90, 7, 90, 36, "Restore", 0xBEE700, tab_restore_settings_cb);
+    y += 66 + 8;
+}
+
+#if MEOWKIT_DEBUG_TAB
+/* Prepend a press to the history and rebuild the multiline log. */
+static void dbg_push(const char * s)
+{
+    for (int i = (s_dbg_hist_n < 6 ? s_dbg_hist_n : 5); i > 0; i--)
+        strcpy(s_dbg_hist[i], s_dbg_hist[i - 1]);
+    strncpy(s_dbg_hist[0], s, sizeof(s_dbg_hist[0]) - 1);
+    s_dbg_hist[0][sizeof(s_dbg_hist[0]) - 1] = '\0';
+    if (s_dbg_hist_n < 6) s_dbg_hist_n++;
+
+    char buf[180] = "";
+    for (int i = 0; i < s_dbg_hist_n; i++) { strcat(buf, s_dbg_hist[i]); strcat(buf, "\n"); }
+    if (s_dbg_log) lv_label_set_text(s_dbg_log, buf);
+}
+
+/* Poll inputs; on a rising edge (just pressed) show what it was. */
+static void dbg_refresh(lv_timer_t * t)
+{
+    (void)t;
+    int n = input_monitor_count();
+    if (n > 16) n = 16;
+    for (int i = 0; i < n; i++) {
+        bool a = input_monitor_active(i);
+        if (a && !s_dbg_prev[i]) {
+            char line[24];
+            lv_snprintf(line, sizeof(line), "%s  (GPIO %d)",
+                        input_monitor_label(i), input_monitor_gpio(i));
+            if (s_dbg_last) lv_label_set_text(s_dbg_last, line);
+            dbg_push(line);
+        }
+        s_dbg_prev[i] = a;
+    }
+}
+
+static void build_tab_debug(lv_obj_t * page)
+{
+    lv_obj_set_style_bg_opa(page,       LV_OPA_TRANSP, 0);
+    lv_obj_set_style_pad_all(page,      0, 0);
+    lv_obj_set_style_border_width(page, 0, 0);
+    lv_obj_set_scroll_dir(page,         LV_DIR_NONE);
+
+    mk_lbl(page, "DEBUG", TAB_MARG, 4, TV_LIME, &ui_font_name_24);
+    lv_obj_t * dv = lv_obj_create(page);
+    lv_obj_set_size(dv, TAB_PG_W - 2*TAB_MARG, 1);
+    lv_obj_set_pos(dv, TAB_MARG, 34);
+    lv_obj_set_style_bg_color(dv, lv_color_hex(TV_LIME), 0);
+    lv_obj_set_style_bg_opa(dv,   LV_OPA_30, 0);
+    lv_obj_set_style_border_width(dv, 0, 0);
+    lv_obj_set_style_radius(dv,   0, 0);
+    lv_obj_set_style_pad_all(dv,  0, 0);
+
+    lv_obj_t * sc = lv_obj_create(page);
+    lv_obj_set_size(sc, TAB_PG_W, 241 - 38);
+    lv_obj_set_pos(sc, 0, 38);
+    lv_obj_set_scroll_dir(sc, LV_DIR_VER);
+    lv_obj_set_scrollbar_mode(sc, LV_SCROLLBAR_MODE_AUTO);
+    lv_obj_set_style_bg_opa(sc,        LV_OPA_TRANSP, 0);
+    lv_obj_set_style_pad_all(sc,       0, 0);
+    lv_obj_set_style_pad_bottom(sc,    40, 0);
+    lv_obj_set_style_border_width(sc,  0, 0);
+    lv_obj_set_style_radius(sc,        0, 0);
+
+    int y = 4;
+    mk_lbl(sc, "INPUT MONITOR", TAB_MARG, y, TV_MUTED, &ui_font_name_14);
+    y += 18;
+    mk_lbl(sc, "press a key / joystick to identify it", TAB_MARG, y, TV_MUTED, &ui_font_name_14);
+    y += 24;
+
+    mk_lbl(sc, "LAST PRESSED", TAB_MARG, y, TV_MUTED, &ui_font_name_14);
+    y += 18;
+    s_dbg_last = mk_lbl(sc, "-", TAB_MARG, y, TV_LIME, &ui_font_name_24);
+    y += 36;
+
+    mk_lbl(sc, "HISTORY", TAB_MARG, y, TV_MUTED, &ui_font_name_14);
+    y += 18;
+    s_dbg_log = mk_lbl(sc, "", TAB_MARG, y, TV_TEXT, &ui_font_name_14);
+    lv_obj_set_width(s_dbg_log, TAB_PG_W - 2 * TAB_MARG);
+
+    input_monitor_begin();
+    s_dbg_hist_n = 0;
+    for (int i = 0; i < 16; i++) s_dbg_prev[i] = false;
+    if (!s_dbg_timer) s_dbg_timer = lv_timer_create(dbg_refresh, 40, NULL);
+}
+#endif /* MEOWKIT_DEBUG_TAB */
+
+// ── Custom scrollable tab rail (replaces LVGL's non-scrolling tab bar) ──────
+static lv_obj_t * s_rail_btn[8] = {0};
+static int        s_rail_count  = 0;
+
+static void rail_select(int idx)
+{
+    if (idx < 0 || idx >= s_rail_count) return;
+    lv_tabview_set_act(ui_tabview_settings, (uint32_t)idx, LV_ANIM_OFF);
+    for (int i = 0; i < s_rail_count; i++) {
+        lv_obj_t * b = s_rail_btn[i];
+        if (!b) continue;
+        if (i == idx) lv_obj_add_state(b, LV_STATE_CHECKED);
+        else          lv_obj_clear_state(b, LV_STATE_CHECKED);
+        lv_obj_t * lbl = lv_obj_get_child(b, 0);
+        if (lbl) lv_obj_set_style_text_color(lbl, lv_color_hex(i == idx ? TV_INK : TV_MUTED), 0);
+    }
+    if (s_rail_btn[idx]) lv_obj_scroll_to_view(s_rail_btn[idx], LV_ANIM_ON);
+}
+
+static void rail_btn_cb(lv_event_t * e)
+{
+    if (lv_event_get_code(e) != LV_EVENT_CLICKED) return;
+    rail_select((int)(intptr_t)lv_event_get_user_data(e));
+}
+
+void ui_tabview_select_tab(int idx) { rail_select(idx); }
+
+static void build_tab_rail(lv_obj_t * parent, const char * const * names, int count)
+{
+    const int MAXB = (int)(sizeof(s_rail_btn) / sizeof(s_rail_btn[0]));
+    if (count > MAXB) count = MAXB;
+    s_rail_count = count;
+
+    lv_obj_t * rail = lv_obj_create(parent);
+    lv_obj_set_pos(rail, 0, 0);
+    lv_obj_set_size(rail, TAB_BAR_W, 240);
+    lv_obj_set_scroll_dir(rail, LV_DIR_VER);
+    lv_obj_set_scrollbar_mode(rail, LV_SCROLLBAR_MODE_ACTIVE);
+    lv_obj_set_style_bg_color(rail, lv_color_hex(TV_INK), 0);
+    lv_obj_set_style_bg_opa(rail, LV_OPA_COVER, 0);
+    lv_obj_set_style_border_width(rail, 0, 0);
+    lv_obj_set_style_radius(rail, 0, 0);
+    lv_obj_set_style_pad_all(rail, 4, 0);
+    lv_obj_set_style_pad_row(rail, 4, 0);
+    lv_obj_set_flex_flow(rail, LV_FLEX_FLOW_COLUMN);
+
+    for (int i = 0; i < count; i++) {
+        lv_obj_t * b = lv_btn_create(rail);
+        lv_obj_set_width(b, LV_PCT(100));
+        lv_obj_set_height(b, 44);
+        lv_obj_set_style_radius(b, 8, 0);
+        lv_obj_set_style_bg_opa(b, LV_OPA_TRANSP, LV_PART_MAIN | LV_STATE_DEFAULT);
+        lv_obj_set_style_bg_color(b, lv_color_hex(TV_LIME), LV_PART_MAIN | LV_STATE_CHECKED);
+        lv_obj_set_style_bg_opa(b, LV_OPA_COVER, LV_PART_MAIN | LV_STATE_CHECKED);
+        lv_obj_set_style_shadow_width(b, 0, 0);
+        lv_obj_set_style_pad_all(b, 2, 0);
+        lv_obj_add_event_cb(b, rail_btn_cb, LV_EVENT_CLICKED, (void *)(intptr_t)i);
+
+        lv_obj_t * l = lv_label_create(b);
+        lv_label_set_text(l, names[i]);
+        lv_obj_center(l);
+        lv_obj_set_style_text_font(l, &ui_font_name_14, 0);
+        lv_obj_set_style_text_color(l, lv_color_hex(TV_MUTED), 0);
+        s_rail_btn[i] = b;
+    }
+    rail_select(0);
+}
+
 // ── Screen init / destroy ─────────────────────────────────────────────────
 
 void ui_tabview_screen_init(void)
@@ -919,27 +1215,13 @@ void ui_tabview_screen_init(void)
     lv_obj_set_style_bg_opa(cont, LV_OPA_TRANSP, 0);
     lv_obj_set_style_pad_all(cont, 0, 0);
 
-    // ── Tab button bar styling ────────────────────────────────────────────
+    /* Make LVGL's built-in tab bar invisible but keep it reserving the 74px
+     * strip (so the content pages stay put); our scrollable rail overlays it. */
     lv_obj_t * tab_btns = lv_tabview_get_tab_btns(ui_tabview_settings);
-
-    lv_obj_set_style_bg_opa(tab_btns,    LV_OPA_TRANSP,          LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_border_width(tab_btns, 0,                   LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_border_side(tab_btns,  LV_BORDER_SIDE_NONE, LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_pad_all(tab_btns,   0,                      LV_PART_MAIN | LV_STATE_DEFAULT);
-
-    lv_obj_set_style_bg_opa(tab_btns,    LV_OPA_TRANSP,          LV_PART_ITEMS | LV_STATE_DEFAULT);
-    lv_obj_set_style_text_color(tab_btns, lv_color_hex(TV_MUTED), LV_PART_ITEMS | LV_STATE_DEFAULT);
-    lv_obj_set_style_text_font(tab_btns, &ui_font_name_14,        LV_PART_ITEMS | LV_STATE_DEFAULT);
-    lv_obj_set_style_border_width(tab_btns, 0,                   LV_PART_ITEMS | LV_STATE_DEFAULT);
-    lv_obj_set_style_shadow_width(tab_btns, 0,                   LV_PART_ITEMS | LV_STATE_DEFAULT);
-    lv_obj_set_style_outline_width(tab_btns, 0,                  LV_PART_ITEMS | LV_STATE_DEFAULT);
-
-    lv_obj_set_style_bg_color(tab_btns,  lv_color_hex(TV_LIME),  LV_PART_ITEMS | LV_STATE_CHECKED);
-    lv_obj_set_style_bg_opa(tab_btns,    LV_OPA_COVER,           LV_PART_ITEMS | LV_STATE_CHECKED);
-    lv_obj_set_style_text_color(tab_btns, lv_color_hex(TV_INK),  LV_PART_ITEMS | LV_STATE_CHECKED);
-    lv_obj_set_style_radius(tab_btns,    8,                       LV_PART_ITEMS | LV_STATE_CHECKED);
-    lv_obj_set_style_border_width(tab_btns, 0,                   LV_PART_ITEMS | LV_STATE_CHECKED);
-    lv_obj_set_style_shadow_width(tab_btns, 0,                     LV_PART_ITEMS | LV_STATE_CHECKED);
+    lv_obj_set_style_bg_opa(tab_btns,   LV_OPA_TRANSP, LV_PART_MAIN  | LV_STATE_DEFAULT);
+    lv_obj_set_style_bg_opa(tab_btns,   LV_OPA_TRANSP, LV_PART_ITEMS | LV_STATE_DEFAULT);
+    lv_obj_set_style_text_opa(tab_btns, LV_OPA_TRANSP, LV_PART_ITEMS | LV_STATE_DEFAULT);
+    lv_obj_set_style_bg_opa(tab_btns,   LV_OPA_TRANSP, LV_PART_ITEMS | LV_STATE_CHECKED);
 
     // ── Add tabs + build content ──────────────────────────────────────────
     ui_TabPage1 = lv_tabview_add_tab(ui_tabview_settings, "Display");
@@ -947,12 +1229,27 @@ void ui_tabview_screen_init(void)
     ui_TabPage3 = lv_tabview_add_tab(ui_tabview_settings, "Connect");
     ui_TabPage4 = lv_tabview_add_tab(ui_tabview_settings, "Time");
     ui_TabPage5 = lv_tabview_add_tab(ui_tabview_settings, "System");
+    ui_TabPage6 = lv_tabview_add_tab(ui_tabview_settings, "Backup");
 
     build_tab_display(ui_TabPage1);
     build_tab_sound(ui_TabPage2);
     build_tab_connect(ui_TabPage3);
     build_tab_time(ui_TabPage4);
     build_tab_system(ui_TabPage5);
+    build_tab_backup(ui_TabPage6);
+#if MEOWKIT_DEBUG_TAB
+    ui_TabPage7 = lv_tabview_add_tab(ui_tabview_settings, "Debug");
+    build_tab_debug(ui_TabPage7);
+#endif
+
+    /* Custom scrollable tab rail over the left strip. */
+    static const char * const RAIL[] = {
+        "Display", "Sound", "Connect", "Time", "System", "Backup",
+#if MEOWKIT_DEBUG_TAB
+        "Debug",
+#endif
+    };
+    build_tab_rail(ui_tabview, RAIL, (int)(sizeof(RAIL) / sizeof(RAIL[0])));
 
     // ── Bottom key bar ────────────────────────────────────────────────────
     ui_tab_key_prompts_bg = lv_img_create(ui_tabview);
@@ -997,12 +1294,22 @@ void ui_tabview_screen_init(void)
 void ui_tabview_screen_destroy(void)
 {
     if(s_time_timer)    { lv_timer_del(s_time_timer);    s_time_timer    = NULL; }
+#if MEOWKIT_DEBUG_TAB
+    if(s_dbg_timer)     { lv_timer_del(s_dbg_timer);     s_dbg_timer     = NULL; }
+#endif
     if(s_sys_bat_timer) { lv_timer_del(s_sys_bat_timer); s_sys_bat_timer = NULL; }
+#if MEOWKIT_DEBUG_TAB
+    s_dbg_last = NULL;
+    s_dbg_log  = NULL;
+    s_dbg_hist_n = 0;
+#endif
     s_lbl_date        = NULL;
     s_lbl_time_str    = NULL;
     s_sys_bat_pct_lbl = NULL;
     s_sys_bat_status  = NULL;
     s_sys_bat_fill    = NULL;
+    for (int i = 0; i < s_rail_count; i++) s_rail_btn[i] = NULL;
+    s_rail_count = 0;
 
     if(ui_tabview) lv_obj_del(ui_tabview);
 

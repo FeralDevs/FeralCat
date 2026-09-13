@@ -10,6 +10,7 @@
  */
 #include "settings_bridge.h"
 #include "persist.h"
+#include "config_sd.h"
 #include <Arduino.h>
 
 /* ── Hardware handle ─────────────────────────────────────────── */
@@ -118,6 +119,8 @@ void settings_flush(void)
 
     Serial.printf("[settings] Flushed dirty=0x%03lX\n", (unsigned long)s_dirty);
     s_dirty = 0;
+
+    config_sd_backup();   /* mirror to SD so a reflash doesn't lose settings */
 }
 
 void settings_tick(void)

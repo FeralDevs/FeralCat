@@ -78,6 +78,29 @@ bool time_sync_now(char *status, int status_len)
     return true;
 }
 
+/* config_sd (src/system/config_sd.cpp — not built in the sim) */
+void config_sd_backup(void) {}
+bool config_sd_has_backup(void) { return true; }
+void config_sd_restore(void) {}
+void config_sd_restore_all(void) {}
+void config_sd_restore_wifi(void) {}
+void config_sd_restore_settings(void) {}
+
+/* input_monitor (src/system/input_monitor.cpp — not built in the sim) */
+void input_monitor_begin(void) {}
+int  input_monitor_count(void) { return 10; }
+const char* input_monitor_label(int i)
+{
+    static const char* L[10] = {"A","B","Up","Down","Left","Right","GPIO0","GPIO44","GPIO45","GPIO46"};
+    return (i >= 0 && i < 10) ? L[i] : "";
+}
+int input_monitor_gpio(int i)
+{
+    static const int G[10] = {6,4,12,18,17,8,0,44,45,46};
+    return (i >= 0 && i < 10) ? G[i] : -1;
+}
+bool input_monitor_active(int i) { return i == 2; }   /* fake "Up" pressed */
+
 /* ── Carte SD ───────────────────────────────────────────────────────── */
 int ui_sd_present(void) { return 1; }
 

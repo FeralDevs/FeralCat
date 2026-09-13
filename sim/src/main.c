@@ -218,6 +218,28 @@ int main(int argc, char **argv)
         screen_name = NULL;   /* handled — skip the screen table lookup */
     }
 
+    /* A styled confirm dialog, to verify msgbox text contrast (the gray-on-gray
+     * fix). Mirrors _style_msgbox() in ui_tabview.c. */
+    if (screen_name && strcmp(screen_name, "msgbox") == 0) {
+        if (ui_tabview == NULL) ui_tabview_screen_init();
+        lv_disp_load_scr(ui_tabview);
+        ui_tabview_select_tab(5);
+        static const char * btns[] = { "Restore", "Cancel", "" };
+        lv_obj_t * m = lv_msgbox_create(lv_scr_act(), "Restore",
+            "Restore all settings + WiFi\nfrom SD and reboot?", btns, false);
+        lv_obj_set_style_bg_color(m,     lv_color_hex(0x141713), LV_PART_MAIN | LV_STATE_DEFAULT);
+        lv_obj_set_style_border_color(m, lv_color_hex(0xF5A623), LV_PART_MAIN | LV_STATE_DEFAULT);
+        lv_obj_set_style_border_width(m, 2,                      LV_PART_MAIN | LV_STATE_DEFAULT);
+        lv_obj_center(m);
+        lv_obj_set_style_text_color(lv_msgbox_get_title(m), lv_color_hex(0xC4EE1F), 0);
+        lv_obj_set_style_text_color(lv_msgbox_get_text(m),  lv_color_hex(0xE9EFE2), 0);
+        lv_obj_t * bt = lv_msgbox_get_btns(m);
+        lv_obj_set_style_bg_color(bt,   lv_color_hex(0x2A2D26), LV_PART_ITEMS | LV_STATE_DEFAULT);
+        lv_obj_set_style_bg_opa(bt,     LV_OPA_COVER,           LV_PART_ITEMS | LV_STATE_DEFAULT);
+        lv_obj_set_style_text_color(bt, lv_color_hex(0xE9EFE2), LV_PART_ITEMS | LV_STATE_DEFAULT);
+        screen_name = NULL;
+    }
+
     /* Apps menu populated with 17 entries to verify the dynamic grid + scroll. */
     if (screen_name && strcmp(screen_name, "apps17") == 0) {
         static AppMenuEntry_t e[17];
@@ -242,18 +264,16 @@ int main(int argc, char **argv)
 
     /* The tabview opens on the Display tab; jump to Time (index 3) so the
      * "Sync over WiFi" button is visible in the shot. */
-    if (screen_name && strcmp(screen_name, "time_tab") == 0) {
-        extern lv_obj_t * ui_tabview_settings;
+    if (screen_name && (strcmp(screen_name, "time_tab") == 0 ||
+                        strcmp(screen_name, "system_tab") == 0 ||
+                        strcmp(screen_name, "backup_tab") == 0 ||
+                        strcmp(screen_name, "debug_tab") == 0)) {
+        int idx = !strcmp(screen_name, "time_tab") ? 3
+                : !strcmp(screen_name, "system_tab") ? 4
+                : !strcmp(screen_name, "backup_tab") ? 5 : 6;
         if (ui_tabview == NULL) ui_tabview_screen_init();
         lv_disp_load_scr(ui_tabview);
-        lv_tabview_set_act(ui_tabview_settings, 3, LV_ANIM_OFF);
-        screen_name = NULL;
-    }
-    if (screen_name && strcmp(screen_name, "system_tab") == 0) {
-        extern lv_obj_t * ui_tabview_settings;
-        if (ui_tabview == NULL) ui_tabview_screen_init();
-        lv_disp_load_scr(ui_tabview);
-        lv_tabview_set_act(ui_tabview_settings, 4, LV_ANIM_OFF);   /* System tab */
+        ui_tabview_select_tab(idx);   /* rail-aware: highlights + scrolls the rail */
         screen_name = NULL;
     }
 

@@ -44,7 +44,7 @@ Built entirely in Docker (nothing installed on the host). Full technical guide:
 | **SD firmware update** (no computer) <br> <img src="docs/screenshots/sd-update.png" width="280"> | **Settings ▸ About** (the fixed info button) <br> <img src="docs/screenshots/about-panel.png" width="280"> |
 | **Update over WiFi** — checks GitHub for a newer release <br> <img src="docs/screenshots/wifi-update.png" width="280"> | **…then downloads it to the SD card** <br> <img src="docs/screenshots/wifi-download.png" width="280"> |
 | **Probe Sniffer** — nearby devices + the SSIDs they leak <br> <img src="docs/screenshots/probe-sniffer.png" width="280"> | **Tracker Detector** — AirTag/Tile/SmartTag "FOLLOWED!" <br> <img src="docs/screenshots/tracker-detector.png" width="280"> |
-| **Firmware update in Settings** — SD / GitHub / USB <br> <img src="docs/screenshots/settings-firmware.png" width="280"> | |
+| **Firmware update in Settings** — SD / GitHub / USB <br> <img src="docs/screenshots/settings-firmware.png" width="280"> | **Settings ▸ Backup** — backup / restore, scrollable rail <br> <img src="docs/screenshots/settings-backup.png" width="280"> |
 
 ## Download & flash
 
@@ -82,6 +82,24 @@ Docker only — see [`docs/CUSTOM-FIRMWARE.md` §3](docs/CUSTOM-FIRMWARE.md).
 ---
 
 ## Changelog — all changes vs. stock
+
+### v0.6.0 — Settings backup & restore (survive a reflash)
+- **SD‑card settings backup.** Every setting — brightness, volume, LED, BLE, and
+  **WiFi credentials** — is mirrored to `/config/meowkit.cfg` on the SD card on
+  each change. After a full reflash wipes NVS, the settings are **auto‑restored
+  from the card on boot**, so you don't lose your WiFi. *(The WiFi password is
+  stored in plain text in that file, by design — anyone with the card can read
+  it.)*
+- **New Settings ▸ Backup tab** — **Backup now**, **Restore all**, **Restore
+  WiFi only**, **Restore settings only**; each restore confirms, writes NVS, and
+  reboots to apply cleanly.
+- **Scrollable settings rail.** The settings tabs now live in a scrollable side
+  rail (LVGL's built‑in tab bar can't scroll), so there's room for more sections
+  without cramping.
+- **Fix: unreadable (gray‑on‑gray) dialogs.** Message boxes (backup/restore
+  confirmations, Factory Reset, Time Sync) had a styled background but no text
+  color, so the text fell back to a dark default. All dialogs now use a shared
+  style with a readable light title/body/buttons.
 
 ### v0.5.2 — Firmware update in Settings
 - **Settings ▸ System ▸ Firmware ▸ Open** launches the Firmware app (SD‑card /
