@@ -56,6 +56,7 @@
 #include "../../system/settings_bridge.h"  /* includes persist internally */
 #include "../../system/time_sync.h"         /* WiFi NTP + IP-timezone clock sync */
 #include "../../system/config_sd.h"         /* SD backup/restore of settings */
+#include "../../splash/splash_screen.h"      /* boot splash (progress bar) */
 #include "../../system/power_mgmt.h"
 #include "../../system/mk_events.h"
 #include <Arduino.h>
@@ -186,6 +187,9 @@ void Launcher::onCreate()
                   (unsigned long)esp_get_free_heap_size(),
                   (unsigned long)ESP.getFreePsram());
 
+    /* Boot splash — the bar advances as each stage below completes. */
+    SplashScreen::begin(_device->Lcd);
+
     /* NVS init — wrapped in settings layer so we don't expose persist.h here */
     settings_init();
 
@@ -200,6 +204,7 @@ void Launcher::onCreate()
 
     Serial.println("[Launcher] [1/5] initSD...");
     initSD();
+    SplashScreen::step(_device->Lcd, 20, "SD card");
 
     /* Restore settings from the SD backup if NVS was wiped by a reflash — must
      * run after SD mount + NVS init (settings_init above), before WiFi/settings
@@ -217,15 +222,19 @@ void Launcher::onCreate()
 
     Serial.println("[Launcher] [2/5] installApps...");
     installApps();
+    SplashScreen::step(_device->Lcd, 45, "Apps");
 
     Serial.println("[Launcher] [3/5] initLVGL...");
     initLVGL();
+    SplashScreen::step(_device->Lcd, 65, "Display");
 
     Serial.println("[Launcher] [4/5] buildUI...");
     buildUI();
+    SplashScreen::step(_device->Lcd, 90, "Interface");
 
     /* First boot: show home screen */
     Serial.println("[Launcher] [5/5] Loading home screen...");
+    SplashScreen::finish(_device->Lcd);   /* 100% → fade out; home fades in below */
     if (ui_home) {
         lv_disp_load_scr(ui_home);
         updateStatusBar();   /* prime SD icon + battery label */

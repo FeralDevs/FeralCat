@@ -3,7 +3,6 @@
  * @brief MeowKit application entry — manages device lifecycle
  */
 #include "MeowKit.h"
-#include "splash/splash_screen.h"
 
 bool MeowKit::Setup()
 {
@@ -13,8 +12,7 @@ bool MeowKit::Setup()
         return false;
     }
 
-    _device->init();
-    SplashScreen::show(_device->Lcd);
+    _device->init();   /* splash is drawn from Launcher::onCreate (tied to boot stages) */
 
     _launcher = std::make_unique<Launcher>(_device.get());
     _launcher->onCreate();

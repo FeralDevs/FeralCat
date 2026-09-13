@@ -194,6 +194,30 @@ int main(int argc, char** argv)
         v.nearby = 3; v.persistent = alert ? 1 : 0; v.alert = alert;
         v.running = true; v.now_ms = now;
         TrackerUI::drawList(canvas, v, trk, 3);
+    } else if (scene && !strcmp(scene, "splash")) {
+        canvas.fillScreen(0x0000);
+        uint32_t lime  = canvas.color888(0xC4, 0xEE, 0x1F);
+        uint32_t white = canvas.color888(0xE9, 0xEF, 0xE2);
+        uint32_t muted = canvas.color888(0x9A, 0xA3, 0x94);
+        uint32_t track = canvas.color888(0x2A, 0x2D, 0x26);
+        canvas.setFont(&fonts::efontCN_24);
+        canvas.setTextColor(lime, 0x0000);
+        int tw = canvas.textWidth("MeowGotchi");
+        canvas.setCursor((320 - tw) / 2, 86); canvas.print("MeowGotchi");
+        canvas.setFont(&fonts::efontCN_16);
+        canvas.setTextColor(white, 0x0000);
+        tw = canvas.textWidth("v0.6.0");
+        canvas.setCursor((320 - tw) / 2, 118); canvas.print("v0.6.0");
+        canvas.setTextColor(muted, 0x0000);
+        tw = canvas.textWidth("Fork: Janud");
+        canvas.setCursor((320 - tw) / 2, 138); canvas.print("Fork: Janud");
+        int bw = 220, bh = 12, bx = (320 - bw) / 2, by = 176;
+        canvas.drawRoundRect(bx - 2, by - 2, bw + 4, bh + 4, 4, track);
+        canvas.fillRoundRect(bx, by, bw * 65 / 100, bh, 3, lime);
+        /* stage label under the bar (as step() draws it) */
+        canvas.setTextColor(muted, 0x0000);
+        tw = canvas.textWidth("Display");
+        canvas.setCursor((320 - tw) / 2, by + bh + 10); canvas.print("Display");
     } else if (scene && !strcmp(scene, "firmware_menu")) {
         MK_TUI::clearScreen(canvas);
         MK_TUI::drawHeader(canvas, "Firmware");
