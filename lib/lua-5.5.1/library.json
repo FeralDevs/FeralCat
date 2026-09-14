@@ -1,0 +1,12 @@
+{
+  "name": "meowkit-lua",
+  "version": "5.5.1",
+  "description": "Unmodified Lua 5.5.1 sources for the MeowKit app runtime",
+  "license": "MIT",
+  "homepage": "https://www.lua.org/",
+  "build": {
+    "flags": "-DLUAI_MAXCCALLS=32",
+    "srcDir": "src",
+    "srcFilter": ["+<*.c>", "-<lua.c>", "-<luac.c>"]
+  }
+}
