@@ -45,6 +45,7 @@ Built entirely in Docker (nothing installed on the host). Full technical guide:
 | **Update over WiFi** — checks GitHub for a newer release <br> <img src="docs/screenshots/wifi-update.png" width="280"> | **…then downloads it to the SD card** <br> <img src="docs/screenshots/wifi-download.png" width="280"> |
 | **Probe Sniffer** — nearby devices + the SSIDs they leak <br> <img src="docs/screenshots/probe-sniffer.png" width="280"> | **Tracker Detector** — AirTag/Tile/SmartTag "FOLLOWED!" <br> <img src="docs/screenshots/tracker-detector.png" width="280"> |
 | **Firmware update in Settings** — SD / GitHub / USB <br> <img src="docs/screenshots/settings-firmware.png" width="280"> | **Settings ▸ Backup** — backup / restore, scrollable rail <br> <img src="docs/screenshots/settings-backup.png" width="280"> |
+| **Script Runner** — run Berry `.be` scripts from the SD <br> <img src="docs/screenshots/script-runner.png" width="280"> | |
 
 ## Download & flash
 
@@ -82,6 +83,19 @@ Docker only — see [`docs/CUSTOM-FIRMWARE.md` §3](docs/CUSTOM-FIRMWARE.md).
 ---
 
 ## Changelog — all changes vs. stock
+
+### v0.7.0 — Script Runner (Berry) + lightweight boot splash
+- **Script Runner** — run small **[Berry](https://berry-lang.github.io/)** scripts
+  from `/scripts/*.be` on the SD card: pick one in the app and it runs, with
+  `print()` output on screen. A tiny device API is exposed to scripts —
+  `led(r,g,b)` (onboard WS2812), `pin_mode/write/read`, `button("A"…)`,
+  `delay`, `millis`, `print`. A VM hook stops any script after ~20 s or when you
+  **hold B**, so an infinite loop can't hang the device. See
+  [`docs/SCRIPTING.md`](docs/SCRIPTING.md); examples in [`docs/scripts/`](docs/scripts).
+  The Berry VM adds only ~120 KB.
+- **Boot splash rewritten** — the old ~2 MB boot GIF (baked into the app image)
+  is replaced by a small title + **progress bar tied to the real boot stages**.
+  Frees **~1.6 MB** of the app slot (88.6% → 70.6% flash) and boots faster.
 
 ### v0.6.0 — Settings backup & restore (survive a reflash)
 - **SD‑card settings backup.** Every setting — brightness, volume, LED, BLE, and

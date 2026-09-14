@@ -218,6 +218,34 @@ int main(int argc, char** argv)
         canvas.setTextColor(muted, 0x0000);
         tw = canvas.textWidth("Display");
         canvas.setCursor((320 - tw) / 2, by + bh + 10); canvas.print("Display");
+    } else if (scene && !strcmp(scene, "script_list")) {
+        MK_TUI::clearScreen(canvas);
+        MK_TUI::drawHeader(canvas, "Scripts");
+        const char* files[] = { "blink.be", "rainbow.be", "hello.be", "buttons.be" };
+        int y = MK_LAYOUT::CONTENT_Y + 6;
+        for (int i = 0; i < 4; i++) {
+            bool s = (i == 0);
+            canvas.setFont(&fonts::efontCN_16);
+            canvas.setTextColor(s ? (uint32_t)MK_PAL::ACCENT : (uint32_t)MK_PAL::TEXT_PRI, (uint32_t)MK_PAL::BLACK);
+            canvas.setCursor(MK_LAYOUT::PAD, y);
+            canvas.printf("%s %s", s ? ">" : " ", files[i]);
+            y += 22;
+        }
+        MK_TUI::drawFooter(canvas, "Run", "Exit");
+    } else if (scene && !strcmp(scene, "script_console")) {
+        MK_TUI::clearScreen(canvas);
+        MK_TUI::drawHeader(canvas, "blink.be");
+        const char* lines[] = { "Blinking the LED 5 times", "tick 1", "tick 2",
+                                "tick 3", "tick 4", "tick 5", "", "-- done --" };
+        canvas.setFont(&fonts::efontCN_16);
+        int y = MK_LAYOUT::CONTENT_Y + 4;
+        for (int i = 0; i < 8; i++) {
+            canvas.setTextColor((uint32_t)MK_PAL::TEXT_PRI, (uint32_t)MK_PAL::BLACK);
+            canvas.setCursor(MK_LAYOUT::PAD, y);
+            canvas.printf("%s", lines[i]);
+            y += 16;
+        }
+        MK_TUI::drawFooter(canvas, "Back", "Exit");
     } else if (scene && !strcmp(scene, "firmware_menu")) {
         MK_TUI::clearScreen(canvas);
         MK_TUI::drawHeader(canvas, "Firmware");
