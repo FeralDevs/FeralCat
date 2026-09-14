@@ -1079,6 +1079,57 @@ static void build_tab_backup(lv_obj_t * page)
     y += 66 + 8;
 }
 
+/* ── Features tab — opt-in experimental subsystems (persisted, reboot to apply) ── */
+static void _features_reboot_cb(lv_event_t * e)
+{
+    lv_obj_t * m = lv_event_get_current_target(e);
+    if (lv_msgbox_get_active_btn(m) == 0) { lv_msgbox_close(m); esp_restart(); }
+    else lv_msgbox_close(m);
+}
+
+static void tab_lua_sw_cb(lv_event_t * e)
+{
+    if (lv_event_get_code(e) != LV_EVENT_VALUE_CHANGED) return;
+    lv_obj_t * sw = lv_event_get_target(e);
+    int on = lv_obj_has_state(sw, LV_STATE_CHECKED) ? 1 : 0;
+    persist_set_int(PKEY_LUA_EN, on);
+    static const char * btns[] = { "Reboot", "Later", "" };
+    lv_obj_t * m = lv_msgbox_create(lv_scr_act(), "Lua apps",
+        on ? "Lua apps enabled.\nReboot to apply?"
+           : "Lua apps disabled.\nReboot to apply?", btns, false);
+    _style_msgbox(m, TV_LIME);
+    lv_obj_add_event_cb(m, _features_reboot_cb, LV_EVENT_VALUE_CHANGED, NULL);
+}
+
+static void build_tab_features(lv_obj_t * page)
+{
+    lv_obj_set_style_bg_opa(page,       LV_OPA_TRANSP, 0);
+    lv_obj_set_style_pad_all(page,      0, 0);
+    lv_obj_set_style_border_width(page, 0, 0);
+    lv_obj_set_scroll_dir(page,         LV_DIR_VER);
+
+    mk_lbl(page, "FEATURES", TAB_MARG, 4, TV_LIME, &ui_font_name_24);
+    lv_obj_t * dv = lv_obj_create(page);
+    lv_obj_set_size(dv, TAB_PG_W - 2 * TAB_MARG, 1);
+    lv_obj_set_pos(dv, TAB_MARG, 34);
+    lv_obj_set_style_bg_color(dv, lv_color_hex(TV_LIME), 0);
+    lv_obj_set_style_bg_opa(dv,   LV_OPA_30, 0);
+    lv_obj_set_style_border_width(dv, 0, 0);
+    lv_obj_set_style_radius(dv,   0, 0);
+    lv_obj_set_style_pad_all(dv,  0, 0);
+
+    int y = 44;
+    mk_lbl(page, "Opt-in / experimental", TAB_MARG, y, TV_MUTED, &ui_font_name_14);
+    y += 22;
+
+    lv_obj_t * c = mk_card(page, y, 82);
+    mk_lbl(c, "Lua apps", 0, 0, TV_TEXT, &ui_font_name_14);
+    mk_lbl(c, "installable SD apps (/apps)", 0, 28, TV_MUTED, &ui_font_name_14);
+    mk_lbl(c, "reboots to apply", 0, 46, TV_MUTED, &ui_font_name_14);
+    lv_obj_t * sw = mk_card_switch(c, CARD_INN - 42, 8, persist_get_int(PKEY_LUA_EN, 0) != 0);
+    lv_obj_add_event_cb(sw, tab_lua_sw_cb, LV_EVENT_VALUE_CHANGED, NULL);
+}
+
 #if MEOWKIT_DEBUG_TAB
 /* Prepend a press to the history and rebuild the multiline log. */
 static void dbg_push(const char * s)
@@ -1282,6 +1333,7 @@ void ui_tabview_screen_init(void)
     ui_TabPage4 = lv_tabview_add_tab(ui_tabview_settings, "Time");
     ui_TabPage5 = lv_tabview_add_tab(ui_tabview_settings, "System");
     ui_TabPage6 = lv_tabview_add_tab(ui_tabview_settings, "Backup");
+    lv_obj_t * tab_features = lv_tabview_add_tab(ui_tabview_settings, "Features");
 
     build_tab_display(ui_TabPage1);
     build_tab_sound(ui_TabPage2);
@@ -1289,6 +1341,7 @@ void ui_tabview_screen_init(void)
     build_tab_time(ui_TabPage4);
     build_tab_system(ui_TabPage5);
     build_tab_backup(ui_TabPage6);
+    build_tab_features(tab_features);
 #if MEOWKIT_DEBUG_TAB
     ui_TabPage7 = lv_tabview_add_tab(ui_tabview_settings, "Debug");
     build_tab_debug(ui_TabPage7);
@@ -1296,7 +1349,7 @@ void ui_tabview_screen_init(void)
 
     /* Custom scrollable tab rail over the left strip. */
     static const char * const RAIL[] = {
-        "Display", "Sound", "Connect", "Time", "System", "Backup",
+        "Display", "Sound", "Connect", "Time", "System", "Backup", "Features",
 #if MEOWKIT_DEBUG_TAB
         "Debug",
 #endif

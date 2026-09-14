@@ -1,19 +1,19 @@
 /**
  * @file  app_19.h
- * @brief App19 — MeowPlayer: an MP3/WAV player for /music on the SD card.
+ * @brief App19 — MeowPlayer: native MP3 player over the meow::media AudioService
+ *        (audio backend harvested from PR #2; no Lua runtime).
  *
  * Controls: A = play/pause, B = menu (Songs / Output: Speaker/Jack),
  *           Up/Down = volume, Left/Right = seek. Hold B = exit.
  *
- * Threading: a decoder task on core 0 is the ONLY thing that touches the Audio
- * object (no lock contention with the UI). The UI on core 1 posts requests via
- * volatile flags and reads playback state the task publishes back.
+ * All SD access, MP3 decoding and I2S live in the AudioService worker (core 0).
+ * This app only sends Commands and renders the Status it publishes back.
  */
 #pragma once
 #include <mooncake.h>
 #include <LovyanGFX.hpp>
-#include <Audio.h>
 #include "../../bsp/devices.h"
+#include "../../system/media/audio_service.h"
 
 using namespace mooncake;
 
@@ -28,53 +28,37 @@ namespace MOONCAKE::APPS
 
     private:
         DEVICES* _device = nullptr;
-
         lgfx::LGFX_Sprite* _canvas = nullptr;
         bool _haveCanvas = false;
 
-        /* Decoder — owned entirely by the core-0 task (see _audioTaskFn). */
-        Audio*        _audio     = nullptr;
-        TaskHandle_t  _audioTask = nullptr;
-        volatile bool _taskRun   = false;
-        static void _audioTaskFn(void* arg);
-        void _doOpen(int idx);          /* runs IN the task */
-
-        bool _spkReady = false;
-        bool _ampOn    = true;          /* PA_EN: speaker vs jack (UI/I2C side) */
-        int  _vol      = 10;
-        bool _openOk   = false;
-        char _diag[80] = {0};
-
-        /* UI → task requests (a value >=0 / true means "pending"). */
-        volatile int  _reqSong  = -1;
-        volatile bool _reqPause = false;
-        volatile int  _reqSeek  = 0;
-        volatile int  _reqVol   = -1;
-        /* task → UI published state. */
-        volatile bool     _running = false;
-        volatile uint32_t _pos = 0, _dur = 0;
+        meow::media::AudioService _svc;
+        bool _svcReady = false;
+        bool _ampOn    = true;      /* PA_EN: speaker (service default) vs jack */
 
         enum class Screen { Now, Menu, Songs } _screen = Screen::Now;
 
-        static constexpr int MAXS = 32;
-        char _songs[MAXS][48];
-        int  _nsongs = 0;
-        int  _cur    = -1;
+        static constexpr int MAXT = 64;
+        uint16_t    _ids[MAXT];
+        char        _titles[MAXT][64];
+        const char* _titlePtrs[MAXT];
+        int  _ntracks = 0;
+        uint32_t _cachedGen = 0xFFFFFFFF;   /* catalog generation we cached  */
+        int  _cur = -1;                     /* index of the playing track    */
+        uint32_t _lastFinished = 0;         /* for auto-advance              */
 
-        int  _msel = 0;                 /* top-menu selection            */
-        int  _ssel = 0, _stop = 0;      /* song-list selection + scroll  */
+        int  _msel = 0;                     /* top-menu selection            */
+        int  _ssel = 0, _stop = 0;          /* song-list selection + scroll  */
         const char* _menuItems[2];
         char _songsItem[16];
         char _outItem[24];
-        const char* _songPtrs[MAXS];
 
-        uint32_t _lastDraw = 0;
+        meow::media::Status _st{};
+        uint32_t _lastPoll = 0, _lastDraw = 0;
+        char _diag[80] = {0};
 
-        int  volMax() const;
-        void _applyVol();               /* clamp _vol, post _reqVol */
-        bool _initCodec();
+        void _refreshCatalog();
+        void _play(int idx);
         void _setAmp(bool on);
-        void _scan();
         void _buildMenu();
         void _present();
     };

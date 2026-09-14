@@ -78,6 +78,17 @@ bool time_sync_now(char *status, int status_len)
     return true;
 }
 
+/* persist (NVS) — sim keeps one value so the Features toggle renders both states */
+static int g_lua_en = 0;
+int  persist_get_int(const char* key, int def) {
+    if (key && !strcmp(key, "lua_en")) return g_lua_en;
+    return def;
+}
+bool persist_set_int(const char* key, int val) {
+    if (key && !strcmp(key, "lua_en")) g_lua_en = val;
+    return true;
+}
+
 /* config_sd (src/system/config_sd.cpp — not built in the sim) */
 void config_sd_backup(void) {}
 bool config_sd_has_backup(void) { return true; }

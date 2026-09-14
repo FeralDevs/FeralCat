@@ -50,7 +50,8 @@ extern "C" const lv_img_dsc_t ui_img_usb_msc_png;
  * @brief Register active apps into Mooncake (order determines menu slot index).
  *        Keep in sync with APP_BUILTIN_ICONS below.
  */
-inline MOONCAKE::APPS::AppLua* registerAllApps(mooncake::Mooncake& mc, DEVICES* dev)
+inline MOONCAKE::APPS::AppLua* registerAllApps(mooncake::Mooncake& mc, DEVICES* dev,
+                                               bool luaEnabled)
 {
     /* Menu visual order: left → right, top → bottom (app_01 … app_15) */
     mc.installApp(std::make_unique<MOONCAKE::APPS::App01>(dev));     /* app_01  Dino         */
@@ -74,6 +75,10 @@ inline MOONCAKE::APPS::AppLua* registerAllApps(mooncake::Mooncake& mc, DEVICES* 
 #if MEOWKIT_ENABLE_PLAYER
     mc.installApp(std::make_unique<MOONCAKE::APPS::App19>(dev));     /* app_19  MeowPlayer    */
 #endif
+    /* Lua installable-app platform — opt-in (Settings ▸ Features). When off it is
+     * not installed at all: no App-manager tile, no /apps scan, no Lua behavior
+     * (every launcher hook is gated on this returned pointer). Still compiled in. */
+    if (!luaEnabled) return nullptr;
     auto luaHost = std::make_unique<MOONCAKE::APPS::AppLua>(dev);
     auto* luaHostPtr = luaHost.get();
     mc.installApp(std::move(luaHost));                            /* Lua app manager */

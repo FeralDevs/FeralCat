@@ -59,6 +59,9 @@ extern "C" {
 #define PKEY_XP_PLAY        "xp_play"    /* u32  lifetime awake seconds              */
 #define PKEY_XP_APPS        "xp_apps"    /* u32  bitmask of apps opened at least once*/
 
+/* Features (Settings ▸ Features) — opt-in experimental subsystems, off by default. */
+#define PKEY_LUA_EN         "lua_en"     /* int  0|1      Lua installable-app platform */
+
 /* Internal — do not read/write from application code */
 #define PKEY_NVS_VER        "nvs_ver"   /* int  schema version sentinel             */
 

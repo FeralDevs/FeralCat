@@ -282,10 +282,12 @@ int main(int argc, char **argv)
     if (screen_name && (strcmp(screen_name, "time_tab") == 0 ||
                         strcmp(screen_name, "system_tab") == 0 ||
                         strcmp(screen_name, "backup_tab") == 0 ||
+                        strcmp(screen_name, "features_tab") == 0 ||
                         strcmp(screen_name, "debug_tab") == 0)) {
         int idx = !strcmp(screen_name, "time_tab") ? 3
                 : !strcmp(screen_name, "system_tab") ? 4
-                : !strcmp(screen_name, "backup_tab") ? 5 : 6;
+                : !strcmp(screen_name, "backup_tab") ? 5
+                : !strcmp(screen_name, "features_tab") ? 6 : 7;
         if (ui_tabview == NULL) ui_tabview_screen_init();
         lv_disp_load_scr(ui_tabview);
         ui_tabview_select_tab(idx);   /* rail-aware: highlights + scrolls the rail */

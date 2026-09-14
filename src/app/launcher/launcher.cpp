@@ -54,6 +54,7 @@
 #include "../../system/usb_msc.h"
 #include "../../system/usb_manager.h"
 #include "../../system/settings_bridge.h"  /* includes persist internally */
+#include "../../system/persist.h"           /* PKEY_LUA_EN + persist_get_int */
 #include "../../system/time_sync.h"         /* WiFi NTP + IP-timezone clock sync */
 #include "../../system/config_sd.h"         /* SD backup/restore of settings */
 #include "../../system/meow_xp.h"            /* device-wide XP / leveling */
@@ -468,7 +469,11 @@ void Launcher::initSD()
 void Launcher::installApps()
 {
     Serial.println("[Launcher] Installing native apps...");
-    _luaApps = registerAllApps(_mooncake, _device);
+    /* Lua app platform is opt-in: Settings ▸ Features (persisted in NVS, off by
+     * default). Reboot applies the change (apps are registered once here). */
+    const bool luaEnabled = persist_get_int(PKEY_LUA_EN, 0) != 0;
+    _luaApps = registerAllApps(_mooncake, _device, luaEnabled);
+    Serial.printf("[Launcher] Lua apps: %s\n", luaEnabled ? "enabled" : "disabled");
     auto apps = _mooncake.getAllAppInfo();
     for (int i = 0; i < (int)apps.size(); ++i)
         if (apps[i].name == "App manager") _luaHostId = i;
@@ -828,8 +833,10 @@ void Launcher::processNavEvents()
         if (cur == ui_tabview) {
             if (a)    { _ui_screen_change(&ui_home, LV_SCR_LOAD_ANIM_FADE_ON, 350, 0, &ui_home_screen_init); continue; }
             if (b)    { _ui_screen_change(&ui_settings, LV_SCR_LOAD_ANIM_FADE_ON, 300, 0, &ui_settings_screen_init); continue; }
-            if (up)   { uint16_t t = lv_tabview_get_tab_act(ui_tabview_settings); if (t > 0) lv_tabview_set_act(ui_tabview_settings, t-1, LV_ANIM_ON); continue; }
-            if (down) { uint16_t t = lv_tabview_get_tab_act(ui_tabview_settings); if (t < 4) lv_tabview_set_act(ui_tabview_settings, t+1, LV_ANIM_ON); continue; }
+            /* Route through the rail so it stays in sync and bounds match the
+             * actual tab count (Backup/Features/… beyond the old 5). */
+            if (up)   { uint16_t t = lv_tabview_get_tab_act(ui_tabview_settings); if (t > 0) ui_tabview_select_tab(t - 1); continue; }
+            if (down) { uint16_t t = lv_tabview_get_tab_act(ui_tabview_settings); ui_tabview_select_tab(t + 1); continue; }
             continue;
         }
         if (cur == ui_t9_keyboard) {
