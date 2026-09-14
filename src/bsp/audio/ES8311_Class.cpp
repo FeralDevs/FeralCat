@@ -5,6 +5,7 @@
  */
 #include "Arduino.h"
 #include "ES8311_Class.hpp"
+#include "dac_gain.hpp"
 
 #include <string.h>
 #include "driver/gpio.h"
@@ -425,6 +426,19 @@ esp_err_t es8311_voice_volume_get(es8311_handle_t dev, int *volume)
         *volume = 0;
     } else {
         *volume = ((reg32 * 100) / 256) + 1;
+    }
+    return ESP_OK;
+}
+
+esp_err_t es8311_voice_gain_set_db(es8311_handle_t dev, int gain_db)
+{
+    if (!dev || !_i2c) return ESP_ERR_INVALID_ARG;
+    const auto* es = static_cast<const es8311_dev_t*>(dev);
+    const auto result = meow::audio::setDacGainDbVerified(*_i2c, es->dev_addr, gain_db);
+    if (result == meow::audio::DacGainResult::InvalidArgument) return ESP_ERR_INVALID_ARG;
+    if (result != meow::audio::DacGainResult::Ok) {
+        ESP_LOGE(TAG, "DAC gain write/readback failed (%d)", static_cast<int>(result));
+        return ESP_FAIL;
     }
     return ESP_OK;
 }

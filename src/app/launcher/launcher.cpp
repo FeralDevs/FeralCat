@@ -302,6 +302,19 @@ void Launcher::onLoop()
     meow_xp_tick(!s_screen_off);
 
     if (!_app_running) {
+        if (_luaApps) {
+            const bool usbActive = usb_msc_is_active() != 0;
+            if (_luaUsbWasActive && !usbActive) _luaApps->refreshCatalog();
+            _luaUsbWasActive = usbActive;
+            _luaApps->scanStep();
+            // Rebuild only after a complete bounded scan, outside LVGL events.
+            // Defer across screen animations and pending user selections.
+            lv_disp_t* display = lv_disp_get_default();
+            if (_luaCatalogRevision != _luaApps->catalogRevision() &&
+                display && !display->scr_to_load && !ui_apps_menu_get_selected_id()) {
+                loadAppsMenu();
+            }
+        }
         /* ── GUI state: LVGL active ── */
         /* Drive LED animation (BREATHING / BLINK) — must tick every loop. */
         _device->led.update();
@@ -407,6 +420,14 @@ void Launcher::onLoop()
         }
 
         _mooncake.update();
+        if (_running_app_id == _luaHostId && _luaApps && _luaApps->exitRequested()) {
+            _mooncake.closeApp(_running_app_id);
+            _mooncake.update();
+            _running_app_id = -1;
+            _app_running = false;
+            returnToUI();
+        }
+        if (_running_app_id == _luaHostId) delay(1); // yield for ESP32 system tasks
     }
 }
 
@@ -447,7 +468,11 @@ void Launcher::initSD()
 void Launcher::installApps()
 {
     Serial.println("[Launcher] Installing native apps...");
-    registerAllApps(_mooncake, _device);
+    _luaApps = registerAllApps(_mooncake, _device);
+    auto apps = _mooncake.getAllAppInfo();
+    for (int i = 0; i < (int)apps.size(); ++i)
+        if (apps[i].name == "Apps verwalten") _luaHostId = i;
+    if (_luaApps) _luaApps->refreshCatalog();
 }
 
 /* ── LVGL one-time init ────────────────────────────── */
@@ -538,6 +563,15 @@ void Launcher::loadAppsMenu()
         entries[i].icon = (i < APP_BUILTIN_ICONS_COUNT) ? APP_BUILTIN_ICONS[i] : nullptr;
     }
 
+    if (_luaApps) {
+        const auto& catalog = _luaApps->catalog();
+        for (size_t i = 0; i < catalog.count() && count < APPS_MENU_MAX_APPS; ++i, ++count) {
+            snprintf(entries[count].id, sizeof(entries[count].id), "lua:%s", catalog.at(i).id);
+            snprintf(entries[count].name, sizeof(entries[count].name), "%s", catalog.at(i).name);
+            entries[count].icon = catalog.at(i).musicIcon ? &ui_img_music_png : &ui_img_webserial_png;
+        }
+        _luaCatalogRevision = _luaApps->catalogRevision();
+    }
     ui_apps_menu_load_apps(entries, count);
 }
 
@@ -585,6 +619,7 @@ void Launcher::updateStatusBar()
         bool sd_present = (ui_sd_present() != 0);
         if (sd_present != _sd_ready) {
             mk_event_push(sd_present ? MK_EVT_SD_INSERTED : MK_EVT_SD_REMOVED);
+            if (_luaApps && !usb_msc_is_active()) _luaApps->refreshCatalog();
         }
         _sd_ready = sd_present;
         if (ui_sd_on && ui_sd_null) {
@@ -607,6 +642,17 @@ void Launcher::handleAppSelection()
     if (!selId || selId[0] == '\0') return;
 
     Serial.printf("[Launcher] Selected: %s\n", selId);
+
+    if (_luaApps && _luaHostId >= 0 && strncmp(selId, "lua:", 4) == 0) {
+        _luaApps->selectPackage(selId + 4);
+        _running_app_id = _luaHostId;
+        // Dynamic menu positions must never consume existing native XP bits.
+        meow_xp_app_open(-1);
+        _mooncake.openApp(_luaHostId);
+        _app_running = true;
+        ui_apps_menu_clear_selected();
+        return;
+    }
 
     /* Find mooncake app by name match */
     auto allInfo = _mooncake.getAllAppInfo();
@@ -806,4 +852,3 @@ void Launcher::processNavEvents()
         }
     }
 }
-

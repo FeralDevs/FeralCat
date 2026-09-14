@@ -29,9 +29,10 @@
 // ES8311 default I2C address (CE pin low)
 #define SPK_ES8311_ADDR   ES8311_ADDRRES_0   // 0x18
 
-/* NS4150B + 18mm 1W speaker: amplifier output power exceeds speaker rated power
- * at high DAC levels. Validated safe ceiling: volume=16/100 keeps output ≤1W.
- * All callers (settings_bridge, mp3 apps) must not exceed this value. */
+/* Inherited legacy volume ceiling, retained for existing callers. This driver
+ * maps 16 to DAC register 0x27 (-76 dB), not to 16% PCM amplitude.
+ * No measured <=1W validation is recorded here. The MP3 codec-only session uses
+ * a separate explicit dB attenuation policy and verified register readback. */
 #define SPK_VOLUME_MAX    16
 
 /**
@@ -100,6 +101,10 @@ public:
      */
     bool begin(I2C_Class* i2c = &In_I2C);
 
+    /// Initialize only the capped ES8311 DAC. An external decoder owns I2S0.
+    /// Caller must end that decoder before calling end() or begin() again.
+    bool beginCodecOnly(I2C_Class* i2c = &In_I2C);
+
     /**
      * @brief Stop playback and release resources.
      */
@@ -132,6 +137,10 @@ public:
      * @return true on success
      */
     bool setMute(bool enable);
+
+    /// Codec-only player session: fixed -12 dB DAC attenuation, verified over I2C.
+    /// Legacy setVolume()/tone()/begin() behavior is unchanged.
+    bool setPlayerDacAttenuation();
 
     // ── Playback ──
 
@@ -192,7 +201,7 @@ private:
     bool     _initialized  = false;
     bool     _i2s_installed = false;
     volatile bool _is_playing = false;
-    int      _volume       = 50;      ///< Cached volume 0~100
+    int      _volume       = SPK_VOLUME_MAX; ///< Cached DAC volume, always capped
 
     // ── Internal ──
     bool _init_codec(uint32_t sample_rate);

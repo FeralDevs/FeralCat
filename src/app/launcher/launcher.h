@@ -21,6 +21,8 @@
 #include "../../ui/ui.h"
 #include <string>
 
+namespace MOONCAKE::APPS { class AppLua; }
+
 class Launcher
 {
 public:
@@ -33,6 +35,10 @@ public:
 private:
     DEVICES* _device;
     mooncake::Mooncake _mooncake;
+    MOONCAKE::APPS::AppLua* _luaApps = nullptr;
+    uint32_t _luaCatalogRevision = 0;
+    int _luaHostId = -1;
+    bool _luaUsbWasActive = false;
 
     /* state */
     bool _sd_ready       = false;

@@ -23,3 +23,9 @@ sim/shots/
 
 # TUI sim build
 sim/tui/build/
+
+# Local Lua/native verification environments
+.venv/
+.build/
+build/
+build-native/

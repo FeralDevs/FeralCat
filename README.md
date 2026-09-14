@@ -1,5 +1,22 @@
 # MeowKit‑S3 Custom Firmware — "MeowGotchi" build
 
+**v0.8.1-lua.1** adds separately installable Lua apps with direct launcher tiles
+and a native SD audio service on top of v0.8.1. The [MP3 Player](docs/MP3-PLAYER.md)
+is a separate app package with large touch controls, M3U playlists, JPEG covers
+and four equalizer presets. Copy apps from `sd files/apps` onto the SD card
+after installing a firmware built from this branch.
+
+See [app installation and API](docs/LUA-APPS.md), [build and tests](docs/LUA-BUILD.md)
+and [implementation and verification](docs/MP3-PLAYER-1.1.md). Existing `releases/`
+binaries are the unchanged upstream v0.8.1 images and do **not** include Lua apps.
+The upstream experimental native MeowPlayer remains disabled by default.
+
+| Lua MP3 player | Large volume controls |
+| --- | --- |
+| ![MP3 player](docs/images/lua-mp3-player.png) | ![Volume controls](docs/images/lua-mp3-volume.png) |
+
+The previews above use the production LVGL renderer with synthetic track data.
+
 Custom, community firmware for the **MeowKit‑S3** (ESP32‑S3) pocket multi‑tool.
 It fixes the boot bugs that stop the open‑source firmware from running on retail
 hardware, repairs several half‑finished stock UI elements, and fills the empty

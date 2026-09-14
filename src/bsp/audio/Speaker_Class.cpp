@@ -11,6 +11,7 @@
  */
 
 #include "Speaker_Class.hpp"
+#include "dac_gain.hpp"
 #include <esp_log.h>
 #include <cstring>
 #include <cmath>
@@ -36,7 +37,8 @@ bool Speaker_Class::_init_codec(uint32_t sample_rate)
         return false;
     }
 
-    // Clock config — MCLK derived from SCLK (no separate MCLK pin for DAC)
+    // Clock config — MCLK derived from SCLK. The board also routes an MCLK
+    // signal, but the existing speaker path deliberately does not use it.
     // When mclk_from_mclk_pin=false, ES8311 derives MCLK from SCLK internally.
     // mclk_frequency is ignored in this mode.
     es8311_clock_config_t es_clk = {
@@ -55,8 +57,11 @@ bool Speaker_Class::_init_codec(uint32_t sample_rate)
         return false;
     }
 
-    // Set initial volume
-    es8311_voice_volume_set(_es_handle, _volume, NULL);
+    // Apply the retained legacy volume limit before the first sample, including
+    // callers which have not yet called setVolume().
+    if (_volume < 0) _volume = 0;
+    if (_volume > SPK_VOLUME_MAX) _volume = SPK_VOLUME_MAX;
+    if (es8311_voice_volume_set(_es_handle, _volume, NULL) != ESP_OK) return false;
 
     // Configure microphone (analog, even if not used for speaker — required by driver)
     es8311_microphone_config(_es_handle, false);
@@ -133,20 +138,35 @@ void Speaker_Class::_uninstall_i2s()
 
 bool Speaker_Class::begin(I2C_Class* i2c)
 {
+    end();
     _i2c = i2c;
 
     // Init codec
     if (!_init_codec(_cfg.sample_rate)) {
+        end();
         return false;
     }
 
     // Init I2S TX
     if (!_init_i2s()) {
+        end();
         return false;
     }
 
     _initialized = true;
     ESP_LOGI(TAG, "Speaker initialized");
+    return true;
+}
+
+bool Speaker_Class::beginCodecOnly(I2C_Class* i2c)
+{
+    end();
+    _i2c = i2c;
+    if (!_init_codec(_cfg.sample_rate)) {
+        end();
+        return false;
+    }
+    _initialized = true;
     return true;
 }
 
@@ -170,7 +190,7 @@ void Speaker_Class::end()
 bool Speaker_Class::setVolume(int volume)
 {
     if (volume < 0)            volume = 0;
-    if (volume > SPK_VOLUME_MAX) volume = SPK_VOLUME_MAX;  /* NS4150B 1W speaker ceiling */
+    if (volume > SPK_VOLUME_MAX) volume = SPK_VOLUME_MAX;  /* Retained legacy volume limit */
 
     if (!_es_handle) return false;
 
@@ -199,6 +219,16 @@ bool Speaker_Class::setMute(bool enable)
 {
     if (!_es_handle) return false;
     return (es8311_voice_mute(_es_handle, enable) == ESP_OK);
+}
+
+bool Speaker_Class::setPlayerDacAttenuation()
+{
+    // Explicit opt-in for the external decoder session; legacy speaker callers
+    // keep their existing volume behavior and cannot select this mode by accident.
+    if (!_initialized || !_es_handle || _i2s_installed) return false;
+    if (es8311_voice_gain_set_db(_es_handle, meow::audio::PlayerDacGainDb) != ESP_OK) return false;
+    ESP_LOGI(TAG, "Player DAC gain: %d dB (register readback verified)", meow::audio::PlayerDacGainDb);
+    return true;
 }
 
 // ── I2S write helper ──

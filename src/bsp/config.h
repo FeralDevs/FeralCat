@@ -17,14 +17,14 @@
 #define PROJECT_NAME                "MeowKit"
 
 /* Custom firmware (this fork) version — shown in Settings > About. */
-#define MEOWGOTCHI_FW_VERSION       "v0.8.1"
+#define MEOWGOTCHI_FW_VERSION       "v0.8.1-lua.1"
 
 /* Settings > Debug tab (live Input Monitor) — developer tool, off in releases. */
 #define MEOWKIT_DEBUG_TAB           0
 
 /* MeowPlayer (app_19) — MP3/WAV audio player. Work-in-progress (audio path not
  * yet solid), so hidden from the menu in releases. When 0, app_19 is not built
- * and the ESP32-audioI2S decoder is not linked. */
+ * but the decoder remains available to the native Lua audio service. */
 #define MEOWKIT_ENABLE_PLAYER       0
 
 /* ═══════════════════════════════════════════════════════════════

@@ -11,6 +11,8 @@
 #pragma once
 #pragma GCC optimize ("Ofast")
 #include <vector>
+#include "audio_dsp.h"
+#include "audio_output.h"
 #include <Arduino.h>
 #include <libb64/cencode.h>
 #include <esp32-hal-log.h>
@@ -52,6 +54,7 @@ extern __attribute__((weak)) void audio_eof_speech(const char*);
 extern __attribute__((weak)) void audio_eof_stream(const char*); // The webstream comes to an end
 extern __attribute__((weak)) void audio_process_extern(int16_t* buff, uint16_t len, bool *continueI2S); // record audiodata or send via BT
 extern __attribute__((weak)) void audio_process_i2s(uint32_t* sample, bool *continueI2S); // record audiodata or send via BT
+extern __attribute__((weak)) bool audio_cancelled(); // MeowKit cooperative local-file cancellation
 
 //----------------------------------------------------------------------------------------------------------------------
 
@@ -131,6 +134,8 @@ class Audio : private AudioBuffer{
 public:
     Audio(bool internalDAC = false, uint8_t channelEnabled = 3, uint8_t i2sPort = I2S_NUM_0); // #99
     ~Audio();
+    // MeowKit: constructor failures are observable and safely destructible.
+    bool isInitialized() const { return m_initialized; }
     void setBufsize(int rambuf_sz, int psrambuf_sz);
     bool connecttohost(const char* host, const char* user = "", const char* pwd = "");
     bool connecttospeech(const char* speech, const char* lang);
@@ -186,7 +191,7 @@ private:
 
     void UTF8toASCII(char* str);
     bool latinToUTF8(char* buff, size_t bufflen);
-    void setDefaults(); // free buffers and set defaults
+    void setDefaults(bool initializeBuffer = true); // free buffers and set defaults
     void initInBuff();
     bool httpPrint(const char* host);
     void processLocalFile();
@@ -484,6 +489,8 @@ private:
     static const uint8_t m_tsHeaderSize  = 4;
 
     char*           m_ibuff = nullptr;              // used in audio_info()
+    bool            m_initialized = false;          // MeowKit: buffers and I2S installed
+    bool            m_i2s_installed = false;        // owns the driver even on partial failure
     char*           m_chbuf = NULL;
     uint16_t        m_chbufSize = 0;                // will set in constructor (depending on PSRAM)
     uint16_t        m_ibuffSize = 0;                // will set in constructor (depending on PSRAM)
@@ -568,7 +575,8 @@ private:
     float           m_audioCurrentTime = 0;
     uint32_t        m_audioDataStart = 0;           // in bytes
     size_t          m_audioDataSize = 0;            //
-    float           m_filterBuff[3][2][2][2];       // IIR filters memory for Audio DSP
+    audio_dsp::History m_filterHistory;             // zero-initialized IIR state
+    audio_dsp::PendingFrame m_pendingFrame;         // DSP runs once even when DMA is full
     float           m_corr = 1.0;					// correction factor for level adjustment
     size_t          m_i2s_bytesWritten = 0;         // set in i2s_write() but not used
     size_t          m_file_size = 0;                // size of the file

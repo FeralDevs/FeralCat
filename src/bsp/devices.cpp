@@ -26,12 +26,7 @@
 #include "../app/app_common/mk_tui.h"
 #endif
 
-/* ── Audio library diagnostic callback (weak symbol override) ── */
-#if MEOWKIT_HW_TEST_ENABLE
-void audio_info(const char *info) {
-    Serial.printf("[Audio] %s\n", info);
-}
-#endif
+/* Audio diagnostics are routed by system/media/audio_service.cpp. */
 
 
 /* ── Forward declarations for internal helpers ──────────── */

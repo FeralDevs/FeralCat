@@ -19,7 +19,7 @@ static lv_obj_t * _scroll_cont = NULL;
 /* ── Dynamic selection state ─────────────────────────────────────── */
 static AppMenuEntry_t s_entries[APPS_MENU_MAX_APPS];
 static int            s_entry_count = 0;
-static char           s_selected_id[32] = "";
+static char           s_selected_id[40] = "";
 
 static void on_app_click(lv_event_t * e)
 {
@@ -93,8 +93,10 @@ static void build_tiles(void)
         s_btn[i] = btn;
 
         lv_obj_t * lbl = lv_label_create(_scroll_cont);
-        lv_obj_set_width(lbl, LV_SIZE_CONTENT);
+        lv_obj_set_width(lbl, 88);
         lv_obj_set_height(lbl, LV_SIZE_CONTENT);
+        lv_label_set_long_mode(lbl, LV_LABEL_LONG_DOT);
+        lv_obj_set_style_text_align(lbl, LV_TEXT_ALIGN_CENTER, 0);
         lv_label_set_text(lbl, s_entries[i].name);
         lv_obj_set_style_text_color(lbl, lv_color_hex(0xFFFFFF), LV_PART_MAIN | LV_STATE_DEFAULT);
         lv_obj_set_style_text_opa(lbl, 255, LV_PART_MAIN | LV_STATE_DEFAULT);

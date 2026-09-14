@@ -43,6 +43,14 @@ static USBMSC                 s_msc;
 static sdmmc_card_t *         s_card    = nullptr;
 static volatile int           s_running = 0;
 static volatile unsigned long s_bytes   = 0;
+static void (*s_before_enable)(void*) = nullptr;
+static void* s_before_enable_context = nullptr;
+
+void usb_msc_set_before_enable(void (*callback)(void*), void* context)
+{
+    s_before_enable = callback;
+    s_before_enable_context = context;
+}
 
 /* ── Sector callbacks — prefixed to avoid USBMSC.h typedef-name clash ── */
 
@@ -79,6 +87,7 @@ int usb_msc_enable(void)
     s_bytes = 0;
 
     /* 1. Dismount FAT-FS — release exclusive SDMMC bus ownership */
+    if (s_before_enable) s_before_enable(s_before_enable_context);
     SD_MMC.end();
 
     /* 2. Re-init SDMMC in 1-bit raw mode (same params as Launcher::initSD) */

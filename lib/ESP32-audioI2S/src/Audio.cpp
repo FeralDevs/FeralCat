@@ -12,6 +12,7 @@
 #include "aac_decoder/aac_decoder.h"
 #include "flac_decoder/flac_decoder.h"
 #include "mp3_decoder/mp3_decoder.h"
+#include "mp3_decoder/mp3_resync.h"
 #include "opus_decoder/opus_decoder.h"
 #include "vorbis_decoder/vorbis_decoder.h"
 
@@ -136,7 +137,7 @@ uint32_t AudioBuffer::getReadPos() { return m_readPtr - m_buffer; }
 //---------------------------------------------------------------------------------------------------------------------
 Audio::Audio(bool internalDAC /* = false */, uint8_t channelEnabled /* = I2S_SLOT_MODE_STEREO */, uint8_t i2sPort) {
 
-    mutex_audio = xSemaphoreCreateMutex();
+    mutex_audio = xSemaphoreCreateRecursiveMutex();
 
 #ifdef AUDIO_LOG
     m_f_Log = true;
@@ -153,12 +154,17 @@ Audio::Audio(bool internalDAC /* = false */, uint8_t channelEnabled /* = I2S_SLO
     m_chbuf = (char*)__malloc_heap_psram(m_chbufSize);
     m_ibuff = (char*)__malloc_heap_psram(m_ibuffSize);
 
-    if(!m_chbuf || !m_lastHost || !m_outBuff || !m_ibuff) log_e("oom");
+    if(!mutex_audio || !m_chbuf || !m_lastHost || !m_outBuff || !m_ibuff) {
+        log_e("oom");
+        return; // MeowKit: safely destructible; caller checks isInitialized().
+    }
 
 #define AUDIO_INFO(...)                     \
     {                                       \
-        sprintf(m_ibuff, __VA_ARGS__);      \
-        if(audio_info) audio_info(m_ibuff); \
+        if(m_ibuff) {                       \
+            snprintf(m_ibuff, m_ibuffSize, __VA_ARGS__); \
+            if(audio_info) audio_info(m_ibuff); \
+        }                                   \
     }
 
     clientsecure.setInsecure();
@@ -173,7 +179,8 @@ Audio::Audio(bool internalDAC /* = false */, uint8_t channelEnabled /* = I2S_SLO
     m_i2s_chan_cfg.dma_desc_num  = 16;                     // number of DMA buffer
     m_i2s_chan_cfg.dma_frame_num = 512;                    // I2S frame number in one DMA buffer.
     m_i2s_chan_cfg.auto_clear    = true;                   // i2s will always send zero automatically if no data to send
-    i2s_new_channel(&m_i2s_chan_cfg, &m_i2s_tx_handle, NULL);
+    if(i2s_new_channel(&m_i2s_chan_cfg, &m_i2s_tx_handle, NULL) != ESP_OK) return;
+    m_i2s_installed = true;
 
     m_i2s_std_cfg.slot_cfg.data_bit_width = I2S_DATA_BIT_WIDTH_16BIT;  // Bits per sample
     m_i2s_std_cfg.slot_cfg.slot_bit_width = I2S_SLOT_BIT_WIDTH_AUTO;   // I2S channel slot bit-width equals to data bit-width
@@ -196,7 +203,7 @@ Audio::Audio(bool internalDAC /* = false */, uint8_t channelEnabled /* = I2S_SLO
     m_i2s_std_cfg.clk_cfg.sample_rate_hz = 44100;
     m_i2s_std_cfg.clk_cfg.clk_src        = I2S_CLK_SRC_DEFAULT;        // Select PLL_F160M as the default source clock
     m_i2s_std_cfg.clk_cfg.mclk_multiple  = I2S_MCLK_MULTIPLE_128;      // mclk = sample_rate * 256
-    i2s_channel_init_std_mode(m_i2s_tx_handle, &m_i2s_std_cfg);
+    if(i2s_channel_init_std_mode(m_i2s_tx_handle, &m_i2s_std_cfg) != ESP_OK) return;
     I2Sstart(0);
 #else
     m_i2s_config.sample_rate          = 16000;
@@ -215,7 +222,8 @@ Audio::Audio(bool internalDAC /* = false */, uint8_t channelEnabled /* = I2S_SLO
         printf("internal DAC");
         m_i2s_config.mode             = (i2s_mode_t)(I2S_MODE_MASTER | I2S_MODE_TX | I2S_MODE_DAC_BUILT_IN );
         m_i2s_config.communication_format = (i2s_comm_format_t)(I2S_COMM_FORMAT_STAND_MSB); // vers >= 2.0.5
-        i2s_driver_install((i2s_port_t)m_i2s_num, &m_i2s_config, 0, NULL);
+        if(i2s_driver_install((i2s_port_t)m_i2s_num, &m_i2s_config, 0, NULL) != ESP_OK) return;
+        m_i2s_installed = true;
         i2s_set_dac_mode((i2s_dac_mode_t)m_f_channelEnabled);
         if(m_f_channelEnabled != I2S_DAC_CHANNEL_BOTH_EN) {
             m_f_forceMono = true;
@@ -225,9 +233,11 @@ Audio::Audio(bool internalDAC /* = false */, uint8_t channelEnabled /* = I2S_SLO
     else {
         m_i2s_config.mode             = (i2s_mode_t)(I2S_MODE_MASTER | I2S_MODE_TX);
         m_i2s_config.communication_format = (i2s_comm_format_t)(I2S_COMM_FORMAT_STAND_I2S); // Arduino vers. > 2.0.0
-        i2s_driver_install((i2s_port_t)m_i2s_num, &m_i2s_config, 0, NULL);
+        if(i2s_driver_install((i2s_port_t)m_i2s_num, &m_i2s_config, 0, NULL) != ESP_OK) return;
+        m_i2s_installed = true;
         m_f_forceMono = false;
     }
+    if(!m_i2s_installed) return;
     i2s_zero_dma_buffer((i2s_port_t) m_i2s_num);
 
 #endif // ESP_IDF_VERSION_MAJOR == 5
@@ -239,6 +249,7 @@ Audio::Audio(bool internalDAC /* = false */, uint8_t channelEnabled /* = I2S_SLO
         m_filter[i].b2 = 0;
     }
     computeLimit();  // first init, vol = 21, vol_steps = 21
+    m_initialized = true;
     
 }
 //---------------------------------------------------------------------------------------------------------------------
@@ -282,15 +293,18 @@ esp_err_t Audio::I2Sstop(uint8_t i2s_num) {
 Audio::~Audio() {
     // I2Sstop(m_i2s_num);
     // InBuff.~AudioBuffer(); #215 the AudioBuffer is automatically destroyed by the destructor
-    setDefaults();
+    setDefaults(false); // Destruction must never allocate a previously unused input buffer.
     if(m_playlistBuff) {
         free(m_playlistBuff);
         m_playlistBuff = NULL;
     }
 #if ESP_IDF_VERSION_MAJOR == 5
-    i2s_del_channel(m_i2s_tx_handle);
+    if(m_i2s_installed) {
+        i2s_channel_disable(m_i2s_tx_handle);
+        i2s_del_channel(m_i2s_tx_handle);
+    }
 #else
-    i2s_driver_uninstall((i2s_port_t)m_i2s_num); // #215 free I2S buffer
+    if(m_i2s_installed) i2s_driver_uninstall((i2s_port_t)m_i2s_num); // #215 free I2S buffer
 #endif
     if(m_chbuf)       {free(m_chbuf);        m_chbuf        = NULL;}
     if(m_lastHost)    {free(m_lastHost);     m_lastHost     = NULL;}
@@ -298,13 +312,14 @@ Audio::~Audio() {
     if(m_ibuff)       {free(m_ibuff);        m_ibuff        = NULL;}
     if(m_lastM3U8host){free(m_lastM3U8host); m_lastM3U8host = NULL;}
 
-    vSemaphoreDelete(mutex_audio);
+    if(mutex_audio) vSemaphoreDelete(mutex_audio);
 }
 //---------------------------------------------------------------------------------------------------------------------
-void Audio::setDefaults() {
+void Audio::setDefaults(bool initializeBuffer) {
     stopSong();
-    initInBuff();  // initialize InputBuffer if not already done
-    InBuff.resetBuffer();
+    m_filterHistory.reset(); // A new track must not inherit the previous track's DSP feedback.
+    if(initializeBuffer) initInBuff();  // initialize InputBuffer if not already done
+    if(InBuff.isInitialized()) InBuff.resetBuffer();
     MP3Decoder_FreeBuffers();
     FLACDecoder_FreeBuffers();
     AACDecoder_FreeBuffers();
@@ -714,6 +729,7 @@ void Audio::UTF8toASCII(char* str){
 bool Audio::connecttoSD(const char* path, int32_t resumeFilePos) { return connecttoFS(SD, path, resumeFilePos); }
 //---------------------------------------------------------------------------------------------------------------------
 bool Audio::connecttoFS(fs::FS& fs, const char* path, int32_t resumeFilePos) {
+    if(!m_initialized || !path) return false;
     xSemaphoreTakeRecursive(mutex_audio, portMAX_DELAY);  // #3
 
     if(strlen(path) > 255) {
@@ -724,6 +740,11 @@ bool Audio::connecttoFS(fs::FS& fs, const char* path, int32_t resumeFilePos) {
     m_resumeFilePos = resumeFilePos;
     char audioName[256];
     setDefaults();  // free buffers an set defaults
+    if(!InBuff.isInitialized()) {
+        AUDIO_INFO("Out of memory for audio input buffer");
+        xSemaphoreGiveRecursive(mutex_audio);
+        return false;
+    }
     memcpy(audioName, path, strlen(path) + 1);
     if(audioName[0] != '/') {
         for(int i = 255; i > 0; i--) { audioName[i] = audioName[i - 1]; }
@@ -755,6 +776,12 @@ bool Audio::connecttoFS(fs::FS& fs, const char* path, int32_t resumeFilePos) {
 
     char* afn = NULL;  // audioFileName
     afn = strdup(audiofile.name());
+
+    if(!afn) {
+        audiofile.close();
+        xSemaphoreGiveRecursive(mutex_audio);
+        return false;
+    }
 
     uint8_t dotPos = lastIndexOf(afn, ".");
     for(uint8_t i = dotPos + 1; i < strlen(afn); i++) { afn[i] = toLowerCase(afn[i]); }
@@ -2110,13 +2137,14 @@ uint32_t Audio::stopSong() {
         AUDIO_INFO("Closing audio file");
         log_w("Closing audio file");  // for debug
     }
-    memset(m_outBuff, 0, 2048 * 2 * sizeof(uint16_t));  // Clear OutputBuffer
+    if(m_outBuff) memset(m_outBuff, 0, 2048 * 2 * sizeof(uint16_t));  // Clear OutputBuffer
     m_validSamples = 0;
+    m_pendingFrame.reset();
     return pos;
 }
 //---------------------------------------------------------------------------------------------------------------------
 bool Audio::pauseResume() {
-    xSemaphoreTake(mutex_audio, portMAX_DELAY);
+    xSemaphoreTakeRecursive(mutex_audio, portMAX_DELAY);
     bool retVal = false;
     if(getDatamode() == AUDIO_LOCALFILE || m_streamType == ST_WEBSTREAM) {
         m_f_running = !m_f_running;
@@ -2124,9 +2152,10 @@ bool Audio::pauseResume() {
         if(!m_f_running) {
             memset(m_outBuff, 0, 2048 * 2 * sizeof(uint16_t));  // Clear OutputBuffer
             m_validSamples = 0;
+            m_pendingFrame.reset();
         }
     }
-    xSemaphoreGive(mutex_audio);
+    xSemaphoreGiveRecursive(mutex_audio);
     return retVal;
 }
 //---------------------------------------------------------------------------------------------------------------------
@@ -2196,7 +2225,7 @@ void Audio::playChunk() {
 void Audio::loop() {
     if(!m_f_running) return;
 
-    xSemaphoreTake(mutex_audio, portMAX_DELAY);
+    xSemaphoreTakeRecursive(mutex_audio, portMAX_DELAY);
 
     if(m_playlistFormat != FORMAT_M3U8) { // normal process
         switch(getDatamode()) {
@@ -2249,7 +2278,7 @@ void Audio::loop() {
             break;
         }
     }
-    xSemaphoreGive(mutex_audio);
+    xSemaphoreGiveRecursive(mutex_audio);
 }
 //---------------------------------------------------------------------------------------------------------------------
 bool Audio::readPlayListData() {
@@ -2840,16 +2869,27 @@ void Audio::processLocalFile() {
         return;
     }
 
+    if(audiofile.size() != m_file_size || byteCounter > m_file_size) {
+        AUDIO_INFO("Audio read error: file size changed during playback");
+        stopSong();
+        return;
+    }
     availableBytes = 16 * 1024;  // set some large value
 
     availableBytes = min(availableBytes, (uint32_t)InBuff.writeSpace());
-    availableBytes = min(availableBytes, audiofile.size() - byteCounter);
+    availableBytes = min(availableBytes, m_file_size - byteCounter);
     if(m_contentlength) {
         if(m_contentlength > getFilePos()) availableBytes = min(availableBytes, m_contentlength - getFilePos());
     }
     if(m_audioDataSize) { availableBytes = min(availableBytes, m_audioDataSize + m_audioDataStart - byteCounter); }
 
     int32_t bytesAddedToBuffer = audiofile.read(InBuff.getWritePtr(), availableBytes);
+
+    if((availableBytes && bytesAddedToBuffer <= 0) || bytesAddedToBuffer > static_cast<int32_t>(availableBytes)) {
+        AUDIO_INFO("Audio read error: SD read failed before expected end of file");
+        stopSong();
+        return; // A short/failed SD read is never a natural EOF callback.
+    }
 
     if(bytesAddedToBuffer > 0) {
         byteCounter += bytesAddedToBuffer;  // Pull request #42
@@ -2910,7 +2950,11 @@ void Audio::processLocalFile() {
             m_resumeFilePos = flac_correctResumeFilePos(m_resumeFilePos);
             FLACDecoderReset();
         }
-        if(m_codec == CODEC_MP3) { m_resumeFilePos = mp3_correctResumeFilePos(m_resumeFilePos); }
+        if(m_codec == CODEC_MP3) {
+            const uint32_t corrected = mp3_correctResumeFilePos(m_resumeFilePos);
+            if(corrected == UINT32_MAX) { stopSong(); return; }
+            m_resumeFilePos = corrected;
+        }
         if(m_avr_bitrate) m_audioCurrentTime = ((m_resumeFilePos - m_audioDataStart) / m_avr_bitrate) * 8;
         audiofile.seek(m_resumeFilePos);
         InBuff.resetBuffer();
@@ -2928,9 +2972,11 @@ void Audio::processLocalFile() {
 
     // end of file reached? - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     if(f_fileDataComplete && InBuff.bufferFilled() < InBuff.getMaxBlockSize()) {
+        // MeowKit: the last compressed frame may have consumed the input
+        // completely while its PCM still waits for DMA. Drain it before EOF.
+        if(m_validSamples) { playChunk(); return; }
         if(InBuff.bufferFilled()) {
             if(!readID3V1Tag()) {
-                if(m_validSamples) {playChunk(); return;} // play samples first
                 int bytesDecoded = sendBytes(InBuff.getReadPtr(), InBuff.bufferFilled());
                 if(bytesDecoded <= InBuff.bufferFilled()) {  // avoid InBuff overrun (can be if file is corrupt)
                     if(m_f_playing) {
@@ -2966,8 +3012,8 @@ void Audio::processLocalFile() {
         if(m_codec == CODEC_FLAC) FLACDecoder_FreeBuffers();
         if(m_codec == CODEC_OPUS) OPUSDecoder_FreeBuffers();
         if(m_codec == CODEC_VORBIS) VORBISDecoder_FreeBuffers();
-        AUDIO_INFO("End of file \"%s\"", afn);
-        if(audio_eof_mp3) audio_eof_mp3(afn);
+        AUDIO_INFO("End of file \"%s\"", afn ? afn : "");
+        if(audio_eof_mp3) audio_eof_mp3(afn ? afn : "");
         if(afn) {
             free(afn);
             afn = NULL;
@@ -2975,7 +3021,7 @@ void Audio::processLocalFile() {
         return;
     }
 
-    if(byteCounter == audiofile.size()) { f_fileDataComplete = true; }
+    if(byteCounter == m_file_size) { f_fileDataComplete = true; }
     if(byteCounter == m_audioDataSize + m_audioDataStart) { f_fileDataComplete = true; }
 
     // play audio data - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -4603,6 +4649,8 @@ bool Audio::setFilePos(uint32_t pos) {
     m_resumeFilePos = pos;
     memset(m_outBuff, 0, 2048 * 2 * sizeof(int16_t));
     m_validSamples = 0;
+    m_pendingFrame.reset();
+    m_filterHistory.reset();
     return true;
 }
 //---------------------------------------------------------------------------------------------------------------------
@@ -4758,49 +4806,44 @@ uint16_t Audio::getVUlevel() {
 }
 //---------------------------------------------------------------------------------------------------------------------
 bool Audio::playSample(int16_t sample[2]) {
-    if(getBitsPerSample() == 8) {  // Upsample from unsigned 8 bits to signed 16 bits
-        sample[LEFTCHANNEL] = ((sample[LEFTCHANNEL] & 0xff) - 128) << 8;
-        sample[RIGHTCHANNEL] = ((sample[RIGHTCHANNEL] & 0xff) - 128) << 8;
-    }
+    return m_pendingFrame.submit([&](uint32_t& s32) {
+        if(getBitsPerSample() == 8) {  // Upsample unsigned 8 bits to signed 16 bits.
+            sample[LEFTCHANNEL] = ((sample[LEFTCHANNEL] & 0xff) - 128) << 8;
+            sample[RIGHTCHANNEL] = ((sample[RIGHTCHANNEL] & 0xff) - 128) << 8;
+        }
 
-    // set a correction factor if filter have positive amplification
-    if(m_corr > 1) {
-        sample[LEFTCHANNEL] = sample[LEFTCHANNEL] / m_corr;
-        sample[RIGHTCHANNEL] = sample[RIGHTCHANNEL] / m_corr;
-    }
+        // Set a correction factor if the filters have positive amplification.
+        if(m_corr > 1) {
+            sample[LEFTCHANNEL] = sample[LEFTCHANNEL] / m_corr;
+            sample[RIGHTCHANNEL] = sample[RIGHTCHANNEL] / m_corr;
+        }
+        computeVUlevel(sample);
+        sample = audio_dsp::applyTone(m_gain0, m_gain1, m_gain2, sample, [&](int16_t* pcm) {
+            pcm = IIR_filterChain0(pcm);
+            pcm = IIR_filterChain1(pcm);
+            return IIR_filterChain2(pcm);
+        });
+        s32 = Gain(sample);
 
-    computeVUlevel(sample);
-
-    // Filterchain, can commented out if not used
-    sample = IIR_filterChain0(sample);
-    sample = IIR_filterChain1(sample);
-    sample = IIR_filterChain2(sample);
-    //-------------------------------------------
-
-    uint32_t s32 = Gain(sample);  // sample2volume;
-
-    if(audio_process_i2s) {
-        // process audio sample just before writing to i2s
-        bool continueI2S = false;
-        audio_process_i2s(&s32, &continueI2S);
-        if(!continueI2S) { return true; }
-    }
-
-    if(m_f_internalDAC) { s32 += 0x80008000; }
-    m_i2s_bytesWritten = 0;
-    #if(ESP_IDF_VERSION_MAJOR == 5)
-    esp_err_t err = i2s_channel_write(m_i2s_tx_handle, (const char*)&s32, sizeof(uint32_t), &m_i2s_bytesWritten, 0);
-    #else
-    esp_err_t err = i2s_write((i2s_port_t)m_i2s_num, (const char*)&s32, sizeof(uint32_t), &m_i2s_bytesWritten, 0); // no wait
-    #endif
-    if(err != ESP_OK) {
-        log_e("ESP32 Errorcode %i", err);
-        return false;
-    }
-    if(m_i2s_bytesWritten < 4) { // no more space in dma buffer  --> break and try it later
-        return false;
-    }
-    return true;
+        if(audio_process_i2s) {
+            bool continueI2S = false;
+            audio_process_i2s(&s32, &continueI2S);
+            if(!continueI2S) return false;
+        }
+        if(m_f_internalDAC) s32 += 0x80008000;
+        return true;
+    }, [&](const uint8_t* bytes, size_t count) {
+        m_i2s_bytesWritten = 0;
+        #if(ESP_IDF_VERSION_MAJOR == 5)
+        esp_err_t err = i2s_channel_write(m_i2s_tx_handle, bytes, count, &m_i2s_bytesWritten, 0);
+        #else
+        esp_err_t err = i2s_write((i2s_port_t)m_i2s_num, bytes, count, &m_i2s_bytesWritten, 0);
+        #endif
+        if(err != ESP_OK && err != ESP_ERR_TIMEOUT) log_e("ESP32 Errorcode %i", err);
+        // Even a timeout may have written a prefix. Retry only the remaining
+        // bytes, keeping the already-filtered PCM and filter history intact.
+        return m_i2s_bytesWritten;
+    });
 }
 //---------------------------------------------------------------------------------------------------------------------
 void Audio::setTone(int8_t gainLowPass, int8_t gainBandPass, int8_t gainHighPass) {
@@ -4901,7 +4944,7 @@ int32_t Audio::Gain(int16_t s[2]) {
     v[LEFTCHANNEL] = s[LEFTCHANNEL] * m_limit_left;
     v[RIGHTCHANNEL] = s[RIGHTCHANNEL] * m_limit_right;
 
-    return (v[LEFTCHANNEL] << 16) | (v[RIGHTCHANNEL] & 0xffff);
+    return audio_dsp::packStereo(static_cast<int16_t>(v[LEFTCHANNEL]), static_cast<int16_t>(v[RIGHTCHANNEL]));
 }
 //---------------------------------------------------------------------------------------------------------------------
 uint32_t Audio::inBufferFilled() {
@@ -5024,150 +5067,33 @@ void Audio::IIR_calculateCoefficients(int8_t G0, int8_t G1, int8_t G2) {  // Inf
     //                                                  m_filter[2].b1, m_filter[2].b2);
 }
 //---------------------------------------------------------------------------------------------------------------------
-int16_t* Audio::IIR_filterChain0(int16_t iir_in[2], bool clear) {  // Infinite Impulse Response (IIR) filters
-
-    uint8_t z1 = 0, z2 = 1;
-    enum : uint8_t
-    {
-        in = 0,
-        out = 1
-    };
-    float          inSample[2];
-    float          outSample[2];
-    static int16_t iir_out[2];
-
+int16_t* Audio::IIR_filterChain0(int16_t iir_in[2], bool clear) {
+    static int16_t iir_out[2]{};
     if(clear) {
-        memset(m_filterBuff, 0, sizeof(m_filterBuff));  // zero IIR filterbuffer
-        iir_out[0] = 0;
-        iir_out[1] = 0;
-        iir_in[0] = 0;
-        iir_in[1] = 0;
+        m_filterHistory.reset();
+        iir_in[0] = iir_in[1] = 0;
     }
-
-    inSample[LEFTCHANNEL] = (float)(iir_in[LEFTCHANNEL]);
-    inSample[RIGHTCHANNEL] = (float)(iir_in[RIGHTCHANNEL]);
-
-    outSample[LEFTCHANNEL] =
-        m_filter[0].a0 * inSample[LEFTCHANNEL] + m_filter[0].a1 * m_filterBuff[0][z1][in][LEFTCHANNEL] +
-        m_filter[0].a2 * m_filterBuff[0][z2][in][LEFTCHANNEL] - m_filter[0].b1 * m_filterBuff[0][z1][out][LEFTCHANNEL] -
-        m_filter[0].b2 * m_filterBuff[0][z2][out][LEFTCHANNEL];
-
-    m_filterBuff[0][z2][in][LEFTCHANNEL] = m_filterBuff[0][z1][in][LEFTCHANNEL];
-    m_filterBuff[0][z1][in][LEFTCHANNEL] = inSample[LEFTCHANNEL];
-    m_filterBuff[0][z2][out][LEFTCHANNEL] = m_filterBuff[0][z1][out][LEFTCHANNEL];
-    m_filterBuff[0][z1][out][LEFTCHANNEL] = outSample[LEFTCHANNEL];
-    iir_out[LEFTCHANNEL] = (int16_t)outSample[LEFTCHANNEL];
-
-    outSample[RIGHTCHANNEL] = m_filter[0].a0 * inSample[RIGHTCHANNEL] +
-                              m_filter[0].a1 * m_filterBuff[0][z1][in][RIGHTCHANNEL] +
-                              m_filter[0].a2 * m_filterBuff[0][z2][in][RIGHTCHANNEL] -
-                              m_filter[0].b1 * m_filterBuff[0][z1][out][RIGHTCHANNEL] -
-                              m_filter[0].b2 * m_filterBuff[0][z2][out][RIGHTCHANNEL];
-
-    m_filterBuff[0][z2][in][RIGHTCHANNEL] = m_filterBuff[0][z1][in][RIGHTCHANNEL];
-    m_filterBuff[0][z1][in][RIGHTCHANNEL] = inSample[RIGHTCHANNEL];
-    m_filterBuff[0][z2][out][RIGHTCHANNEL] = m_filterBuff[0][z1][out][RIGHTCHANNEL];
-    m_filterBuff[0][z1][out][RIGHTCHANNEL] = outSample[RIGHTCHANNEL];
-    iir_out[RIGHTCHANNEL] = (int16_t)outSample[RIGHTCHANNEL];
-
+    audio_dsp::process(m_filter[0], m_filterHistory.samples[0], iir_in, iir_out);
     return iir_out;
 }
 //---------------------------------------------------------------------------------------------------------------------
-int16_t* Audio::IIR_filterChain1(int16_t iir_in[2], bool clear) {  // Infinite Impulse Response (IIR) filters
-
-    uint8_t z1 = 0, z2 = 1;
-    enum : uint8_t
-    {
-        in = 0,
-        out = 1
-    };
-    float          inSample[2];
-    float          outSample[2];
-    static int16_t iir_out[2];
-
+int16_t* Audio::IIR_filterChain1(int16_t iir_in[2], bool clear) {
+    static int16_t iir_out[2]{};
     if(clear) {
-        memset(m_filterBuff, 0, sizeof(m_filterBuff));  // zero IIR filterbuffer
-        iir_out[0] = 0;
-        iir_out[1] = 0;
-        iir_in[0] = 0;
-        iir_in[1] = 0;
+        m_filterHistory.reset();
+        iir_in[0] = iir_in[1] = 0;
     }
-
-    inSample[LEFTCHANNEL] = (float)(iir_in[LEFTCHANNEL]);
-    inSample[RIGHTCHANNEL] = (float)(iir_in[RIGHTCHANNEL]);
-
-    outSample[LEFTCHANNEL] =
-        m_filter[1].a0 * inSample[LEFTCHANNEL] + m_filter[1].a1 * m_filterBuff[1][z1][in][LEFTCHANNEL] +
-        m_filter[1].a2 * m_filterBuff[1][z2][in][LEFTCHANNEL] - m_filter[1].b1 * m_filterBuff[1][z1][out][LEFTCHANNEL] -
-        m_filter[1].b2 * m_filterBuff[1][z2][out][LEFTCHANNEL];
-
-    m_filterBuff[1][z2][in][LEFTCHANNEL] = m_filterBuff[1][z1][in][LEFTCHANNEL];
-    m_filterBuff[1][z1][in][LEFTCHANNEL] = inSample[LEFTCHANNEL];
-    m_filterBuff[1][z2][out][LEFTCHANNEL] = m_filterBuff[1][z1][out][LEFTCHANNEL];
-    m_filterBuff[1][z1][out][LEFTCHANNEL] = outSample[LEFTCHANNEL];
-    iir_out[LEFTCHANNEL] = (int16_t)outSample[LEFTCHANNEL];
-
-    outSample[RIGHTCHANNEL] = m_filter[1].a0 * inSample[RIGHTCHANNEL] +
-                              m_filter[1].a1 * m_filterBuff[1][z1][in][RIGHTCHANNEL] +
-                              m_filter[1].a2 * m_filterBuff[1][z2][in][RIGHTCHANNEL] -
-                              m_filter[1].b1 * m_filterBuff[1][z1][out][RIGHTCHANNEL] -
-                              m_filter[1].b2 * m_filterBuff[1][z2][out][RIGHTCHANNEL];
-
-    m_filterBuff[1][z2][in][RIGHTCHANNEL] = m_filterBuff[1][z1][in][RIGHTCHANNEL];
-    m_filterBuff[1][z1][in][RIGHTCHANNEL] = inSample[RIGHTCHANNEL];
-    m_filterBuff[1][z2][out][RIGHTCHANNEL] = m_filterBuff[1][z1][out][RIGHTCHANNEL];
-    m_filterBuff[1][z1][out][RIGHTCHANNEL] = outSample[RIGHTCHANNEL];
-    iir_out[RIGHTCHANNEL] = (int16_t)outSample[RIGHTCHANNEL];
-
+    audio_dsp::process(m_filter[1], m_filterHistory.samples[1], iir_in, iir_out);
     return iir_out;
 }
 //---------------------------------------------------------------------------------------------------------------------
-int16_t* Audio::IIR_filterChain2(int16_t iir_in[2], bool clear) {  // Infinite Impulse Response (IIR) filters
-
-    uint8_t z1 = 0, z2 = 1;
-    enum : uint8_t
-    {
-        in = 0,
-        out = 1
-    };
-    float          inSample[2];
-    float          outSample[2];
-    static int16_t iir_out[2];
-
+int16_t* Audio::IIR_filterChain2(int16_t iir_in[2], bool clear) {
+    static int16_t iir_out[2]{};
     if(clear) {
-        memset(m_filterBuff, 0, sizeof(m_filterBuff));  // zero IIR filterbuffer
-        iir_out[0] = 0;
-        iir_out[1] = 0;
-        iir_in[0] = 0;
-        iir_in[1] = 0;
+        m_filterHistory.reset();
+        iir_in[0] = iir_in[1] = 0;
     }
-
-    inSample[LEFTCHANNEL] = (float)(iir_in[LEFTCHANNEL]);
-    inSample[RIGHTCHANNEL] = (float)(iir_in[RIGHTCHANNEL]);
-
-    outSample[LEFTCHANNEL] =
-        m_filter[2].a0 * inSample[LEFTCHANNEL] + m_filter[2].a1 * m_filterBuff[2][z1][in][LEFTCHANNEL] +
-        m_filter[2].a2 * m_filterBuff[2][z2][in][LEFTCHANNEL] - m_filter[2].b1 * m_filterBuff[2][z1][out][LEFTCHANNEL] -
-        m_filter[2].b2 * m_filterBuff[2][z2][out][LEFTCHANNEL];
-
-    m_filterBuff[2][z2][in][LEFTCHANNEL] = m_filterBuff[2][z1][in][LEFTCHANNEL];
-    m_filterBuff[2][z1][in][LEFTCHANNEL] = inSample[LEFTCHANNEL];
-    m_filterBuff[2][z2][out][LEFTCHANNEL] = m_filterBuff[2][z1][out][LEFTCHANNEL];
-    m_filterBuff[2][z1][out][LEFTCHANNEL] = outSample[LEFTCHANNEL];
-    iir_out[LEFTCHANNEL] = (int16_t)outSample[LEFTCHANNEL];
-
-    outSample[RIGHTCHANNEL] = m_filter[2].a0 * inSample[RIGHTCHANNEL] +
-                              m_filter[2].a1 * m_filterBuff[2][z1][in][RIGHTCHANNEL] +
-                              m_filter[2].a2 * m_filterBuff[2][z2][in][RIGHTCHANNEL] -
-                              m_filter[2].b1 * m_filterBuff[2][z1][out][RIGHTCHANNEL] -
-                              m_filter[2].b2 * m_filterBuff[2][z2][out][RIGHTCHANNEL];
-
-    m_filterBuff[2][z2][in][RIGHTCHANNEL] = m_filterBuff[2][z1][in][RIGHTCHANNEL];
-    m_filterBuff[2][z1][in][RIGHTCHANNEL] = inSample[RIGHTCHANNEL];
-    m_filterBuff[2][z2][out][RIGHTCHANNEL] = m_filterBuff[2][z1][out][RIGHTCHANNEL];
-    m_filterBuff[2][z1][out][RIGHTCHANNEL] = outSample[RIGHTCHANNEL];
-    iir_out[RIGHTCHANNEL] = (int16_t)outSample[RIGHTCHANNEL];
-
+    audio_dsp::process(m_filter[2], m_filterHistory.samples[2], iir_in, iir_out);
     return iir_out;
 }
 //----------------------------------------------------------------------------------------------------------------------
@@ -5862,27 +5788,21 @@ uint32_t Audio::flac_correctResumeFilePos(uint32_t resumeFilePos) {
 }
 //----------------------------------------------------------------------------------------------------------------------
 uint32_t Audio::mp3_correctResumeFilePos(uint32_t resumeFilePos) {
-    // The starting point is the next MP3 syncword
-    uint8_t  p1, p2;
-    boolean  found = false;
-    uint32_t pos = resumeFilePos;
-    audiofile.seek(pos);
-
-    p1 = audiofile.read();
-    p2 = audiofile.read();
-    pos += 2;
-    while(!found || pos == m_file_size) {
-        if(p1 == 0xFF && (p2 & 0xF0) == 0xF0) {
-            found = true;
-            break;
-        }
-        p1 = p2;
-        p2 = audiofile.read();
-        pos++;
+    if(resumeFilePos >= m_file_size || !audiofile.seek(resumeFilePos)) return UINT32_MAX;
+    const uint32_t remaining = m_file_size - resumeFilePos;
+    const uint32_t maximum = remaining < 65536u ? remaining : 65536u;
+    const auto result = audio_local::findMp3Sync(
+        [&](unsigned char* buffer, size_t count) -> size_t {
+            const int got = audiofile.read(buffer, count);
+            return got > 0 ? static_cast<size_t>(got) : 0;
+        },
+        []() { return audio_cancelled && audio_cancelled(); }, maximum);
+    if(!result.found) {
+        AUDIO_INFO("MP3 seek error: no valid frame within 64 KiB");
+        return UINT32_MAX;
     }
     MP3Decoder_ClearBuffer();
-    if(found) return (pos - 2);
-    return m_audioDataStart;
+    return resumeFilePos + static_cast<uint32_t>(result.offset);
 }
 //----------------------------------------------------------------------------------------------------------------------
 uint8_t Audio::determineOggCodec(uint8_t* data, uint16_t len) {

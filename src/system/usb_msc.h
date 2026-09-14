@@ -18,6 +18,9 @@ extern "C" {
  *  Returns 1 on success, 0 on failure (FAT-FS is remounted on failure). */
 int  usb_msc_enable(void);
 
+/** Main-loop hook: close app-catalog handles before FAT is unmounted. */
+void usb_msc_set_before_enable(void (*callback)(void*), void* context);
+
 /** Stop USB MSC — detach from host and remount SD FAT-FS. */
 void usb_msc_disable(void);
 

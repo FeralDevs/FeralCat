@@ -1,0 +1,35 @@
+[
+  {
+    "path": "lib/mooncake",
+    "repository": "https://github.com/Forairaaaaa/mooncake",
+    "commit": "0dfc177b72fcc55095fd222b0bdc69595b001d9f",
+    "archive_sha256": "1d8d124cf7c90a2132e284f41c63eb0550481ce113975d1c517152ba4334578e",
+    "verified_git_blobs": 29
+  },
+  {
+    "path": "lib/IRremoteESP8266",
+    "repository": "https://github.com/crankyoldgit/IRremoteESP8266",
+    "commit": "3390e72877ac15c74f602151de4a2fb9a154bdb0",
+    "archive_sha256": "0b00707329289308255e0aacd18fca1e83746a72e6d3be9237a8a134431f6056",
+    "verified_git_blobs": 1970
+  },
+  {
+    "path": "lib/arduinoFFT",
+    "repository": "https://github.com/kosme/arduinoFFT",
+    "commit": "6b3ef9732db800bb2c658eefb7ad8939eb44e6e2",
+    "archive_sha256": "c13fac95964de60ca7c95f73f183bb5fa30eedff8c26c1f93c16dab2aca83d05",
+    "verified_git_blobs": 20
+  },
+  {
+    "path": "lib/ESP32-BLE-Mouse",
+    "repository": "https://github.com/T-vK/ESP32-BLE-Mouse",
+    "commit": "ba38caa695cece3cf06ff67b203e9400efe546f4",
+    "archive_sha256": "b55508a8e09519a8a4bceb59cd50f8850adb6c999d1fd0eda7d640206897a59e",
+    "verified_git_blobs": 10
+  },
+  {
+    "path": "lib/lua-5.5.1",
+    "url": "https://www.lua.org/ftp/lua-5.5.1.tar.gz",
+    "archive_sha256": "1c4b4068d67061f2a2231ad2b5422e77acea1487ea9890f6320af614f4373dce"
+  }
+]

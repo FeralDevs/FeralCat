@@ -145,6 +145,12 @@ esp_err_t es8311_voice_volume_set(es8311_handle_t dev, int volume, int *volume_s
  */
 esp_err_t es8311_voice_volume_get(es8311_handle_t dev, int *volume);
 
+/** Set explicit DAC gain in whole dB [-95, 0], then verify register readback.
+ *  This is separate from the legacy 0..100 register-index scale above.
+ *  Returns an error on invalid gain, write failure, read failure or mismatch.
+ */
+esp_err_t es8311_voice_gain_set_db(es8311_handle_t dev, int gain_db);
+
 /**
  * @brief Print out ES8311 register content
  *

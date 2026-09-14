@@ -493,6 +493,7 @@ static JRESULT mcu_load (
 		hd = jd->huffdata[id][0];
 		b = huffext(jd, hb, hc, hd);			/* Extract a huffman coded data (bit length) */
 		if (b < 0) return (JRESULT)(-b);		/* Err: invalid code or input */
+		if (b > 11) return JDR_FMT1; /* Baseline 8-bit DC category. */
 		d = jd->dcv[cmp];						/* DC value of previous block */
 		if (b) {								/* If there is any difference from previous block */
 			e = bitext(jd, b);					/* Extract data bits */
@@ -500,10 +501,16 @@ static JRESULT mcu_load (
 			b = 1 << (b - 1);					/* MSB position */
 			if (!(e & b)) e -= (b << 1) - 1;	/* Restore sign if needed */
 			d += e;								/* Get current value */
+			if (d < -2048 || d > 2048) return JDR_FMT1;
 			jd->dcv[cmp] = d;					/* Save current DC value for next block */
 		}
 		const int32_t *dqf = jd->qttbl[jd->qtid[cmp]];			/* De-quantizer table ID for this component */
-		tmp[0] = d * dqf[0] >> 8;				/* De-quantize, apply scale factor of Arai algorithm and descale 8 bits */
+		/* A corrupt DC predictor must not overflow dequantization or the IDCT.
+		 * 8-bit source DCT coefficients are bounded by 1024 before quantization;
+		 * 2048 leaves room for quantization rounding. Check in wide arithmetic. */
+		int64_t dc_scaled = (int64_t)d * dqf[0];
+		if (dc_scaled < -2048LL * 8192 || dc_scaled > 2048LL * 8192) return JDR_FMT1;
+		tmp[0] = (int32_t)(dc_scaled >> 8);
 
 		/* Extract following 63 AC elements from input stream */
 		memset(&tmp[1], 0, 63*sizeof(int32_t));	/* Clear rest of elements */
@@ -516,13 +523,17 @@ static JRESULT mcu_load (
 			if (b == 0) break;					/* EOB? */
 			if (b < 0) return (JRESULT)(-b);	/* Err: invalid code or input error */
 			i += b >> 4;						/* Number of leading zero elements   Skip zero elements */
+			if (i >= 64) return JDR_FMT1; /* Never index Zig/tmp past the block. */
 			if (b &= 0x0F) {					/* Bit length */
+				if (b > 10) return JDR_FMT1; /* Baseline 8-bit AC category. */
 				d = bitext(jd, b);				/* Extract data bits */
 				if (d < 0) return (JRESULT)(-d);/* Err: input device */
 				b = 1 << (b - 1);				/* MSB position */
 				if (!(d & b)) d -= (b << 1) - 1;/* Restore negative value if needed */
 				uint_fast8_t z = Zig[i];		/* Zigzag-order to raster-order converted index */
-				tmp[z] = d * dqf[z] >> 8;		/* De-quantize, apply scale factor of Arai algorithm and descale 8 bits */
+				int64_t ac_scaled = (int64_t)d * dqf[z];
+				if (ac_scaled < -2048LL * Ipsf[z] || ac_scaled > 2048LL * Ipsf[z]) return JDR_FMT1;
+				tmp[z] = (int32_t)(ac_scaled >> 8);
 			}
 		} while (++i < 64);		/* Next AC element */
 
@@ -906,6 +917,10 @@ JRESULT lgfx_jd_prepare (
 
 			/* Pre-load the JPEG data to extract it from the bit stream */
 			ofs %= JD_SZBUF;						/* Align read offset to JD_SZBUF */
+			/* huffext starts at the byte preceding the first entropy byte.
+			 * Keep that sentinel inside the input buffer for aligned SOS ends. */
+			if (!ofs) ofs = 1;
+			seg[ofs - 1] = 0;
 			int32_t dc = infunc(dev, seg + ofs, JD_SZBUF - ofs);
 			jd->dptr = seg + ofs - 1;
 			jd->dpend = seg + ofs + dc;
@@ -984,6 +999,3 @@ JRESULT lgfx_jd_decomp (
 
 	return rc;
 }
-
-
-

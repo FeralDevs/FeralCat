@@ -37,6 +37,7 @@
 #if MEOWKIT_ENABLE_PLAYER
 #include "app_19/app_19.h"      /* MeowPlayer (WIP)  */
 #endif
+#include "app_lua/app_lua.h"    /* SD-installed Lua apps */
 
 #include <mooncake.h>
 #include <memory>
@@ -49,7 +50,7 @@ extern "C" const lv_img_dsc_t ui_img_usb_msc_png;
  * @brief Register active apps into Mooncake (order determines menu slot index).
  *        Keep in sync with APP_BUILTIN_ICONS below.
  */
-inline void registerAllApps(mooncake::Mooncake& mc, DEVICES* dev)
+inline MOONCAKE::APPS::AppLua* registerAllApps(mooncake::Mooncake& mc, DEVICES* dev)
 {
     /* Menu visual order: left → right, top → bottom (app_01 … app_15) */
     mc.installApp(std::make_unique<MOONCAKE::APPS::App01>(dev));     /* app_01  Dino         */
@@ -73,6 +74,10 @@ inline void registerAllApps(mooncake::Mooncake& mc, DEVICES* dev)
 #if MEOWKIT_ENABLE_PLAYER
     mc.installApp(std::make_unique<MOONCAKE::APPS::App19>(dev));     /* app_19  MeowPlayer    */
 #endif
+    auto luaHost = std::make_unique<MOONCAKE::APPS::AppLua>(dev);
+    auto* luaHostPtr = luaHost.get();
+    mc.installApp(std::move(luaHost));                            /* Lua app manager */
+    return luaHostPtr;
 }
 
 /**
@@ -103,6 +108,7 @@ static const void* const APP_BUILTIN_ICONS[] = {
 #if MEOWKIT_ENABLE_PLAYER
     &ui_img_vu_meter_png,    /* app_19  MeowPlayer (audio) */
 #endif
+    &ui_img_webserial_png,   /* Lua app manager */
 };
 static const int APP_BUILTIN_ICONS_COUNT =
     (int)(sizeof(APP_BUILTIN_ICONS) / sizeof(APP_BUILTIN_ICONS[0]));

@@ -1,0 +1,5 @@
+# Keep third-party Lua sources intact and collapse them in code review.
+lib/lua-5.5.1/** linguist-vendored
+lib/lua-5.5.1/library.json -linguist-vendored
+# Generated glyph bitmaps; generator commands and font license are retained.
+src/app/app_lua/player_font_*.c linguist-generated
