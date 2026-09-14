@@ -1,12 +1,34 @@
 ### MeowKit Custom FW
 
+**Start here**
 - [[Home]]
-- [[Releases]]
-- [[Apps]]
-- [[Firmware Updates]]
-- [[Settings and Backup]]
-- [[Script Runner]]
 - [[Flashing and Recovery]]
+- [[Releases]]
+
+**Apps**
+- [[Apps]] (all)
+- [[MeowGotchi]]
+- [[WiFi Analyzer]]
+- [[Deauth Detector]]
+- [[Probe Sniffer]]
+- [[Rogue Radar]]
+- [[Tracker Detector]]
+- [[BLE Spam Detector]]
+- [[BLE Spam]]
+- [[Bad USB]]
+- [[Infrared]]
+- [[Script Runner]]
+- [[PC Monitor]] · [[Air Mouse]] · [[VU Meter]] · [[Retro TV]] · [[Matrix Rain]] · [[Dino]]
+
+**Features**
+- [[Firmware Updates]]
+- [[SD Settings Backup]]
+- [[WiFi Time Sync]]
+- [[On-Device Screenshots]]
+- [[Settings Rail]]
+- [[Boot Splash]]
+
+**Reference**
 - [[Building from Source]]
 - [[Hardware and Gotchas]]
 
