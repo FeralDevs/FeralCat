@@ -3,7 +3,7 @@ name: Lua apps and MP3
 on:
   pull_request:
   push:
-    branches: [feature/lua-apps-mp3-player, meowkit-mine]
+    branches: [feature/lua-apps-mp3-player, feature/lua-apps-mp3-english, meowkit-mine]
   workflow_dispatch:
 
 permissions:
@@ -54,7 +54,7 @@ jobs:
       - name: Retain firmware for device testing
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
-          name: firmware-v0.8.1-lua.1
+          name: firmware-v0.8.1-lua.2
           path: |
             .pio/build/esp32s3box/firmware.bin
             .pio/build/esp32s3box/firmware.elf

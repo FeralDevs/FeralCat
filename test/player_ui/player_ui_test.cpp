@@ -81,23 +81,23 @@ int main() {
     ui.create(screen, nullptr, action, cover);
     View v;
     v.kind = ViewKind::Menu; v.compact = true;
-    std::strcpy(v.title, "Lautstärke");
-    std::strcpy(v.body, "60 / 100");
+    std::strcpy(v.title, "Volume");
+    std::strcpy(v.body, "Volume: 60%");
     v.itemCount = 3;
-    std::strcpy(v.items[0].id, "quieter"); std::strcpy(v.items[0].label, "Leiser −5");
-    std::strcpy(v.items[1].id, "louder"); std::strcpy(v.items[1].label, "Lauter +5");
-    std::strcpy(v.items[2].id, "back"); std::strcpy(v.items[2].label, "Zurück");
+    std::strcpy(v.items[0].id, "quieter"); std::strcpy(v.items[0].label, "Quieter  -5");
+    std::strcpy(v.items[1].id, "louder"); std::strcpy(v.items[1].label, "Louder  +5");
+    std::strcpy(v.items[2].id, "back"); std::strcpy(v.items[2].label, "Back");
     ui.show(v); pump();
     lv_font_glyph_dsc_t glyph{};
     const auto* buttonFont = lv_obj_get_style_text_font(lv_obj_get_child(ui.button(0), 0), 0);
     require(lv_font_get_glyph_dsc(buttonFont, &glyph, 0x00fc, 0) && !glyph.is_placeholder,
-            "German umlaut has a real rendered glyph");
+            "Latin-1 metadata character has a real rendered glyph");
     lv_area_t initial;
     lv_obj_get_coords(ui.button(1), &initial);
     require(initial.x1 == 163 && initial.y1 == 59 && initial.x2 == 307 && initial.y2 == 138, "large volume hit box has fixed geometry");
     for (unsigned i = 0; i < 500; ++i) {
         pressed = true; pump();
-        std::snprintf(v.body, sizeof(v.body), "%u / 100", (i * 5) % 101);
+        std::snprintf(v.body, sizeof(v.body), "Volume: %u%%", (i * 5) % 101);
         ui.show(v); pump(); // Status changes while the finger remains down.
         pressed = false; pump();
         lv_area_t area;
@@ -112,9 +112,9 @@ int main() {
     // A release from an old screen must not activate the new button at the
     // same coordinates (especially an exit confirmation or an error close).
     pressed = true; pump();
-    std::strcpy(v.title, "App beenden?");
+    std::strcpy(v.title, "Exit app?");
     std::strcpy(v.items[1].id, "exit");
-    std::strcpy(v.items[1].label, "Beenden");
+    std::strcpy(v.items[1].label, "Exit");
     ui.show(v); pump();
     pressed = false; pump();
     require(actions == 500 && unexpectedActions == 0, "release across page change cannot become Exit");
@@ -123,8 +123,8 @@ int main() {
     View player;
     player.kind = ViewKind::Player;
     std::strcpy(player.player.title, "Body Electric");
-    std::strcpy(player.player.subtitle, "Alle Titel · 1 / 12");
-    std::strcpy(player.player.status, "Wiedergabe");
+    std::strcpy(player.player.subtitle, "All tracks · 1 / 12");
+    std::strcpy(player.player.status, "Playing");
     player.player.playing = true;
     player.player.position = 41; player.player.duration = 3480; player.player.volume = 60;
     ui.show(player); pump();

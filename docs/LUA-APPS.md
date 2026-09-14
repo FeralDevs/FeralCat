@@ -1,15 +1,15 @@
-# Installable Lua apps (v0.8.1-lua.1)
+# Installable Lua apps (v0.8.1-lua.2)
 
 Lua apps appear as **individual tiles in the normal app menu**, alongside the
 built-in apps. The firmware runs one Lua app at a time. The additional
-**Apps verwalten** (app manager) tile rescans the SD card and reports the package
+**App manager** tile rescans the SD card and reports the package
 inventory. The existing 18 built-in apps remain available. The upstream WIP
 MeowPlayer (`app_19`, controlled by `MEOWKIT_ENABLE_PLAYER`) remains hidden by
 default; it is separate from the installable Lua MP3 Player.
 
-This extension includes a Lua host, a bounded UI API, the **Hallo Meow** example,
+This extension includes a Lua host, a bounded UI API, the **Hello Meow** example,
 and a native SD-MP3 service used by the separately installable
-[MP3 Player 1.1.0](MP3-PLAYER.md). Firmware `v0.8.1-lua.1` is based on upstream
+[MP3 Player 1.1.1](MP3-PLAYER.md). Firmware `v0.8.1-lua.2` is based on upstream
 `meowkit-mine` commit `dc63a6c` (v0.8.1). Network access, internet radio, and
 SoundCloud are outside this release's scope.
 
@@ -17,7 +17,7 @@ SoundCloud are outside this release's scope.
 
 Install firmware containing this Lua extension once. Compatible Lua packages
 can then be changed without rebuilding or flashing the firmware. The firmware
-version is `v0.8.1-lua.1`. A subsequent firmware update must also include the Lua
+version is `v0.8.1-lua.2`. A subsequent firmware update must also include the Lua
 extension to retain these capabilities; an unextended upstream image does not
 provide the host required by these packages.
 
@@ -33,8 +33,8 @@ provide the host required by these packages.
 
 3. Safely eject the card. Start the device or leave USB mass-storage mode.
    The app inventory is refreshed at startup and after leaving USB mass-storage
-   mode. Alternatively, select **Apps verwalten → Rescan SD apps**.
-4. Select **Hallo Meow** in the normal app menu to run the example.
+   mode. Alternatively, select **App manager → Rescan SD apps**.
+4. Select **Hello Meow** in the normal app menu to run the example.
 
 To update an app, close it first, then replace its complete folder. To uninstall
 it, remove its folder and rescan. Keep the same app ID across updates. This
@@ -51,8 +51,8 @@ Each app has its own `/apps/<id>` directory and two required files:
 
 ```ini
 id=hello_meow
-name=Hallo Meow
-version=1.0.0
+name=Hello Meow
+version=1.0.1
 api=1
 entry=main.lua
 capabilities=ui,system

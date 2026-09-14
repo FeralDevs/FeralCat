@@ -62,7 +62,7 @@ struct Audio : meow::media::Host {
     bool accept = true, busy = false, pageBusy = false;
 
     explicit Audio(unsigned tracks = 12) {
-        for (unsigned i = 1; i <= tracks; ++i) titles.push_back("Titel " + std::to_string(i));
+        for (unsigned i = 1; i <= tracks; ++i) titles.push_back("Track " + std::to_string(i));
         snapshot.tracks = uint16_t(tracks);
         snapshot.generation = 1;
         snapshot.volume = 35;
@@ -267,7 +267,7 @@ void transportAndStaleSnapshots() {
     require(!std::strcmp(p.host.service.snapshot.state, "playing"), "Pause button resumes through toggle");
     const auto plays = p.host.service.plays().size();
     p.action("library"); p.action("all"); p.action("page_next");
-    require(std::strstr(p.host.view.body, "3-4 von 12"), "track list supports next page");
+    require(std::strstr(p.host.view.body, "3-4 of 12"), "track list supports next page");
     p.key("left"); p.key("back"); p.key("back");
     require(!std::strcmp(p.host.view.title, "MP3 Player") && p.host.service.plays().size() == plays,
             "browsing and Back preserve current playback");
@@ -285,7 +285,7 @@ void transportAndStaleSnapshots() {
 }
 
 void playlistOrderAndRepeat() {
-    Player p(8); p.host.service.list("Lieblingsliste", {6,2,6}); p.start();
+    Player p(8); p.host.service.list("Favorites", {6,2,6}); p.start();
     p.action("library"); p.action("lists"); p.action("pick1"); p.action("pick2");
     p.loadQueue(); p.acknowledge();
     require(p.host.service.snapshot.track == 2, "selected M3U row chooses playlist position");
@@ -303,7 +303,7 @@ void playlistOrderAndRepeat() {
     require(p.host.service.snapshot.track == 2, "Repeat One replays current track on natural EOF");
     p.action("next"); p.acknowledge();
     require(p.host.service.snapshot.track == 6, "manual Next overrides Repeat One");
-    p.key("back"); require(p.host.exits == 0 && std::strstr(p.message(), "B halten"), "short Back on main only shows hold instruction");
+    p.key("back"); require(p.host.exits == 0 && std::strstr(p.message(), "Hold B"), "short Back on main only shows hold instruction");
 }
 
 void shuffleAndLargeQueue() {
@@ -332,7 +332,7 @@ void controlsAndBusy() {
     p.host.service.busy = true; p.tick(20); p.host.service.busy = false;
     require(p.runtime.active(), "temporarily busy status does not fault app");
     p.host.service.accept = false; p.action("next");
-    require(p.host.service.plays().size() == 1 && std::strstr(p.message(), "Beschaeftigt"), "rejected command reports busy without changing queue");
+    require(p.host.service.plays().size() == 1 && std::strstr(p.message(), "Busy"), "rejected command reports busy without changing queue");
     p.host.service.accept = true; p.action("next");
     require(p.host.service.last().value == 2, "retry after rejection selects correct next position");
     p.acknowledge();
@@ -352,9 +352,9 @@ void controlsAndBusy() {
 
 void errorsAndScanGeneration() {
     Player p(3); p.start(); p.playAll();
-    p.host.service.state("error"); std::snprintf(p.host.service.snapshot.error, sizeof(p.host.service.snapshot.error), "%s", "Datei entfernt");
+    p.host.service.state("error"); std::snprintf(p.host.service.snapshot.error, sizeof(p.host.service.snapshot.error), "%s", "File removed");
     p.tick(20);
-    require(p.host.service.plays().size() == 1 && std::strstr(p.message(), "Datei entfernt"), "decoder error stays visible without auto skip");
+    require(p.host.service.plays().size() == 1 && std::strstr(p.message(), "File removed"), "decoder error stays visible without auto skip");
     p.action("play"); p.tick(); // Retried same ID, old error snapshot remains.
     p.acknowledge(); p.eof();
     require(p.host.service.last().action == Action::Play && p.host.service.last().value == 2, "retry survives stale error and rearms EOF advancement");
@@ -363,7 +363,7 @@ void errorsAndScanGeneration() {
     const auto count = p.host.service.plays().size();
     require(p.host.service.last().action == Action::Scan, "rescan disarms old EOF before worker acknowledgement");
     p.host.service.apply(); ++p.host.service.snapshot.generation; p.host.service.state("idle");
-    p.host.service.titles = {"Neuer Titel"}; p.host.service.snapshot.tracks = 1;
+    p.host.service.titles = {"New track"}; p.host.service.snapshot.tracks = 1;
     p.tick(); p.main(); p.action("next");
     require(p.host.service.plays().size() == count, "scan generation invalidates old track IDs and queue");
     p.action("play"); p.loadQueue(); p.acknowledge();
@@ -373,7 +373,7 @@ void errorsAndScanGeneration() {
     require(empty.host.service.last().action == Action::Scan, "empty startup requests media scan");
     empty.host.service.apply(); ++empty.host.service.snapshot.generation; empty.host.service.state("idle"); empty.tick();
     empty.action("play"); empty.tick(20);
-    require(std::strstr(empty.message(), "Keine abspielbaren Titel"), "empty queue produces useful explanation");
+    require(std::strstr(empty.message(), "No playable tracks"), "empty queue produces useful explanation");
 }
 
 void seekWaitsForDuration() {
@@ -383,7 +383,7 @@ void seekWaitsForDuration() {
     const auto commands = p.host.service.commands.size();
     p.action("seek_forward"); p.action("seek_back");
     require(p.host.service.commands.size() == commands, "unknown duration sends neither forward nor backward seek");
-    require(std::strstr(p.host.view.body, "Laufzeit noch nicht bekannt"), "unknown duration reports wait hint");
+    require(std::strstr(p.host.view.body, "Duration not known yet"), "unknown duration reports wait hint");
     require(!std::strcmp(p.host.service.snapshot.state, "playing"), "unknown-duration seek leaves playback running");
     p.host.service.state("paused"); p.tick(); p.action("seek_forward");
     require(p.host.service.commands.size() == commands, "paused track with unknown duration also sends no seek");
@@ -404,11 +404,11 @@ void unicodeAndPageSelection() {
     require(p.runtime.active(), "malformed filename bytes are sanitized before UI");
     p.action("library"); p.action("all");
     for (unsigned i = 0; i < 4; ++i) p.action("page_next");
-    require(std::strstr(p.host.view.body, "9-9 von 9") && !p.has("page_next"), "final partial page is bounded");
+    require(std::strstr(p.host.view.body, "9-9 of 9") && !p.has("page_next"), "final partial page is bounded");
 }
 
 void duplicatePlaybackAcknowledgements() {
-    Player p(2); p.host.service.list("Doppelte Titel", {1,1,2}); p.start();
+    Player p(2); p.host.service.list("Duplicate tracks", {1,1,2}); p.start();
     p.action("library"); p.action("lists"); p.action("pick1"); p.action("pick1");
     p.loadQueue(); p.acknowledge();
     p.action("next"); // Accepted second occurrence of the same track ID.
@@ -485,7 +485,7 @@ void rapidVolumeAndEqualizer() {
             "repeated taps at volume maximum send no redundant command or view");
     p.main(); p.action("sound"); p.action("equalizer");
     p.host.service.accept = false; p.action("eq0");
-    require(p.has("eq0") && std::strstr(p.message(), "Beschaeftigt"), "busy EQ command stays on preset page with feedback");
+    require(p.has("eq0") && std::strstr(p.message(), "Busy"), "busy EQ command stays on preset page with feedback");
     p.host.service.accept = true; p.action("eq1"); p.acknowledge();
     require(p.host.service.snapshot.equalizer == 1, "voice preset is passed to bounded native Equalizer command");
     p.action("equalizer"); p.action("eq_next"); p.action("eq2"); p.acknowledge();

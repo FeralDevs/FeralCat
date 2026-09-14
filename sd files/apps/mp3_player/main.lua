@@ -8,7 +8,7 @@ local requestedPlayback = nil
 local queue = {}
 local order = {}
 local cursor = 0
-local queueName = "Alle Titel"
+local queueName = "All tracks"
 local shuffle = false
 local repeatMode = 0 -- 0=off, 1=all, 2=one
 local armed = false
@@ -28,10 +28,10 @@ local dirty = true
 local equalizerPage = 0
 local optionParent = "sound"
 local wantEqualizer = nil
-local names = {idle="Bereit", scanning="Suche läuft", loading="Titel wird geladen",
-    playing="Wiedergabe", paused="Pause", stopped="Gestoppt", ended="Titel beendet", error="Fehler"}
-local equalizers = {"Neutral", "Stimme", "Warm", "Kleine Box"}
-local repeats = {"Aus", "Alle", "Einer"}
+local names = {idle="Ready", scanning="Scanning", loading="Loading track",
+    playing="Playing", paused="Paused", stopped="Stopped", ended="Track ended", error="Error"}
+local equalizers = {"Neutral", "Voice", "Warm", "Small speaker"}
+local repeats = {"Off", "All", "One"}
 local playerView = {title="", subtitle="", status="", position=0, duration=0, playing=false, volume=35}
 local cachedRawTitle, cachedTitle = nil, ""
 
@@ -83,21 +83,21 @@ local function repeatName() return repeats[repeatMode + 1] end
 
 -- Reuse menu tables. Status polling must not rebuild unchanged controls.
 local menus = {
-    library={item("all", "Alle Titel"), item("lists", "Wiedergabelisten"), item("library_options", "Weitere Optionen"), item("back", "Zurück")},
-    library_options={item("scan", "Musik neu einlesen"), item("options", "Wiedergabeoptionen"), item("close", "Player beenden"), item("back", "Zurück")},
-    sound={item("volume", "Lautstärke"), item("equalizer", "Equalizer"), item("options", "Wiedergabeoptionen"), item("back", "Zurück")},
-    volume={item("quieter", "Leiser  -5"), item("louder", "Lauter  +5"), item("back", "Zurück")},
-    options={item("shuffle", "Zufall: Aus"), item("repeat", "Wiederholen: Aus"), item("seek", "Spulen / Stopp"), item("back", "Zurück")},
-    seek={item("seek_back", "10 Sekunden zurück"), item("seek_forward", "10 Sekunden vor"), item("stop", "Wiedergabe stoppen"), item("back", "Zurück")},
-    confirm_close={item("cancel_close", "Weiter Musik hören"), item("confirm_close", "Player beenden")},
-    equalizer={item("eq0", "Neutral"), item("eq1", "Stimme"), item("eq_next", "Weitere Klänge"), item("back", "Zurück")},
-    waiting={item("back", "Zurück")}
+    library={item("all", "All tracks"), item("lists", "Playlists"), item("library_options", "More options"), item("back", "Back")},
+    library_options={item("scan", "Rescan music"), item("options", "Playback options"), item("close", "Exit player"), item("back", "Back")},
+    sound={item("volume", "Volume"), item("equalizer", "Equalizer"), item("options", "Playback options"), item("back", "Back")},
+    volume={item("quieter", "Quieter -5"), item("louder", "Louder +5"), item("back", "Back")},
+    options={item("shuffle", "Shuffle: Off"), item("repeat", "Repeat: Off"), item("seek", "Seek / Stop"), item("back", "Back")},
+    seek={item("seek_back", "Back 10 s"), item("seek_forward", "Forward 10 s"), item("stop", "Stop playback"), item("back", "Back")},
+    confirm_close={item("cancel_close", "Keep listening"), item("confirm_close", "Exit player")},
+    equalizer={item("eq0", "Neutral"), item("eq1", "Voice"), item("eq_next", "More presets"), item("back", "Back")},
+    waiting={item("back", "Back")}
 }
 
 local function command(action, value)
     if not meow.audio.command(action, value) then
-        dirty = notice ~= "Beschaeftigt. Bitte erneut versuchen."
-        notice = "Beschaeftigt. Bitte erneut versuchen."
+        dirty = notice ~= "Busy. Please try again."
+        notice = "Busy. Please try again."
         return false
     end
     dirty = true
@@ -151,7 +151,7 @@ local function rescan()
         armed, pending, building = false, nil, nil
         scanPending = true
         page, needPage = nil, false
-        notice = "SD-Karte wird durchsucht ..."
+        notice = "Scanning the SD card ..."
     end
 end
 
@@ -160,7 +160,7 @@ local function beginQueue(list, selected, name)
     building = { playlist = list, selected = selected, name = name, ids = {},
                  offset = 0, generation = generation }
     screen = "main"
-    notice = "Warteschlange wird geladen ..."
+    notice = "Loading the queue ..."
 end
 
 -- At most eight IDs per tick; a 512-track queue never blocks one callback.
@@ -173,7 +173,7 @@ local function buildStep()
     dirty = true
     local total = math.min(result.total, 512)
     if total < 1 then
-        building = nil; notice = "Keine abspielbaren Titel."; return
+        building = nil; notice = "No playable tracks."; return
     end
     for i = 1, #result.items do
         if #job.ids < total then job.ids[#job.ids + 1] = result.items[i].id end
@@ -181,7 +181,7 @@ local function buildStep()
     dirty = true
     job.offset = job.offset + #result.items
     if #result.items == 0 and #job.ids < total then
-        building = nil; notice = "Liste wurde geaendert. Bitte neu scannen."; return
+        building = nil; notice = "List changed. Please rescan."; return
     end
     if #job.ids >= total then
         queue = job.ids
@@ -208,7 +208,7 @@ end
 
 local function back()
     dirty = true
-    if screen == "main" then notice = "B halten zum Beenden."
+    if screen == "main" then notice = "Hold B to exit."
     elseif screen == "tracks" and playlist > 0 then browse("playlists")
     elseif screen == "tracks" or screen == "playlists" then screen = "library"
     elseif screen == "library_options" or screen == "confirm_close" then screen = "library"
@@ -225,58 +225,58 @@ local function render()
     local actions = menus[screen] or menus.waiting
     local title, body = "MP3 Player", ""
     if screen == "main" then
-        local rawTitle = s.title and s.title ~= "" and s.title or "Musik auswählen"
+        local rawTitle = s.title and s.title ~= "" and s.title or "Choose music"
         if rawTitle ~= cachedRawTitle then cachedRawTitle = rawTitle; cachedTitle = cut(rawTitle, 95) end
         playerView.title = cachedTitle
         playerView.subtitle = tostring(cursor) .. "/" .. tostring(#queue) .. "  " .. queueName
         if s.state == "error" and not pending then playerView.status = cut(s.error, 95)
-        elseif building then playerView.status = "Liste laden: " .. tostring(#building.ids) .. " Titel"
+        elseif building then playerView.status = "Loading queue: " .. tostring(#building.ids) .. " tracks"
         elseif notice ~= "" then playerView.status = cut(notice, 95)
-        else playerView.status = pending and "Titel wird geladen" or (names[s.state] or "Bereit") end
+        else playerView.status = pending and "Loading track" or (names[s.state] or "Ready") end
         playerView.position, playerView.duration = s.position, s.duration
         playerView.playing = s.state == "playing" and not pending
         playerView.volume = wantVolume or s.volume
         meow.ui.player(playerView)
         return
     elseif screen == "library" then
-        title = "Bibliothek"
-        body = tostring(s.tracks) .. " Titel, " .. tostring(s.playlists) .. " Wiedergabelisten"
-        if scanPending then body = "Musik wird eingelesen ..." end
+        title = "Library"
+        body = tostring(s.tracks) .. " tracks, " .. tostring(s.playlists) .. " playlists"
+        if scanPending then body = "Scanning music ..." end
     elseif screen == "library_options" then
-        title = "Weitere Optionen"
-        body = notice ~= "" and notice or "Musik neu einlesen oder Player beenden."
+        title = "More options"
+        body = notice ~= "" and notice or "Rescan music or exit the player."
     elseif screen == "sound" then
-        title = "Klang"
-        body = "Lautstärke " .. tostring(wantVolume or s.volume) .. "%  |  " .. equalizers[(wantEqualizer or s.equalizer or 0) + 1]
+        title = "Sound"
+        body = "Volume " .. tostring(wantVolume or s.volume) .. "%  |  " .. equalizers[(wantEqualizer or s.equalizer or 0) + 1]
     elseif screen == "volume" then
-        title = "Lautstärke"
-        body = "Lautstärke: " .. tostring(wantVolume or s.volume) .. "%"
+        title = "Volume"
+        body = "Volume: " .. tostring(wantVolume or s.volume) .. "%"
         if notice ~= "" then body = body .. "  " .. notice end
     elseif screen == "options" then
-        title = "Wiedergabeoptionen"
+        title = "Playback options"
         body = cut(queueName, 63)
-        actions[1].label = "Zufall: " .. (shuffle and "An" or "Aus")
-        actions[2].label = "Wiederholen: " .. repeatName()
+        actions[1].label = "Shuffle: " .. (shuffle and "On" or "Off")
+        actions[2].label = "Repeat: " .. repeatName()
     elseif screen == "seek" then
-        title = "Spulen / Stopp"
+        title = "Seek / Stop"
         body = notice ~= "" and notice or (clock(s.position) .. " / " .. clock(s.duration))
     elseif screen == "equalizer" then
         title = "Equalizer"
-        body = "Aktuell: " .. equalizers[(wantEqualizer or s.equalizer or 0) + 1]
+        body = "Current: " .. equalizers[(wantEqualizer or s.equalizer or 0) + 1]
         if notice ~= "" then body = body .. "  " .. notice end
         for i = 1, 2 do
             local preset = equalizerPage + i - 1
             actions[i].id, actions[i].label = "eq" .. tostring(preset), equalizers[preset + 1]
         end
-        actions[3].label = equalizerPage == 0 and "Weitere Klänge" or "Erste Seite"
+        actions[3].label = equalizerPage == 0 and "More presets" or "First page"
     elseif screen == "confirm_close" then
-        title = "Player beenden?"
-        body = "Die Wiedergabe wird beendet."
+        title = "Exit player?"
+        body = "Playback will stop."
     else
-        title = screen == "playlists" and "Wiedergabelisten" or "Titel auswählen"
+        title = screen == "playlists" and "Playlists" or "Choose a track"
         body = page and (tostring(pageOffset + 1) .. "-" .. tostring(pageOffset + #page.items)
-               .. " von " .. tostring(page.total)) or "Liste wird geladen ..."
-        if page and page.total == 0 then body = "Keine Eintraege. MP3-Dateien/M3U auf SD kopieren." end
+               .. " of " .. tostring(page.total)) or "Loading the list ..."
+        if page and page.total == 0 then body = "No entries. Copy MP3/M3U files to the SD card." end
         if page then
             actions = {}
             for i = 1, #page.items do
@@ -285,9 +285,9 @@ local function render()
                 if screen == "playlists" then label = label .. " (" .. tostring(row.count) .. ")" end
                 actions[#actions + 1] = item("pick" .. tostring(i), label)
             end
-            if pageOffset + #page.items < page.total then actions[#actions + 1] = item("page_next", "Naechste Seite") end
-            if pageOffset > 0 and pageOffset + #page.items >= page.total then actions[#actions + 1] = item("page_first", "Erste Seite") end
-            actions[#actions + 1] = item("back", "Zurück")
+            if pageOffset + #page.items < page.total then actions[#actions + 1] = item("page_next", "Next page") end
+            if pageOffset > 0 and pageOffset + #page.items >= page.total then actions[#actions + 1] = item("page_first", "First page") end
+            actions[#actions + 1] = item("back", "Back")
         end
     end
     meow.ui.menu(title, cut(body, 127), actions, screen ~= "tracks" and screen ~= "playlists")
@@ -312,7 +312,7 @@ local function poll()
         needPage = screen == "tracks" or screen == "playlists"
         -- Playlist IDs belong to one generation; return to library on rescan.
         if playlist > 0 and screen == "tracks" then screen = "library"; needPage = false end
-        notice = "Suche fertig: " .. tostring(s.tracks) .. " Titel."
+        notice = "Scan complete: " .. tostring(s.tracks) .. " tracks."
     end
     if wantVolume == s.volume then wantVolume = nil end
     if wantEqualizer == s.equalizer then wantEqualizer = nil end
@@ -335,10 +335,10 @@ local function poll()
     -- Errors from an older request cannot cancel a queued retry.
     local failure = s.state == "error" and (not pending or acknowledged)
     if failure then
-        if armed or pending or notice ~= "Abspielen oder Naechster fuer einen neuen Versuch." then dirty = true end
+        if armed or pending or notice ~= "Press Play or Next to retry." then dirty = true end
         armed, pending = false, nil
         scanPending = false
-        notice = "Abspielen oder Naechster fuer einen neuen Versuch."
+        notice = "Press Play or Next to retry."
     elseif newFinish and armed and not pending and not building and not scanPending
         and s.state == "ended" and s.track == current() then
         advance(1, true)
@@ -348,8 +348,8 @@ local function poll()
 end
 
 function on_start()
-    assert(meow.system.has("audio"), "Audio-Dienst fehlt. Firmware aktualisieren.")
-    assert(meow.system.has("player_ui"), "Player-Oberfläche fehlt. Firmware aktualisieren.")
+    assert(meow.system.has("audio"), "Audio service unavailable. Update the firmware.")
+    assert(meow.system.has("player_ui"), "Player interface unavailable. Update the firmware.")
     meow.app.capture_back(true)
     math.randomseed(meow.system.uptime_ms())
     poll()
@@ -408,14 +408,14 @@ function on_event(kind, value)
         if row then
             if screen == "playlists" then browse("tracks", row.id)
             elseif screen == "tracks" then beginQueue(playlist, pageOffset + index,
-                playlist == 0 and "Alle Titel" or "M3U-Liste") end
+                playlist == 0 and "All tracks" or "M3U playlist") end
         end
     elseif value == "play" then
-        if building or scanPending then notice = "Bitte warten, die Liste wird geladen."
-        elseif pending then notice = "Titel wird geladen."
+        if building or scanPending then notice = "Please wait for the list to load."
+        elseif pending then notice = "Loading track."
         elseif armed and snap and (snap.state == "playing" or snap.state == "paused") then command("pause")
         elseif #queue > 0 then playAt(cursor)
-        else beginQueue(0, 1, "Alle Titel") end
+        else beginQueue(0, 1, "All tracks") end
     elseif value == "next" then advance(1, false)
     elseif value == "previous" then advance(-1, false)
     elseif value == "louder" or value == "quieter" then
@@ -428,19 +428,19 @@ function on_event(kind, value)
         if snap and (snap.state == "playing" or snap.state == "paused")
             and not pending and not scanPending and not building then
             if snap.duration <= 0 then
-                notice = "Laufzeit noch nicht bekannt. Bitte kurz warten."
+                notice = "Duration not known yet. Please wait."
             else
                 local seconds = math.max(0, math.min(65535, (wantSeek or snap.position)
                     + (value == "seek_forward" and 10 or -10)))
                 seconds = math.min(seconds, snap.duration)
                 if command("seek", seconds) then wantSeek = seconds end
             end
-        else notice = "Spulen ist waehrend Wiedergabe oder Pause moeglich." end
+        else notice = "Seeking is available while playing or paused." end
     elseif value == "stop" then
         if command("stop") then
             armed, pending, building = false, nil, nil
             wantSeek = nil
-            notice = "Wiedergabe wird gestoppt."
+            notice = "Stopping playback."
         end
     elseif value == "shuffle" then
         local selected = order[cursor] or 1

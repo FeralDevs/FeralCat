@@ -418,16 +418,16 @@ void examplePackage()
     TestHost host;
     Runtime runtime(host, limits);
     require(runtime.start(source.data(), source.size()), runtime.error());
-    require(!std::strcmp(host.view.title, "Hallo Meow") && std::strstr(host.view.body, "Zaehler: 0"),
+    require(!std::strcmp(host.view.title, "Hello Meow") && std::strstr(host.view.body, "Count: 0"),
             "real SD example starts with visible zero");
     require(host.view.itemCount == 3 && !std::strcmp(host.view.items[0].id, "increment"), "real SD example actions");
     require(!host.view.compact, "existing example retains list layout");
     require(runtime.event("action", "increment"), runtime.error());
-    require(std::strstr(host.view.body, "Zaehler: 1") != nullptr, "real SD increment");
+    require(std::strstr(host.view.body, "Count: 1") != nullptr, "real SD increment");
     require(runtime.event("action", "reset"), runtime.error());
-    require(std::strstr(host.view.body, "Zaehler: 0") != nullptr, "real SD reset");
+    require(std::strstr(host.view.body, "Count: 0") != nullptr, "real SD reset");
     require(runtime.event("key", "right"), runtime.error());
-    require(std::strstr(host.view.body, "Zaehler: 1") != nullptr, "real SD right key");
+    require(std::strstr(host.view.body, "Count: 1") != nullptr, "real SD right key");
     require(runtime.tick(50), runtime.error());
     require(runtime.event("action", "close"), runtime.error());
     require(host.exits == 1 && runtime.active(), "real SD close queues owner shutdown");

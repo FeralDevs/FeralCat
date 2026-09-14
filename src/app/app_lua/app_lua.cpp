@@ -41,7 +41,7 @@ void styleText(lv_obj_t* object, uint32_t color) {
 }
 
 AppLua::AppLua(DEVICES* device) : device_(device) {
-    setAppInfo().name = "Apps verwalten";
+    setAppInfo().name = "App manager";
     usb_msc_set_before_enable([](void* context) {
         auto* app = static_cast<AppLua*>(context);
         // Join the audio worker and release every media file BEFORE unmounting.
@@ -152,7 +152,7 @@ void AppLua::onOpen() {
         for (size_t i = 0; i < catalog_.count(); ++i) {
             if (strcmp(catalog_.at(i).id, requestedId_) == 0) { launch(i); found = true; break; }
         }
-        if (!found) fail("App is no longer available. Open Apps verwalten and Rescan.");
+        if (!found) fail("App is no longer available. Open App manager and select Rescan SD apps.");
     }
     requestedId_[0] = 0;
     render();
@@ -306,12 +306,12 @@ void AppLua::render() {
         count = int(session_->view.itemCount);
         for (int i = 0; i < count; ++i) lv_label_set_text(labels_[i], session_->view.items[i].label);
     } else if (session_->mode == Session::Mode::Error) {
-        lv_label_set_text(title_, "App angehalten");
+        lv_label_set_text(title_, "App stopped");
         lv_label_set_text(body_, session_->error);
         count = 1;
-        lv_label_set_text(labels_[0], "Fehler gelesen - Zurueck");
+        lv_label_set_text(labels_[0], "Dismiss and go back");
     } else {
-        lv_label_set_text(title_, "Apps verwalten");
+        lv_label_set_text(title_, "App manager");
         lv_label_set_text(body_, catalog_.scanning() ? "Reading apps from SD ..." : catalog_.status());
         if (!catalog_.scanning()) {
             count = int(catalog_.count());

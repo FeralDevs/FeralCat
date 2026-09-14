@@ -2,10 +2,10 @@
 local count = 0
 
 local function render()
-    meow.ui.show("Hallo Meow", "Diese App wurde von der SD-Karte geladen.\n\nZaehler: " .. tostring(count), {
+    meow.ui.show("Hello Meow", "This app was loaded from the SD card.\n\nCount: " .. tostring(count), {
         { id = "increment", label = "+1" },
-        { id = "reset", label = "Zuruecksetzen" },
-        { id = "close", label = "App schliessen" }
+        { id = "reset", label = "Reset" },
+        { id = "close", label = "Close app" }
     })
 end
 

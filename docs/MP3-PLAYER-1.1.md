@@ -1,7 +1,7 @@
-# MP3 Player 1.1.0 / firmware v0.8.1-lua.1
+# MP3 Player 1.1.1 / firmware v0.8.1-lua.2
 
 This extension combines an installable Lua MP3 app with native audio and UI
-services. Firmware `v0.8.1-lua.1` is based on upstream `meowkit-mine` commit
+services. Firmware `v0.8.1-lua.2` is based on upstream `meowkit-mine` commit
 `dc63a6c` (v0.8.1). The upstream WIP MeowPlayer (`app_19`) remains hidden by
 default; the Lua package is a separate app. See [MP3-PLAYER.md](MP3-PLAYER.md)
 for installation and controls and [LUA-APPS.md](LUA-APPS.md) for the package API.

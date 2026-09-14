@@ -471,7 +471,7 @@ void Launcher::installApps()
     _luaApps = registerAllApps(_mooncake, _device);
     auto apps = _mooncake.getAllAppInfo();
     for (int i = 0; i < (int)apps.size(); ++i)
-        if (apps[i].name == "Apps verwalten") _luaHostId = i;
+        if (apps[i].name == "App manager") _luaHostId = i;
     if (_luaApps) _luaApps->refreshCatalog();
 }
 

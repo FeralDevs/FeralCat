@@ -1,9 +1,10 @@
 # Building and testing Lua apps and the MP3 player
 
-This extension identifies itself as `v0.8.1-lua.1` and builds on the upstream
+This extension identifies itself as `v0.8.1-lua.2` and builds on the upstream
 `meowkit-mine` branch at commit `dc63a6cdf9f15a1ef5f92d0a303cbe6af9fdf43e`.
-The separately installed MP3 app is version 1.1.0. All commands below run from
-the root of a checkout containing this extension.
+The separately installed MP3 Player app is version 1.1.1, and the Hello Meow
+example is version 1.0.1. All commands below run from the root of a checkout
+containing this extension.
 
 ## Prepare a checkout
 

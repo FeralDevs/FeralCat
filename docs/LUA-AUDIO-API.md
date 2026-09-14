@@ -1,6 +1,6 @@
 # Native audio API for Lua apps
 
-This document describes `v0.8.1-lua.1`, based on upstream `v0.8.1` on
+This document describes `v0.8.1-lua.2`, based on upstream `v0.8.1` on
 `meowkit-mine`. The Lua API version remains `1`.
 
 Declare the capability in the app manifest:
@@ -35,7 +35,7 @@ argument type and range violations raise a script error.
 | `pause` | Omit | Toggle playing/paused state when applicable |
 | `stop` | Omit | Stop playback and close the file |
 | `volume` | Integer 0–100 | Set digital volume independently of the fixed DAC attenuation |
-| `eq` | Integer 0–3 | Select Neutral, Voice, Warm or Small Speaker |
+| `eq` | Integer 0–3 | Select Neutral, Voice, Warm or Small speaker |
 | `seek` | Integer 0–65535 | Seek to an absolute time in seconds |
 
 Seeking requires a playing or paused track with a known duration. A command
@@ -109,7 +109,7 @@ their legacy volume API. See [DAC and PCM implementation notes](MP3-AUDIO-FIX.md
 EQ presets attenuate selected frequency bands and normalize their combined
 gain; they do not raise DAC gain or apply loudness compensation. Neutral is
 bit-exact after the bounded 256-frame preset transition. Voice and Small
-Speaker reduce low bass; Warm reduces treble. These profiles cannot extend
+speaker reduce low bass; Warm reduces treble. These profiles cannot extend
 the physical bass response of a small speaker. See the
 [production equalizer](../src/system/media/audio_equalizer.h).
 

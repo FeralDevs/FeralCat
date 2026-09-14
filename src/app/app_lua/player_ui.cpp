@@ -122,7 +122,7 @@ void PlayerUi::create(lv_obj_t* parent, void* context, Action action, uint16_t* 
     const int x[] = {12, 96, 230, 12, 163};
     const int w[] = {78, 128, 78, 145, 145};
     const char* ids[] = {"previous", "play", "next", "library", "sound"};
-    const char* labels[] = {LV_SYMBOL_PREV, LV_SYMBOL_PLAY, LV_SYMBOL_NEXT, "Bibliothek", "Klang"};
+    const char* labels[] = {LV_SYMBOL_PREV, LV_SYMBOL_PLAY, LV_SYMBOL_NEXT, "Library", "Sound"};
     for (unsigned i = 0; i < 5; ++i) {
         auto& button = playerButtons_[i];
         std::snprintf(button.id, sizeof(button.id), "%s", ids[i]);

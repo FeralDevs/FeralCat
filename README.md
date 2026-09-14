@@ -1,10 +1,13 @@
 # MeowKit‑S3 Custom Firmware — "MeowGotchi" build
 
-**v0.8.1-lua.1** adds separately installable Lua apps with direct launcher tiles
+**v0.8.1-lua.2** adds separately installable Lua apps with direct launcher tiles
 and a native SD audio service on top of v0.8.1. The [MP3 Player](docs/MP3-PLAYER.md)
 is a separate app package with large touch controls, M3U playlists, JPEG covers
 and four equalizer presets. Copy apps from `sd files/apps` onto the SD card
 after installing a firmware built from this branch.
+
+MP3 Player **1.1.1**, Hello Meow **1.0.1**, and the **App manager** use English
+menus, controls, status messages, and errors.
 
 See [app installation and API](docs/LUA-APPS.md), [build and tests](docs/LUA-BUILD.md)
 and [implementation and verification](docs/MP3-PLAYER-1.1.md). Existing `releases/`

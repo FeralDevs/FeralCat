@@ -179,14 +179,14 @@ struct AudioService::Impl final : DecoderObserver {
         if (!decoder || !decoder->isInitialized()) {
             delete decoder;
             decoder = nullptr;
-            error("Audio-Speicher oder I2S-Treiber konnte nicht initialisiert werden.");
+            error("Could not initialize audio memory or the I2S driver.");
             return false;
         }
         decoder->setBufsize(8192, 65536);
         if (!decoder->setPinout(HAL_PIN_I2S_BCLK, HAL_PIN_I2S_WS, HAL_PIN_I2S_DOUT)) {
             delete decoder;
             decoder = nullptr;
-            error("I2S-Audiopins konnten nicht initialisiert werden.");
+            error("Could not initialize the I2S audio pins.");
             return false;
         }
         decoder->forceMono(true);
@@ -211,11 +211,11 @@ struct AudioService::Impl final : DecoderObserver {
         const bool cardAvailable = root && root.isDirectory();
         root.close();
         if (!cardAvailable) {
-            error("SD-Karte nicht verfuegbar.");
+            error("SD card is unavailable.");
             return;
         }
         auto* next = new (std::nothrow) MediaCatalog;
-        if (!next) { error("Kein Speicher fuer den Musikkatalog."); return; }
+        if (!next) { error("Not enough memory for the music library."); return; }
         const auto result = next->scan(SD_MMC, cancelled, this);
         if (result != MediaCatalog::ScanResult::Complete) {
             if (result != MediaCatalog::ScanResult::Cancelled) error(next->error());
@@ -241,7 +241,7 @@ struct AudioService::Impl final : DecoderObserver {
     void play(const Queued& request)
     {
         if (request.generation != live.generation) {
-            error("Musikkatalog wurde geaendert. Titel bitte erneut waehlen.");
+            error("The music library has changed. Please select the track again.");
             return;
         }
         char path[MaxMediaPath + 1]{};
@@ -249,7 +249,7 @@ struct AudioService::Impl final : DecoderObserver {
         // catalog is immutable and exclusively replaced by this worker.
         if (!catalog || !catalog->track(static_cast<uint16_t>(request.command.value),
                 path, sizeof(path), title, sizeof(title))) {
-            error("Titel ist im aktuellen Musikkatalog nicht vorhanden.");
+            error("The track is not in the current music library.");
             return;
         }
         halt();
@@ -275,7 +275,7 @@ struct AudioService::Impl final : DecoderObserver {
         }
         if (quitting.load()) return;
         if (!decoder->connecttoFS(SD_MMC, path)) {
-            error(decoderError[0] ? decoderError : "MP3-Datei konnte nicht geoeffnet oder decodiert werden.");
+            error(decoderError[0] ? decoderError : "Could not open or decode the MP3 file.");
             return;
         }
         decoder->forceMono(true);
@@ -292,7 +292,7 @@ struct AudioService::Impl final : DecoderObserver {
         case Action::Play: play(request); break;
         case Action::Pause:
             if (decoder && !draining && (!std::strcmp(live.state, "playing") || !std::strcmp(live.state, "paused"))) {
-                if (!decoder->pauseResume()) { error("Pause konnte nicht umgeschaltet werden."); break; }
+                if (!decoder->pauseResume()) { error("Could not pause or resume playback."); break; }
                 if (!decoder->isRunning()) i2s_zero_dma_buffer(I2S_NUM_0);
                 setState(decoder->isRunning() ? "playing" : "paused");
                 progressAt = millis();
@@ -321,7 +321,7 @@ struct AudioService::Impl final : DecoderObserver {
             if (!decoder || draining || (std::strcmp(live.state, "playing") != 0 &&
                                         std::strcmp(live.state, "paused") != 0) ||
                 !live.duration || !decoder->setAudioPlayPosition(static_cast<uint16_t>(request.command.value))) {
-                error("Spulen ist fuer diesen Titel noch nicht verfuegbar.");
+                error("Seeking is not yet available for this track.");
                 break;
             }
             i2s_zero_dma_buffer(I2S_NUM_0);
@@ -345,13 +345,13 @@ struct AudioService::Impl final : DecoderObserver {
         decoder->loop();
         if (quitting.load()) return;
         if (unsupportedRate) {
-            error("MP3-Abtastrate nicht unterstuetzt. Erlaubt: 22.05, 32, 44.1 und 48 kHz.");
+            error("Unsupported MP3 sample rate. Supported: 22.05, 32, 44.1 and 48 kHz.");
             return;
         }
         if (naturalEnd) {
             naturalEnd = false;
             if (decoderError[0] || !hasSamples) {
-                error(decoderError[0] ? decoderError : "MP3-Datei enthaelt keine abspielbaren Audiodaten.");
+                error(decoderError[0] ? decoderError : "The MP3 file contains no playable audio.");
             } else {
                 live.position = decoder->getAudioCurrentTime();
                 if (live.duration && live.position < live.duration) live.position = live.duration;
@@ -366,7 +366,7 @@ struct AudioService::Impl final : DecoderObserver {
             return;
         }
         if (!decoder->isRunning()) {
-            error(decoderError[0] ? decoderError : "MP3-Wiedergabe wurde durch einen Lesefehler beendet.");
+            error(decoderError[0] ? decoderError : "MP3 playback stopped because of a read error.");
             return;
         }
         if (hasSamples && !std::strcmp(live.state, "loading")) {
@@ -381,7 +381,7 @@ struct AudioService::Impl final : DecoderObserver {
             lastFilePosition = filePosition;
             progressAt = now;
         } else if (now - progressAt > 10000) {
-            error("MP3-Wiedergabe macht keinen Fortschritt. SD-Karte und Datei pruefen.");
+            error("MP3 playback has stalled. Check the SD card and file.");
             return;
         }
         live.position = position;

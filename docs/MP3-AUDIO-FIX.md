@@ -1,6 +1,6 @@
 # MP3 DAC and PCM implementation notes
 
-These changes are part of `v0.8.1-lua.1`, based on upstream `v0.8.1` on
+These changes are part of `v0.8.1-lua.2`, based on upstream `v0.8.1` on
 `meowkit-mine`. They make the native audio path suitable for the Lua MP3 app.
 The [Lua audio API](LUA-AUDIO-API.md) documents its public contract.
 

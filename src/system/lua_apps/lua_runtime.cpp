@@ -466,7 +466,7 @@ int Runtime::player(lua_State* state) {
     view.player.playing = lua_toboolean(state, -1);
     lua_pop(state, 1);
     const char* ids[] = {"previous", "play", "next", "library", "sound"};
-    const char* labels[] = {"Zurueck", "Play / Pause", "Weiter", "Bibliothek", "Klang"};
+    const char* labels[] = {"Previous", "Play / Pause", "Next", "Library", "Sound"};
     view.itemCount = 5;
     for (size_t i = 0; i < 5; ++i) {
         copyText(view.items[i].id, sizeof(view.items[i].id), ids[i]);
