@@ -52,6 +52,13 @@ extern "C" {
 #define PKEY_BLE_NAME       "ble_name"   /* str  ≤20 B    BLE advertisement name     */
 #define PKEY_BLE_EN         "ble_en"     /* int  0|1      BLE auto-start on boot     */
 
+/* XP / leveling — device-wide (see meow_xp.h). Additive keys: no schema bump,
+ * so upgrading firmware never wipes existing settings; missing keys read as 0. */
+#define PKEY_XP_TOTAL       "xp"          /* u32  total lifetime XP                   */
+#define PKEY_XP_HS          "xp_hs"      /* u32  lifetime handshakes captured        */
+#define PKEY_XP_PLAY        "xp_play"    /* u32  lifetime awake seconds              */
+#define PKEY_XP_APPS        "xp_apps"    /* u32  bitmask of apps opened at least once*/
+
 /* Internal — do not read/write from application code */
 #define PKEY_NVS_VER        "nvs_ver"   /* int  schema version sentinel             */
 

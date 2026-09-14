@@ -27,8 +27,9 @@ WiFi/BLE security tools, updates itself over WiFi or SD, and runs Berry scripts.
 ## Contents
 - **[[Releases]]** — what changed in every version
 - **[[Apps]]** — the full app roster (each app has its own page)
-- **Features:** [[Firmware Updates]] · [[SD Settings Backup]] · [[WiFi Time Sync]] ·
-  [[On-Device Screenshots]] · [[Settings Rail]] · [[Boot Splash]] · [[Script Runner]]
+- **Features:** [[Meow XP]] · [[Firmware Updates]] · [[SD Settings Backup]] ·
+  [[WiFi Time Sync]] · [[On-Device Screenshots]] · [[Settings Rail]] ·
+  [[Boot Splash]] · [[Script Runner]]
 - **Reference:** [[Flashing and Recovery]] · [[Building from Source]] ·
   [[Hardware and Gotchas]]
 

@@ -9,6 +9,7 @@
 #include "../../bsp/devices.h"
 #include "wifi_hunter.h"
 #include "meowgotchi_ui.h"
+#include "../../system/meow_xp.h"
 
 using namespace mooncake;
 
@@ -44,6 +45,9 @@ namespace MOONCAKE::APPS
         uint16_t _prevAct   = 0;
         bool     _blink     = false;
         bool     _dirty     = true;
+
+        /* Handshakes already banked into system XP (award the delta each frame). */
+        uint16_t _xpShakes  = 0;
 
         MeowGotchi::Mood _mood();
         template<typename LCD> void _renderFace(LCD& lcd);

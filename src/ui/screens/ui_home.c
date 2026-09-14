@@ -18,6 +18,8 @@ lv_obj_t * ui_unit2;
 lv_obj_t * ui_unit3;
 lv_obj_t * ui_unit4;
 lv_obj_t * ui_unit5;
+lv_obj_t * ui_xp_bar;
+lv_obj_t * ui_xp_lvl;
 
 /*
  * Home 十字导航布局：手势方向 = 动画方向（推送式）
@@ -179,6 +181,30 @@ void ui_home_screen_init(void)
     lv_obj_add_flag(ui_unit5, LV_OBJ_FLAG_ADV_HITTEST);     /// Flags
     lv_obj_clear_flag(ui_unit5, LV_OBJ_FLAG_SCROLLABLE);      /// Flags
 
+    /* ── Device XP: a thin progress bar along the bottom, to the right of the
+     *    navigation cross, with a "Lv N" label at its right end. Values are
+     *    refreshed each second by the launcher (updateStatusBar). ── */
+    ui_xp_bar = lv_bar_create(ui_home);
+    lv_obj_set_size(ui_xp_bar, 214, 6);
+    lv_obj_set_pos(ui_xp_bar, 44, 216);
+    lv_bar_set_range(ui_xp_bar, 0, 100);
+    lv_bar_set_value(ui_xp_bar, 0, LV_ANIM_OFF);
+    lv_obj_set_style_bg_color(ui_xp_bar, lv_color_hex(0x2A3618), LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_bg_opa(ui_xp_bar, LV_OPA_COVER, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_radius(ui_xp_bar, 3, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_border_color(ui_xp_bar, lv_color_hex(0x4A5E28), LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_border_width(ui_xp_bar, 1, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_border_opa(ui_xp_bar, LV_OPA_COVER, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_bg_color(ui_xp_bar, lv_color_hex(0xBDE600), LV_PART_INDICATOR | LV_STATE_DEFAULT);
+    lv_obj_set_style_bg_opa(ui_xp_bar, LV_OPA_COVER, LV_PART_INDICATOR | LV_STATE_DEFAULT);
+    lv_obj_set_style_radius(ui_xp_bar, 3, LV_PART_INDICATOR | LV_STATE_DEFAULT);
+
+    ui_xp_lvl = lv_label_create(ui_home);
+    lv_obj_set_pos(ui_xp_lvl, 266, 210);
+    lv_label_set_text(ui_xp_lvl, "Lv 1");
+    lv_obj_set_style_text_color(ui_xp_lvl, lv_color_hex(0xBDE600), LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_text_font(ui_xp_lvl, &ui_font_number_14, LV_PART_MAIN | LV_STATE_DEFAULT);
+
     lv_obj_add_event_cb(ui_home, ui_event_home, LV_EVENT_ALL, NULL);
 
 }
@@ -201,5 +227,7 @@ void ui_home_screen_destroy(void)
     ui_unit3 = NULL;
     ui_unit4 = NULL;
     ui_unit5 = NULL;
+    ui_xp_bar = NULL;
+    ui_xp_lvl = NULL;
 
 }

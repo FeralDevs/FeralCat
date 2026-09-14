@@ -7,6 +7,7 @@
 #include <SD_MMC.h>
 #include "../app_common/mk_tui.h"
 #include "../../system/berry_engine.h"
+#include "../../system/meow_xp.h"
 
 namespace MOONCAKE::APPS
 {
@@ -113,7 +114,7 @@ void App18::_runSelected()
     free(code);
 
     log_putc('\n');
-    if (rc == 0) log_sink("-- done --\n", 11);
+    if (rc == 0) { log_sink("-- done --\n", 11); meow_xp_add(MEOW_XP_SCRIPT); }
     else { log_sink("error: ", 7); log_sink(err, strlen(err)); log_putc('\n'); }
 }
 

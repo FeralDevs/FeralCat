@@ -6,6 +6,18 @@ See **[[Flashing and Recovery]]** for how to apply them.
 
 ---
 
+## v0.8.0 — Meow XP (leveling)
+- **[[Meow XP]]** — a device-wide experience/leveling system that rewards *using*
+  the MeowKit. XP trickles in from active/idle time, opening apps (big bonus the
+  first time you open each), running scripts, and capturing WiFi handshakes. Your
+  **level + XP bar** show on the **Home screen** (by the nav cross), with a green
+  **level-up banner**. Progress is saved to NVS and mirrored to `/system/xp.txt`
+  on SD (**survives reflashes**, portable between devices, checksum-guarded against
+  edits). **Backup XP / Restore XP** added to Settings ▸ Backup.
+- **Fix:** a reboot when flicking the joystick the **opposite direction mid-slide**
+  — a pre-existing crash from starting a new screen transition while one was still
+  animating. Navigation now ignores the extra press until the slide finishes.
+
 ## v0.7.0 — Script Runner (Berry)
 - **[[Script Runner]]** — run small **Berry** scripts from `/scripts/*.be` on the
   SD card, with `print()` output on screen. Device API for scripts: `led(r,g,b)`

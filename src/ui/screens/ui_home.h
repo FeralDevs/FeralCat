@@ -27,6 +27,8 @@ extern lv_obj_t * ui_unit2;
 extern lv_obj_t * ui_unit3;
 extern lv_obj_t * ui_unit4;
 extern lv_obj_t * ui_unit5;
+extern lv_obj_t * ui_xp_bar;   // device XP progress bar (bottom, by nav cross)
+extern lv_obj_t * ui_xp_lvl;   // "Lv N" label at the bar's right end
 // CUSTOM VARIABLES
 
 #ifdef __cplusplus

@@ -41,6 +41,7 @@ void App10::onOpen()
     _menuSel    = 0;
     _prevShakes = 0;
     _prevAct    = 0;
+    _xpShakes   = 0;                      /* hunter stats reset by begin() above */
     _lastAct    = millis();
     _dirty      = true;
 }
@@ -147,6 +148,14 @@ void App10::onRunning()
     _device->button.tick();
 
     _hunter.loop();
+
+    /* Award device-wide XP for any new handshakes (the +15 "find" bonus). The
+     * hunter's shake count only climbs, so the delta is safe even when frames
+     * or pages are skipped. */
+    {
+        uint16_t sh = _hunter.stats().shakes;
+        if (sh > _xpShakes) { meow_xp_add_handshake(sh - _xpShakes); _xpShakes = sh; }
+    }
 
     const uint32_t now = millis();
 

@@ -51,6 +51,16 @@ void _ui_slider_set_property(lv_obj_t * target, int id, int val)
 
 void _ui_screen_change(lv_obj_t ** target, lv_scr_load_anim_t fademode, int spd, int delay, void (*target_init)(void))
 {
+    /* Ignore a navigation while a screen-load animation is still running.
+     * Calling lv_scr_load_anim() again mid-transition takes an LVGL re-entrant
+     * force-load path that crashes (e.g. flicking the joystick the opposite way
+     * before the slide finishes). scr_to_load stays non-NULL for the whole
+     * animation and is cleared when it completes, so this just drops the extra
+     * press — the user can navigate again once the slide ends. */
+    lv_disp_t * d = lv_disp_get_default();
+    if(d && d->scr_to_load != NULL)
+        return;
+
     if(*target == NULL)
         target_init();
     lv_scr_load_anim(*target, fademode, spd, delay, false);

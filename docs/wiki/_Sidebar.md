@@ -21,6 +21,7 @@
 - [[PC Monitor]] · [[Air Mouse]] · [[VU Meter]] · [[Retro TV]] · [[Matrix Rain]] · [[Dino]]
 
 **Features**
+- [[Meow XP]]
 - [[Firmware Updates]]
 - [[SD Settings Backup]]
 - [[WiFi Time Sync]]

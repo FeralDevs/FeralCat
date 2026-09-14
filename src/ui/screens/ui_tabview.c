@@ -9,6 +9,7 @@
 #include "../../system/settings_bridge.h"
 #include "../../system/time_sync.h"
 #include "../../system/config_sd.h"
+#include "../../system/meow_xp.h"
 #include "../../system/persist.h"
 #include "../../bsp/config.h"          /* MEOWKIT_DEBUG_TAB */
 #if MEOWKIT_DEBUG_TAB
@@ -230,6 +231,42 @@ static void _restore_confirm(int mode, const char * what)
 static void tab_restore_all_cb(lv_event_t * e)      { if(lv_event_get_code(e)==LV_EVENT_CLICKED) _restore_confirm(0, "all settings + WiFi"); }
 static void tab_restore_wifi_cb(lv_event_t * e)     { if(lv_event_get_code(e)==LV_EVENT_CLICKED) _restore_confirm(1, "WiFi credentials"); }
 static void tab_restore_settings_cb(lv_event_t * e) { if(lv_event_get_code(e)==LV_EVENT_CLICKED) _restore_confirm(2, "settings (not WiFi)"); }
+
+/* ── XP backup/restore. XP already auto-syncs to SD and auto-restores on boot;
+ * these give manual parity with the WiFi/Settings entries. Restore is live —
+ * no reboot needed, since the level is read straight back into RAM. ── */
+static void tab_xp_backup_cb(lv_event_t * e)
+{
+    if(lv_event_get_code(e) != LV_EVENT_CLICKED) return;
+    meow_xp_backup();
+    _info_msgbox("XP Backup", meow_xp_has_backup()
+                 ? "XP saved to SD card." : "No SD card found.");
+}
+
+static void _xp_restore_msgbox_cb(lv_event_t * e)
+{
+    lv_obj_t * mbox = lv_event_get_current_target(e);
+    if (lv_msgbox_get_active_btn(mbox) == 0) {          /* "Restore" */
+        meow_xp_restore();
+        lv_msgbox_close(mbox);
+        char msg[48];
+        lv_snprintf(msg, sizeof(msg), "Restored - Level %d.", meow_xp_level());
+        _info_msgbox("XP Restore", msg);
+    } else {
+        lv_msgbox_close(mbox);
+    }
+}
+
+static void tab_xp_restore_cb(lv_event_t * e)
+{
+    if(lv_event_get_code(e) != LV_EVENT_CLICKED) return;
+    if (!meow_xp_has_backup()) { _info_msgbox("XP Restore", "No XP backup on the SD card."); return; }
+    static const char * btns[] = { "Restore", "Cancel", "" };
+    lv_obj_t * mbox = lv_msgbox_create(lv_scr_act(), "XP Restore",
+        "Load level & XP from the\nSD card copy?", btns, false);
+    _style_msgbox(mbox, TV_ORANGE);
+    lv_obj_add_event_cb(mbox, _xp_restore_msgbox_cb, LV_EVENT_VALUE_CHANGED, NULL);
+}
 
 static void _fr_msgbox_cb(lv_event_t * e)
 {
@@ -1024,6 +1061,21 @@ static void build_tab_backup(lv_obj_t * page)
     mk_lbl(c_rs, "Restore settings only", 0, 0, TV_TEXT, &ui_font_name_14);
     mk_lbl(c_rs, "everything but WiFi", 0, 30, TV_MUTED, &ui_font_name_14);
     mk_outline_btn(c_rs, CARD_INN - 90, 7, 90, 36, "Restore", 0xBEE700, tab_restore_settings_cb);
+    y += 66 + 8;
+
+    mk_lbl(sc, "MEOW XP  -  auto-syncs; buttons are manual", TAB_MARG, y, TV_MUTED, &ui_font_name_14);
+    y += 20;
+
+    lv_obj_t * c_xb = mk_card(sc, y, 66);
+    mk_lbl(c_xb, "Backup XP", 0, 0, TV_TEXT, &ui_font_name_14);
+    mk_lbl(c_xb, "level & lifetime stats to SD", 0, 30, TV_MUTED, &ui_font_name_14);
+    mk_outline_btn(c_xb, CARD_INN - 90, 7, 90, 36, "Save", 0xBEE700, tab_xp_backup_cb);
+    y += 66 + 8;
+
+    lv_obj_t * c_xr = mk_card(sc, y, 66);
+    mk_lbl(c_xr, "Restore XP", 0, 0, TV_TEXT, &ui_font_name_14);
+    mk_lbl(c_xr, "level from SD, no reboot", 0, 30, TV_MUTED, &ui_font_name_14);
+    mk_outline_btn(c_xr, CARD_INN - 90, 7, 90, 36, "Restore", 0xBEE700, tab_xp_restore_cb);
     y += 66 + 8;
 }
 

@@ -56,6 +56,7 @@
 #include "../../system/settings_bridge.h"  /* includes persist internally */
 #include "../../system/time_sync.h"         /* WiFi NTP + IP-timezone clock sync */
 #include "../../system/config_sd.h"         /* SD backup/restore of settings */
+#include "../../system/meow_xp.h"            /* device-wide XP / leveling */
 #include "../../splash/splash_screen.h"      /* boot splash (progress bar) */
 #include "../../system/power_mgmt.h"
 #include "../../system/mk_events.h"
@@ -125,6 +126,7 @@ static void _updateLed(DEVICES* dev, int pct, bool charging)
 static void _shutdown_led_anim(void)
 {
     settings_flush();
+    meow_xp_flush();     /* push the latest XP to SD before power-off */
     if (!s_shutdown_dev) return;
     s_led_cur = WS2812B_Class::OFF;   /* sync tracker so next boot starts clean */
     for (int i = 0; i < 4; i++) {
@@ -135,12 +137,48 @@ static void _shutdown_led_anim(void)
     }
 }
 
-/* Auto-dismiss timer: deletes the toast overlay after 4 s. */
-static void _bat_toast_dismiss(lv_timer_t * t)
+/* ── Toast overlay ──────────────────────────────────────────────────
+ * A single banner pinned to the TOP LAYER, not to a screen. The top layer
+ * persists across every screen change and is never a child of a screen caught
+ * in a load-animation, so a toast can safely outlive a navigation (the original
+ * per-screen toast could linger on an outgoing screen mid-transition). Only one
+ * toast exists at a time: a new one replaces the old, and the auto-dismiss timer
+ * clears the shared pointer so it never deletes a stale object. */
+static lv_obj_t *  s_toast       = nullptr;
+static lv_timer_t* s_toast_timer = nullptr;
+
+static void _toast_dismiss(lv_timer_t * t)
 {
-    lv_obj_t * toast = (lv_obj_t *)t->user_data;
-    if (toast && lv_obj_is_valid(toast)) lv_obj_del_async(toast);
-    /* timer is one-shot (repeat_count=1) — auto-deleted by LVGL after this call */
+    (void)t;
+    if (s_toast && lv_obj_is_valid(s_toast)) lv_obj_del(s_toast);
+    s_toast       = nullptr;
+    s_toast_timer = nullptr;   /* one-shot: LVGL frees the timer after this call */
+}
+
+static void _show_toast(const char * msg, uint32_t bg)
+{
+    /* Replace any toast already showing (and cancel its pending timer). */
+    if (s_toast_timer) { lv_timer_del(s_toast_timer); s_toast_timer = nullptr; }
+    if (s_toast && lv_obj_is_valid(s_toast)) lv_obj_del(s_toast);
+
+    s_toast = lv_obj_create(lv_layer_top());
+    lv_obj_set_size(s_toast, 286, 36);
+    lv_obj_set_pos(s_toast, 17, 6);
+    lv_obj_clear_flag(s_toast, LV_OBJ_FLAG_SCROLLABLE);
+    lv_obj_set_style_bg_color(s_toast,     lv_color_hex(bg),  LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_bg_opa(s_toast,       LV_OPA_COVER,      LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_border_width(s_toast, 0,                 LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_radius(s_toast,       8,                 LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_shadow_width(s_toast, 0,                 LV_PART_MAIN | LV_STATE_DEFAULT);
+
+    lv_obj_t * lbl = lv_label_create(s_toast);
+    lv_label_set_text(lbl, msg);
+    lv_obj_set_style_text_color(lbl, lv_color_hex(0xFFFFFF), 0);
+    lv_obj_set_style_text_font(lbl,  &ui_font_name_14,       0);
+    lv_obj_center(lbl);
+
+    s_toast_timer = lv_timer_create(_toast_dismiss, 4000, NULL);
+    lv_timer_set_repeat_count(s_toast_timer, 1);
 }
 
 /* Called once when battery first drops to POWER_WARN_BAT_PCT (while discharging).
@@ -149,31 +187,17 @@ static void _low_bat_warn_cb(int pct)
 {
     Serial.printf("[Launcher] Low battery: %d%% — please charge soon\n", pct);
     mk_event_push(MK_EVT_POWER_LOW);  /* notify any app that is listening */
-
-    lv_obj_t * scr = lv_scr_act();
-    if (!scr) return;
-
-    /* Toast banner — fixed at top of whatever screen is currently active */
-    lv_obj_t * toast = lv_obj_create(scr);
-    lv_obj_set_size(toast, 286, 36);
-    lv_obj_set_pos(toast, 17, 6);
-    lv_obj_clear_flag(toast, LV_OBJ_FLAG_SCROLLABLE);
-    lv_obj_set_style_bg_color(toast,     lv_color_hex(0xCC3300), LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_bg_opa(toast,       LV_OPA_COVER,           LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_border_width(toast, 0,                      LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_radius(toast,       8,                      LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_shadow_width(toast, 0,                      LV_PART_MAIN | LV_STATE_DEFAULT);
-
-    lv_obj_t * lbl = lv_label_create(toast);
     char msg[48];
     lv_snprintf(msg, sizeof(msg), "Low battery: %d%%  — please charge", pct);
-    lv_label_set_text(lbl, msg);
-    lv_obj_set_style_text_color(lbl, lv_color_hex(0xFFFFFF), 0);
-    lv_obj_set_style_text_font(lbl,  &ui_font_name_14,       0);
-    lv_obj_center(lbl);
+    _show_toast(msg, 0xCC3300);
+}
 
-    lv_timer_t * t = lv_timer_create(_bat_toast_dismiss, 4000, toast);
-    lv_timer_set_repeat_count(t, 1);
+/* Level-up banner. */
+static void _levelup_toast(int level)
+{
+    char msg[48];
+    lv_snprintf(msg, sizeof(msg), "Level %d - %s!", level, meow_xp_title(level));
+    _show_toast(msg, 0x1F8A3B);
 }
 
 Launcher::Launcher(DEVICES* device) : _device(device) {}
@@ -210,6 +234,10 @@ void Launcher::onCreate()
      * run after SD mount + NVS init (settings_init above), before WiFi/settings
      * are read below. */
     config_sd_restore();
+
+    /* XP / leveling — load level & lifetime stats (SD copy wins if present).
+     * After SD mount + NVS init; before the main loop starts earning. */
+    meow_xp_init();
 
 /* Expose RTC to generated C UI screens (clock / pickers) */
     ui_rtc_bridge_register(&_device->rtc);
@@ -268,6 +296,11 @@ void Launcher::onLoop()
     /* Flush dirty settings to NVS after debounce — ~0 cost when clean */
     settings_tick();
 
+    /* XP time-trickle: awake (earns fast) whenever the screen is on, whether in
+     * the GUI or an app; idle (slow) once the display has dimmed out. Also does
+     * the lazy ~once-a-minute SD flush internally. */
+    meow_xp_tick(!s_screen_off);
+
     if (!_app_running) {
         /* ── GUI state: LVGL active ── */
         /* Drive LED animation (BREATHING / BLINK) — must tick every loop. */
@@ -305,6 +338,11 @@ void Launcher::onLoop()
             lastSt = millis();
             power_tick();
             updateStatusBar();
+
+            /* Celebrate any level-up earned since the last tick (incl. ones that
+             * happened while an app was open — the toast fires on return to GUI). */
+            int lu = meow_xp_poll_levelup();
+            if (lu) _levelup_toast(lu);
             /* LED state: only active after boot grace; setEffect called on change only */
             _updateLed(_device, power_battery_pct(), power_is_charging());
 
@@ -534,6 +572,14 @@ void Launcher::updateStatusBar()
         setUnit(ui_unit5, pct >  80);
     }
 
+    /* ── Device XP: refresh the bottom progress bar + level label ── */
+    if (ui_xp_bar) lv_bar_set_value(ui_xp_bar, meow_xp_pct(), LV_ANIM_OFF);
+    if (ui_xp_lvl) {
+        char lv[12];
+        snprintf(lv, sizeof(lv), "Lv %d", meow_xp_level());
+        lv_label_set_text(ui_xp_lvl, lv);
+    }
+
     /* ── SD card hot-plug: detect changes and push events ── */
     {
         bool sd_present = (ui_sd_present() != 0);
@@ -568,6 +614,7 @@ void Launcher::handleAppSelection()
         if (allInfo[i].name == selId) {
             /* Enter app — LVGL screens stay in memory, just pause rendering */
             _running_app_id = i;
+            meow_xp_app_open(i);   /* +20 first-ever open, else +2 (rate-limited) */
             _mooncake.openApp(i);
             _app_running = true;
 

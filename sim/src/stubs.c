@@ -86,6 +86,24 @@ void config_sd_restore_all(void) {}
 void config_sd_restore_wifi(void) {}
 void config_sd_restore_settings(void) {}
 
+/* meow_xp (src/system/meow_xp.cpp — not built in the sim) */
+void        meow_xp_init(void) {}
+void        meow_xp_tick(bool awake) { (void)awake; }
+void        meow_xp_flush(void) {}
+void        meow_xp_add(uint32_t a) { (void)a; }
+void        meow_xp_add_handshake(uint32_t n) { (void)n; }
+void        meow_xp_app_open(int id) { (void)id; }
+uint32_t    meow_xp_total(void) { return 150; }
+int         meow_xp_level(void) { return 3; }
+uint8_t     meow_xp_pct(void) { return 45; }
+const char* meow_xp_title(int level) { (void)level; return "Packet Prowler"; }
+int         meow_xp_poll_levelup(void) { return 0; }
+uint32_t    meow_xp_stat_handshakes(void) { return 4; }
+uint32_t    meow_xp_stat_playtime(void) { return 3600; }
+void        meow_xp_backup(void) {}
+bool        meow_xp_has_backup(void) { return true; }
+void        meow_xp_restore(void) {}
+
 /* input_monitor (src/system/input_monitor.cpp — not built in the sim) */
 void input_monitor_begin(void) {}
 int  input_monitor_count(void) { return 10; }

@@ -21,6 +21,10 @@
 #include "lvgl.h"
 #include "ui.h"
 
+/* XP query prototypes (stubbed in stubs.c) — for the home-screen bar demo. */
+int     meow_xp_level(void);
+uint8_t meow_xp_pct(void);
+
 /* UI de l'app PC Monitor (src/app/app_05/asset) — déclarée à la main pour
  * éviter un conflit de noms entre les deux « ui.h » du projet. */
 void ui_PC_Monitor_screen_init(void);
@@ -288,6 +292,14 @@ int main(int argc, char **argv)
         }
         if (*sel->screen == NULL) sel->init();   /* création paresseuse */
         lv_disp_load_scr(*sel->screen);
+
+        /* Demo the device XP bar on the home screen (launcher drives it live). */
+        if (strcmp(sel->name, "home") == 0 && ui_xp_bar) {
+            char lv[12];
+            snprintf(lv, sizeof(lv), "Lv %d", meow_xp_level());
+            lv_bar_set_value(ui_xp_bar, meow_xp_pct(), LV_ANIM_OFF);
+            lv_label_set_text(ui_xp_lvl, lv);
+        }
     }
 
     if (shot_path) {
