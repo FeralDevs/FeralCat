@@ -6,6 +6,18 @@ See **[[Flashing and Recovery]]** for how to apply them.
 
 ---
 
+## v0.9.0 — MeowPlayer + Lua apps
+- **[[MeowPlayer]]** — a real MP3/WAV music player. Plays from `/mp3`, with
+  play/pause, seek, volume, a Songs list and a Speaker/Jack output switch. Native
+  player UI on a contributed audio engine.
+- **[[Lua Apps]]** — an **opt-in** installable-app platform: drop Lua apps in
+  `/apps` and they get launcher tiles, no rebuild needed. **Off by default** —
+  enable it in **Settings ▸ Features ▸ Lua apps** (reboots to apply). Ships with a
+  *Hello Meow* example.
+- New **Settings ▸ Features** tab for opt-in/experimental toggles.
+- **Credit:** the audio engine and the Lua runtime/app platform were contributed
+  by **[Caliun](https://github.com/Caliun)** ([PR #2](https://github.com/janud/MeowKitCustomFW/pull/2)). Thank you!
+
 ## v0.8.1 — Keyboard symbols
 - **On-screen keyboard now types every ASCII symbol.** The password/text keyboard's
   symbol mode went from 2 pages to **4** (cycle with the **◄►** key), adding the
