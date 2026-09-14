@@ -1,9 +1,9 @@
-name: Lua apps and MP3
+name: Firmware and native tests
 
 on:
   pull_request:
   push:
-    branches: [feature/lua-apps-mp3-player, feature/lua-apps-mp3-english, meowkit-mine]
+    branches: [main, feature/native-tracker-radar, feature/lua-apps-mp3-player, feature/lua-apps-mp3-english, meowkit-mine]
   workflow_dispatch:
 
 permissions:
@@ -25,7 +25,7 @@ jobs:
         run: cmake -S test/lua_apps -B build/native -DCMAKE_BUILD_TYPE=Debug
       - name: Build host tests
         run: cmake --build build/native --config Debug --parallel 2
-      - name: Run all 13 suites
+      - name: Run native suites including tracker radar
         run: ctest --test-dir build/native -C Debug --output-on-failure
       - name: Retain test logs and actual LVGL renders
         if: always()
@@ -54,7 +54,7 @@ jobs:
       - name: Retain firmware for device testing
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
-          name: firmware-v0.8.1-lua.2
+          name: esp32s3-firmware
           path: |
             .pio/build/esp32s3box/firmware.bin
             .pio/build/esp32s3box/firmware.elf

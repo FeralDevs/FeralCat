@@ -77,6 +77,132 @@ static Scene SCENES[] = {
 };
 static const int SCENE_COUNT = (int)(sizeof(SCENES) / sizeof(SCENES[0]));
 
+static const char* TRACKER_SCENES[] = {
+    "tracker_list", "tracker_alert", "tracker_list_selected", "tracker_list_page",
+    "tracker_list_empty", "tracker_radar_live", "tracker_radar_approach",
+    "tracker_radar_weak", "tracker_radar_waiting", "tracker_radar_lost",
+    "tracker_radar_paused", "tracker_radar_starting", "tracker_radar_error",
+    "tracker_radar_no_target", "tracker_radar_max", "tracker_radar_sampling",
+    "tracker_list_boundary", "tracker_radar_boundary",
+    "tracker_list_cached", "tracker_radar_cached"
+};
+
+/* Deterministic synthetic measurements; calls the device's shared UI code. */
+static bool draw_tracker_scene(lgfx::LGFX_Sprite& canvas, const char* scene)
+{
+    if (!scene || strncmp(scene, "tracker_", 8)) return false;
+    constexpr uint32_t now = 200000;
+    TrackerEntry entries[9]{};
+    for (int i = 0; i < 9; ++i) {
+        const uint8_t mac[6] = {0x4c, 0x00, 0x12, 0xaa, 0xbb, uint8_t(0xc0 + i)};
+        memcpy(entries[i].mac, mac, sizeof(mac));
+        entries[i].type = uint8_t(i % 3);
+        entries[i].rssi = int8_t(-46 - i * 5);
+        entries[i].filtered_rssi = entries[i].rssi;
+        entries[i].count = uint16_t(220 - i * 20);
+        entries[i].first_ms = now - 30000 + i * 1000;
+        entries[i].last_ms = now - 200 - i * 300;
+        entries[i].id = uint32_t(i + 1);
+        entries[i].sequence = entries[i].count;
+        entries[i].addr_type = 1;
+        entries[i].scan_fresh = true;
+    }
+
+    if (!strcmp(scene, "tracker_list_boundary") || !strcmp(scene, "tracker_radar_boundary")) {
+        entries[0].id = UINT32_MAX;
+        entries[0].type = TRK_SAMSUNG;
+        entries[0].rssi = -127;
+        entries[0].filtered_rssi = -127;
+    }
+
+    if (!strncmp(scene, "tracker_radar_", 14)) {
+        TrackerUI::RadarView v;
+        v.target = entries[0];
+        v.running = true;
+        v.hasTarget = true;
+        v.now_ms = now;
+        v.state = TrackerUI::SignalState::Live;
+        v.strength = 77;
+        v.trend = 0;
+        v.trend_ready = true;
+        v.age_ms = 200;
+        v.history_count = 32;
+        for (int i = 0; i < 32; ++i) v.history[i] = int16_t(-47 + i % 3);
+        if (!strcmp(scene, "tracker_radar_boundary")) {
+            v.strength = 0;
+            for (int i = 0; i < 32; ++i) v.history[i] = -127;
+        } else if (!strcmp(scene, "tracker_radar_cached")) {
+            // Recent timestamp and cached Live state must not relight a meter
+            // after pause/resume without an advertisement from this scan.
+            v.target.scan_fresh = false;
+        } else if (!strcmp(scene, "tracker_radar_max")) {
+            v.target.rssi = -35; v.target.filtered_rssi = -35;
+            v.strength = 100;
+            for (int i = 0; i < 32; ++i) v.history[i] = -35;
+        } else if (!strcmp(scene, "tracker_radar_sampling")) {
+            v.trend_ready = false;
+            v.history_count = 1;
+        } else if (!strcmp(scene, "tracker_radar_approach")) {
+            v.target.rssi = -45; v.target.filtered_rssi = -48;
+            v.strength = 79; v.trend = 8;
+            for (int i = 0; i < 32; ++i) v.history[i] = int16_t(-80 + i);
+        } else if (!strcmp(scene, "tracker_radar_weak")) {
+            v.target.rssi = -90; v.target.filtered_rssi = -88;
+            v.strength = 12; v.trend = -7;
+            for (int i = 0; i < 32; ++i) v.history[i] = int16_t(-70 - i / 2);
+        } else if (!strcmp(scene, "tracker_radar_waiting")) {
+            v.state = TrackerUI::SignalState::Waiting;
+            v.age_ms = 5500;
+        } else if (!strcmp(scene, "tracker_radar_lost")) {
+            v.state = TrackerUI::SignalState::Lost;
+            v.age_ms = 34000;
+        } else if (!strcmp(scene, "tracker_radar_paused")) {
+            v.running = false;
+            v.target.scan_fresh = false;
+            v.state = TrackerUI::SignalState::Paused;
+            v.age_ms = 6000;
+        } else if (!strcmp(scene, "tracker_radar_starting")) {
+            v.target.scan_fresh = false;
+            v.state = TrackerUI::SignalState::Waiting;
+            v.starting = true;
+            v.age_ms = 1500;
+        } else if (!strcmp(scene, "tracker_radar_error")) {
+            v.running = false;
+            v.target.scan_fresh = false;
+            v.state = TrackerUI::SignalState::Waiting;
+            v.error = "BLE scan start failed";
+            v.age_ms = 7000;
+        } else if (!strcmp(scene, "tracker_radar_no_target")) {
+            v.hasTarget = false;
+            v.target.scan_fresh = false;
+            v.state = TrackerUI::SignalState::Lost;
+            v.age_ms = 310000;
+        }
+        v.target.last_ms = now - v.age_ms;
+        TrackerUI::drawRadar(canvas, v);
+    } else {
+        TrackerUI::View v;
+        v.nearby = 9;
+        v.persistent = !strcmp(scene, "tracker_alert") ? 2 : 0;
+        v.alert = v.persistent > 0;
+        if (v.persistent) {
+            entries[0].first_ms = now - 140000;
+            entries[1].first_ms = now - 100000;
+        }
+        v.running = true;
+        v.now_ms = now;
+        v.selected = !strcmp(scene, "tracker_list_selected") ? 2 : 0;
+        if (!strcmp(scene, "tracker_list_page")) { v.selected = 7; v.first = 4; }
+        if (!strcmp(scene, "tracker_list_cached")) {
+            for (auto& entry : entries) entry.scan_fresh = false;
+        }
+        const int count = !strcmp(scene, "tracker_list_empty") ? 0 : 9;
+        if (!count) v.nearby = 0;
+        TrackerUI::drawList(canvas, v, entries, count);
+    }
+    return true;
+}
+
 int main(int argc, char** argv)
 {
     const char* out   = "tui.bmp";
@@ -86,6 +212,7 @@ int main(int argc, char** argv)
         else if (!strcmp(argv[i], "--out") && i + 1 < argc) out = argv[++i];
         else if (!strcmp(argv[i], "--list")) {
             for (int k = 0; k < SCENE_COUNT; k++) printf("%s\n", SCENES[k].name);
+            for (const char* name : TRACKER_SCENES) printf("%s\n", name);
             return 0;
         } else out = argv[i];   /* positional output path */
     }
@@ -107,7 +234,9 @@ int main(int argc, char** argv)
     };
     const int wn = 6;
 
-    if (scene && !strcmp(scene, "deauth_log")) {
+    if (draw_tracker_scene(canvas, scene)) {
+        // Rendered above using the same TrackerUI templates as the device.
+    } else if (scene && !strcmp(scene, "deauth_log")) {
         static AttackerEntry atk[] = {
             { {0x3c,0x84,0x6a,0x11,0x22,0x33}, {0xff,0xff,0xff,0xff,0xff,0xff}, 84, -41, 6 },
             { {0xf4,0xca,0xe5,0xaa,0xbb,0xcc}, {0x12,0x34,0x56,0x78,0x9a,0xbc}, 37, -63, 11 },
@@ -183,18 +312,6 @@ int main(int argc, char** argv)
         v.devices = 4; v.running = true;
         v.hist = hist; v.histLen = ProbeMonitor::HIST;
         ProbeUI::drawList(canvas, v, dev, 4);
-    } else if (scene && (!strcmp(scene, "tracker_list") || !strcmp(scene, "tracker_alert"))) {
-        bool alert = !strcmp(scene, "tracker_alert");
-        uint32_t now = 200000;
-        static TrackerEntry trk[] = {
-            { {0x4c,0x00,0x12,0xaa,0xbb,0xcc}, TRK_APPLE,   -46, 220, now - 140000, now - 2000 },
-            { {0xfe,0xed,0x00,0x11,0x22,0x33}, TRK_TILE,    -68,  40, now - 30000,  now - 5000 },
-            { {0xfd,0x5a,0x00,0x44,0x55,0x66}, TRK_SAMSUNG, -80,  12, now - 12000,  now - 8000 },
-        };
-        TrackerUI::View v;
-        v.nearby = 3; v.persistent = alert ? 1 : 0; v.alert = alert;
-        v.running = true; v.now_ms = now;
-        TrackerUI::drawList(canvas, v, trk, 3);
     } else if (scene && !strcmp(scene, "splash")) {
         canvas.fillScreen(0x0000);
         uint32_t lime  = canvas.color888(0xC4, 0xEE, 0x1F);

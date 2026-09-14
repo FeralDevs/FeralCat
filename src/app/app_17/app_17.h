@@ -1,7 +1,6 @@
 /**
  * @file  app_17.h
- * @brief App17 — Tracker Detector: scan BLE for AirTag/Tile/SmartTag item
- *        trackers and flag any that keep following you.
+ * @brief Native tracker candidate list and selected-target proximity finder.
  */
 #pragma once
 #include <mooncake.h>
@@ -9,6 +8,7 @@
 #include "../../bsp/devices.h"
 #include "tracker_monitor.h"
 #include "tracker_ui.h"
+#include "tracker_finder.h"
 
 using namespace mooncake;
 
@@ -31,8 +31,15 @@ namespace MOONCAKE::APPS
         uint32_t _lastDraw = 0;
         bool     _dirty    = true;
         TrackerEntry _trkbuf[TrackerMonitor::MAXTRK];
+        int _trackerCount = 0;
+        TrackerSelection _selection;
+        TrackerFinder _finder;
+        bool _radar = false;
+        bool _inputReady = false;
 
         template<typename LCD> void _render(LCD& lcd);
         void _present();
+        void _refresh();
+        void _toggleScan();
     };
 }

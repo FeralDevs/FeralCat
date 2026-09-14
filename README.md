@@ -1,24 +1,25 @@
 # MeowKit‑S3 Custom Firmware — "MeowGotchi" build
 
-**v0.8.1-lua.2** adds separately installable Lua apps with direct launcher tiles
-and a native SD audio service on top of v0.8.1. The [MP3 Player](docs/MP3-PLAYER.md)
-is a separate app package with large touch controls, M3U playlists, JPEG covers
-and four equalizer presets. Copy apps from `sd files/apps` onto the SD card
-after installing a firmware built from this branch.
+**Native TrackerDetect proximity radar** builds on v0.9.0: select a detected
+candidate, press **A**, and compare filtered signal strength, recent samples and
+stronger/weaker trends while searching. Selection stays with the same observed
+address; stale readings are hidden after signal loss or pause. The radar shows
+relative signal strength, **not distance or direction**. No Lua app is required.
 
-MP3 Player **1.1.1**, Hello Meow **1.0.1**, and the **App manager** use English
-menus, controls, status messages, and errors.
+See [controls and search workflow](docs/wiki/Tracker-Detector.md) and
+[implementation, tests and device validation](docs/TRACKER-RADAR.md).
+Build this branch or use its CI firmware artifact to test the radar; the
+existing `releases/` images are the upstream v0.9.0 baseline without this change.
 
-See [app installation and API](docs/LUA-APPS.md), [build and tests](docs/LUA-BUILD.md)
-and [implementation and verification](docs/MP3-PLAYER-1.1.md). Existing `releases/`
-binaries are the unchanged upstream v0.8.1 images and do **not** include Lua apps.
-The upstream experimental native MeowPlayer remains disabled by default.
+v0.9.0 also includes native **MeowPlayer** and optional SD-installed Lua apps.
+Lua is disabled by default; enable it under **Settings → Features → Lua apps**
+and reboot. [Lua installation](docs/wiki/Lua-Apps.md) · [MeowPlayer](docs/wiki/MeowPlayer.md).
 
-| Lua MP3 player | Large volume controls |
+| Selected tracker candidate | Native proximity radar |
 | --- | --- |
-| ![MP3 player](docs/images/lua-mp3-player.png) | ![Volume controls](docs/images/lua-mp3-volume.png) |
+| ![Candidate selection](docs/screenshots/tracker-detector.png) | ![Signal finder](docs/screenshots/tracker-radar.png) |
 
-The previews above use the production LVGL renderer with synthetic track data.
+These previews use the production TrackerDetect renderer with synthetic BLE data.
 
 Custom, community firmware for the **MeowKit‑S3** (ESP32‑S3) pocket multi‑tool.
 It fixes the boot bugs that stop the open‑source firmware from running on retail
@@ -48,7 +49,7 @@ app slots with working WiFi/BLE security tools.
 ## What this is
 
 Based on the open‑source [`mingolucky/meowkit-s3-firmware`](https://github.com/mingolucky/meowkit-s3-firmware).
-Built entirely in Docker (nothing installed on the host). Full technical guide:
+Build with PlatformIO on Windows or Linux. Full technical guide:
 **[`docs/CUSTOM-FIRMWARE.md`](docs/CUSTOM-FIRMWARE.md)**.
 
 ## Screenshots
@@ -63,7 +64,7 @@ Built entirely in Docker (nothing installed on the host). Full technical guide:
 | **Rogue Radar** — Beacon Flood / Karma <br> <img src="docs/screenshots/rogue-beacon-flood.png" width="280"> | **Firmware** — SD update / USB download <br> <img src="docs/screenshots/firmware-menu.png" width="280"> |
 | **SD firmware update** (no computer) <br> <img src="docs/screenshots/sd-update.png" width="280"> | **Settings ▸ About** (the fixed info button) <br> <img src="docs/screenshots/about-panel.png" width="280"> |
 | **Update over WiFi** — checks GitHub for a newer release <br> <img src="docs/screenshots/wifi-update.png" width="280"> | **…then downloads it to the SD card** <br> <img src="docs/screenshots/wifi-download.png" width="280"> |
-| **Probe Sniffer** — nearby devices + the SSIDs they leak <br> <img src="docs/screenshots/probe-sniffer.png" width="280"> | **Tracker Detector** — AirTag/Tile/SmartTag "FOLLOWED!" <br> <img src="docs/screenshots/tracker-detector.png" width="280"> |
+| **Probe Sniffer** — nearby devices + the SSIDs they leak <br> <img src="docs/screenshots/probe-sniffer.png" width="280"> | **Tracker Detector** — select a candidate and search by signal <br> <img src="docs/screenshots/tracker-radar.png" width="280"> |
 | **Firmware update in Settings** — SD / GitHub / USB <br> <img src="docs/screenshots/settings-firmware.png" width="280"> | **Settings ▸ Backup** — backup / restore, scrollable rail <br> <img src="docs/screenshots/settings-backup.png" width="280"> |
 | **Script Runner** — run Berry `.be` scripts from the SD <br> <img src="docs/screenshots/script-runner.png" width="280"> | |
 
@@ -98,7 +99,8 @@ Full guide: [`docs/SD-UPDATE.md`](docs/SD-UPDATE.md).
 
 ## Building it yourself
 
-Docker only — see [`docs/CUSTOM-FIRMWARE.md` §3](docs/CUSTOM-FIRMWARE.md).
+See [build and native-test instructions](docs/LUA-BUILD.md) and
+[tracker tests and simulator](docs/TRACKER-RADAR.md).
 
 ---
 
@@ -205,7 +207,7 @@ Docker only — see [`docs/CUSTOM-FIRMWARE.md` §3](docs/CUSTOM-FIRMWARE.md).
 | 14 | **BLE Spam Detector** | Passive BLE scan for Apple/Google/MS/Samsung spam‑popup floods; alerts on distinct advertiser MACs/sec, per‑vector breakdown. |
 | 15 | **Rogue Radar** | **Evil‑Twin** scan (open+secure same SSID) + **Beacon Flood / Karma** monitor (distinct APs/sec). |
 | 16 | **Probe Sniffer** | Passive 802.11 probe‑request log: which devices are nearby and the SSIDs they leak (MAC, signal, requested network); list ↔ rate graph. |
-| 17 | **Tracker Detector** | Passive BLE scan for **AirTag/Find My, Tile, Samsung SmartTag**; lists each with proximity and how long it's been near you, alerting when one persists (`FOLLOWED!`). |
+| 17 | **Tracker Detector** | Passive Find My / Tile / Samsung candidate scan, paginated selection and a target-locked proximity radar with filtered RSSI, trend, sample history and signal-loss states. |
 
 Controls everywhere: **A** = action, **short B** = toggle/secondary,
 **hold B** = exit. In MeowGotchi and the detectors, **hold Up+Down** saves a

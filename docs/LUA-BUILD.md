@@ -1,10 +1,9 @@
-# Building and testing Lua apps and the MP3 player
+# Building firmware and running native tests
 
-This extension identifies itself as `v0.8.1-lua.2` and builds on the upstream
-`meowkit-mine` branch at commit `dc63a6cdf9f15a1ef5f92d0a303cbe6af9fdf43e`.
-The separately installed MP3 Player app is version 1.1.1, and the Hello Meow
-example is version 1.0.1. All commands below run from the root of a checkout
-containing this extension.
+These instructions apply to the v0.9.0 firmware and native TrackerDetect radar.
+MeowPlayer is native; upstream removed the redundant Lua MP3 Player package.
+The Hello Meow example remains separately installable. All commands below run
+from the root of the checkout being tested.
 
 ## Prepare a checkout
 
@@ -100,14 +99,13 @@ For another compiler, select it at configuration time with
 new build directory. For a multi-configuration generator instead of Ninja,
 pass `--config Debug` to the build and `-C Debug` to CTest.
 
-The entry point `test/lua_apps/CMakeLists.txt` includes **13 suites**:
+The entry point `test/lua_apps/CMakeLists.txt` includes **15 applicable suites**:
 
 | Suite | Production code and behavior covered |
 | --- | --- |
 | `runtime` | Real Lua VM, API bindings, execution/memory limits, errors, lifecycle, example app |
 | `manifest` | Package schema, capabilities, UTF-8 and size/path limits |
 | `catalog` | SD app discovery, revalidation, ordering, removal, short reads and handle cleanup |
-| `player_app` | Shipped Lua player, asynchronous status, 512-track queues, M3U duplicates, shuffle/repeat, EQ, busy/error recovery and rapid volume input |
 | `media_catalog` | MP3/M3U discovery, bounded paths, allocation/read failures and cancellation |
 | `mp3_decode` | Vendored Helix decoder with synthetic audio, output bounds and bounded seek synchronization |
 | `audio_dsp` | Filter initialization and source reset using the production DSP kernel |
@@ -117,9 +115,13 @@ The entry point `test/lua_apps/CMakeLists.txt` includes **13 suites**:
 | `audio_commands` | Bounded command coalescing and ordering |
 | `cover` | JPEG/APIC parsing, decoder regression cases, limits and cleanup |
 | `player_ui` | Production LVGL player/menu renderer, 500 rapid pointer gestures, stable action targets and heap cleanup |
+| `tracker_store` | Bounded candidate storage, stable selection, expiry and scan freshness |
+| `tracker_monitor` | Production BLE scan lifecycle with simulated GAP callbacks, errors and pause/resume |
+| `tracker_finder` | Proximity filtering, sample history, trend, signal loss and pause handling |
 
-The Lua player test includes 2.5 hours of simulated playback and repeated
-start/stop cycles with allocation accounting. SD, PSRAM, codec-register and
+The legacy `player_app` suite is additionally registered if the optional
+`sd files/apps/mp3_player` package is present. v0.9.0 does not ship that package;
+an existing but incomplete package still fails its test. SD, PSRAM, codec-register and
 audio-service adapters are explicitly simulated where hardware is required.
 The LVGL test renders a real 320x240 framebuffer without SDL or a display
 server. It writes `player-preview.ppm` and `volume-preview.ppm` under

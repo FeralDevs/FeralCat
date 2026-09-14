@@ -213,9 +213,10 @@ screens are deleted only after the previous LVGL screen is active again.
 
 ## Testing and future services
 
-The native configuration under `test/lua_apps` includes 13 test suites covering
-the runtime, package and media catalogs, MP3 app, audio components, cover art,
-and player UI. These are PC tests; they do not establish a hardware pass. See
+The native configuration under `test/lua_apps` includes 15 applicable test suites covering
+the runtime, package and media catalogs, audio components, cover art,
+player UI, and native TrackerDetect storage, BLE scan lifecycle and proximity
+filtering. These are PC tests; they do not establish a hardware pass. See
 [LUA-BUILD.md](LUA-BUILD.md) for reproducible build and test instructions and
 [MP3-PLAYER-1.1.md](MP3-PLAYER-1.1.md) for the player validation scope.
 

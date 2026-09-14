@@ -16,7 +16,7 @@ joystick Up+Down** for an [[On-Device Screenshots|on-device screenshot]].
 | [[Deauth Detector]] | 🐱 | Deauth/disassoc monitor + Attacker Log (MAC + RSSI) |
 | [[Probe Sniffer]] | 🐱 | Nearby devices + the SSIDs they leak |
 | [[Rogue Radar]] | 🐱 | Evil-Twin scan + Beacon-Flood / Karma monitor |
-| [[Tracker Detector]] | 🐱 | AirTag / Tile / SmartTag anti-stalking |
+| [[Tracker Detector]] | 🐱 | BLE tracker candidates with selected-target proximity radar |
 | [[BLE Spam Detector]] | 🐱 | Apple/Google/MS/Samsung BLE popup floods |
 | [[BLE Spam]] | 📦 | Send BLE advertisement bursts (educational) |
 | [[Bad USB]] | 📦 | USB-HID keystroke injection (Ducky-style) |
