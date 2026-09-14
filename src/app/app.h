@@ -34,6 +34,9 @@
 #include "app_16/app_16.h"      /* Probe Sniffer     */
 #include "app_17/app_17.h"      /* Tracker Detector  */
 #include "app_18/app_18.h"      /* Script Runner     */
+#if MEOWKIT_ENABLE_PLAYER
+#include "app_19/app_19.h"      /* MeowPlayer (WIP)  */
+#endif
 
 #include <mooncake.h>
 #include <memory>
@@ -67,6 +70,9 @@ inline void registerAllApps(mooncake::Mooncake& mc, DEVICES* dev)
     mc.installApp(std::make_unique<MOONCAKE::APPS::App16>(dev));     /* app_16  Probe Sniffer */
     mc.installApp(std::make_unique<MOONCAKE::APPS::App17>(dev));     /* app_17  Tracker Det. */
     mc.installApp(std::make_unique<MOONCAKE::APPS::App18>(dev));     /* app_18  Script Runner */
+#if MEOWKIT_ENABLE_PLAYER
+    mc.installApp(std::make_unique<MOONCAKE::APPS::App19>(dev));     /* app_19  MeowPlayer    */
+#endif
 }
 
 /**
@@ -94,6 +100,9 @@ static const void* const APP_BUILTIN_ICONS[] = {
     &ui_img_wifispam_png,    /* app_16  Probe Sniffer */
     &ui_img_ble_spam_png,    /* app_17  Tracker Detector */
     &ui_img_webserial_png,   /* app_18  Script Runner */
+#if MEOWKIT_ENABLE_PLAYER
+    &ui_img_vu_meter_png,    /* app_19  MeowPlayer (audio) */
+#endif
 };
 static const int APP_BUILTIN_ICONS_COUNT =
     (int)(sizeof(APP_BUILTIN_ICONS) / sizeof(APP_BUILTIN_ICONS[0]));

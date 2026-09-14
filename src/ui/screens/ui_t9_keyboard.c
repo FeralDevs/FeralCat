@@ -73,10 +73,15 @@ static const char * t9_lower[9][5] = {
 
 static const char * number_map[9]  = {"1","2","3","4","5","6","7","8","9"};
 
-/* Symbol page 0 — common password / special chars (ASCII only) */
-static const char * sym_page0[9]   = {".", "!", "@", "#", "$", "%", "&", "*", "?"};
-/* Symbol page 1 — extended */
-static const char * sym_page1[9]   = {"-", "_", "(", ")", "+", "=", "/", "\"", "'"};
+/* Symbol pages — all ASCII punctuation across 4 pages (◄► cycles them).
+ * Empty "" slots on the last page are drawn blank and insert nothing. */
+#define SYM_PAGES 4
+static const char * sym_pages[SYM_PAGES][9] = {
+    {".", "!", "@", "#", "$", "%", "&", "*", "?"},
+    {"-", "_", "(", ")", "+", "=", "/", "\"", "'"},
+    {";", ":", ",", "<", ">", "[", "]", "{", "}"},
+    {"~", "^", "`", "\\", "|", "",  "",  "",  ""},
+};
 
 /* ═══════════════════════════════════════════════════════════════
  *  Internal helpers
@@ -130,7 +135,7 @@ static void _refresh_labels(void)
         if(s_space_bar) lv_obj_add_flag(s_space_bar, LV_OBJ_FLAG_HIDDEN);
 
     } else { /* MODE_SYMBOL */
-        const char ** sym = (s_sym_page == 0) ? sym_page0 : sym_page1;
+        const char ** sym = sym_pages[s_sym_page];
         for(int i = 0; i < 9; i++) lv_label_set_text(s_key_labels[i], sym[i]);
         /* Restore space-key background */
         lv_obj_set_style_img_recolor_opa(ui_matrix_9, LV_OPA_TRANSP, 0);
@@ -336,8 +341,8 @@ static void _key_cb(lv_event_t * e)
     if(s_mode == MODE_NUMBER) {
         lv_textarea_add_text(ui_input_textarea, number_map[idx]);
     } else if(s_mode == MODE_SYMBOL) {
-        const char ** sym = (s_sym_page == 0) ? sym_page0 : sym_page1;
-        lv_textarea_add_text(ui_input_textarea, sym[idx]);
+        const char ** sym = sym_pages[s_sym_page];
+        if(sym[idx] && sym[idx][0]) lv_textarea_add_text(ui_input_textarea, sym[idx]);
     } else {
         /* T9 multi-tap */
         if(idx == s_last_key) {
@@ -372,7 +377,7 @@ static void _ctrl2_cb(lv_event_t * e)
     if(s_mode == MODE_NUMBER) {
         if(ui_input_textarea) lv_textarea_add_text(ui_input_textarea, "0");
     } else if(s_mode == MODE_SYMBOL) {
-        s_sym_page = (s_sym_page == 0) ? 1 : 0;
+        s_sym_page = (s_sym_page + 1) % SYM_PAGES;
         _refresh_labels();
     } else {
         s_upper = !s_upper;

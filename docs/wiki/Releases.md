@@ -6,6 +6,12 @@ See **[[Flashing and Recovery]]** for how to apply them.
 
 ---
 
+## v0.8.1 — Keyboard symbols
+- **On-screen keyboard now types every ASCII symbol.** The password/text keyboard's
+  symbol mode went from 2 pages to **4** (cycle with the **◄►** key), adding the
+  previously-missing `;` `:` `,` `<` `>` `[` `]` `{` `}` `~` `^` `` ` `` `\` `|`.
+  Fixes not being able to enter WiFi passwords that contain those characters.
+
 ## v0.8.0 — Meow XP (leveling)
 - **[[Meow XP]]** — a device-wide experience/leveling system that rewards *using*
   the MeowKit. XP trickles in from active/idle time, opening apps (big bonus the

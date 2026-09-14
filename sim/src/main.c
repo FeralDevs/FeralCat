@@ -244,6 +244,17 @@ int main(int argc, char **argv)
         screen_name = NULL;
     }
 
+    /* t9p0..t9p3: T9 keyboard forced into SYMBOL mode at page N (0-3). */
+    if (screen_name && strncmp(screen_name, "t9p", 3) == 0) {
+        int page = screen_name[3] - '0';
+        if (ui_t9_keyboard == NULL) ui_t9_keyboard_screen_init();
+        lv_disp_load_scr(ui_t9_keyboard);
+        lv_event_send(ui_switch, LV_EVENT_CLICKED, NULL);   /* Letter -> Number */
+        lv_event_send(ui_switch, LV_EVENT_CLICKED, NULL);   /* Number -> Symbol */
+        for (int i = 0; i < page; i++) lv_event_send(ui_control_2, LV_EVENT_CLICKED, NULL);
+        screen_name = NULL;
+    }
+
     /* Apps menu populated with 17 entries to verify the dynamic grid + scroll. */
     if (screen_name && strcmp(screen_name, "apps17") == 0) {
         static AppMenuEntry_t e[17];

@@ -20,7 +20,7 @@ extern lv_obj_t * ui_left;
 /* App tiles + labels are created dynamically from the loaded entry list
  * (see ui_apps_menu_load_apps); they are no longer individual globals. */
 /* ── Dynamic app loading API ─────────────────────────────────────── */
-#define APPS_MENU_MAX_APPS  18
+#define APPS_MENU_MAX_APPS  19
 
 typedef struct {
     char         id[32];

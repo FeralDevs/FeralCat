@@ -15,6 +15,7 @@
 
 #include "mk_tui.h"
 #include "app_10/meowgotchi_ui.h"
+#include "app_19/meowplayer_ui.h"
 #include "app_11/wifi_analyzer_ui.h"
 #include "app_13/deauth_monitor.h"
 #include "app_13/deauth_ui.h"
@@ -246,6 +247,24 @@ int main(int argc, char** argv)
             y += 16;
         }
         MK_TUI::drawFooter(canvas, "Back", "Exit");
+    } else if (scene && (!strcmp(scene, "player") || !strcmp(scene, "player_paused"))) {
+        MeowPlayer::View v;
+        v.ampOn = true;
+        v.playing = !!strcmp(scene, "player_paused");
+        v.title = "Koi no Yokan.mp3";
+        v.posSec = 83; v.durSec = 224;
+        v.vol = 8; v.volMax = 12;
+        MeowPlayer::drawNowPlaying(canvas, v);
+    } else if (scene && !strcmp(scene, "player_menu")) {
+        static const char* items[] = { "Songs (3)", "Output: Speaker" };
+        MeowPlayer::MenuView m;
+        m.title = "Menu"; m.items = items; m.count = 2; m.sel = 0; m.top = 0;
+        MeowPlayer::drawMenu(canvas, m);
+    } else if (scene && !strcmp(scene, "player_songs")) {
+        static const char* items[] = { "Koi no Yokan.mp3", "Nyan Cat.mp3", "Cafe Lofi.mp3" };
+        MeowPlayer::MenuView m;
+        m.title = "Songs"; m.items = items; m.count = 3; m.sel = 1; m.top = 0;
+        MeowPlayer::drawMenu(canvas, m);
     } else if (scene && !strcmp(scene, "firmware_menu")) {
         MK_TUI::clearScreen(canvas);
         MK_TUI::drawHeader(canvas, "Firmware");
