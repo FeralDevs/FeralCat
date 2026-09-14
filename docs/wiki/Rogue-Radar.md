@@ -1,5 +1,7 @@
 # Rogue Radar
 
+> 🐱 **Custom** — built for this fork (not in the original firmware).
+
 Two rogue-AP detectors in one app.
 
 ## Controls

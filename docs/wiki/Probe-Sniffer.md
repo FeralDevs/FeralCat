@@ -1,5 +1,7 @@
 # Probe Sniffer
 
+> 🐱 **Custom** — built for this fork (not in the original firmware).
+
 Passively logs the **802.11 probe-request** frames that nearby phones and laptops
 broadcast while searching for known networks — showing which devices are around
 and the network names they leak.

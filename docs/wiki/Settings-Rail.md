@@ -1,5 +1,7 @@
 # Scrollable Settings Rail
 
+> 🐱 **Custom** — built for this fork (not in the original firmware).
+
 The detailed settings (the **gear** button) use a **scrollable side rail** of
 tabs instead of LVGL's built-in tab bar, which can't scroll and just shrinks the
 tabs as you add more.

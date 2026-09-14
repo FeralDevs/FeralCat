@@ -1,5 +1,7 @@
 # Bad USB
 
+> 📦 **From the original MeowKit firmware.**
+
 Turns the device into a **USB HID keyboard** that types a scripted sequence of
 keystrokes into a host computer (Rubber-Ducky style), using the ESP32-S3 native
 USB. Scripts live on the SD card.

@@ -1,5 +1,7 @@
 # MeowGotchi
 
+> 🐱 **Custom** — built for this fork (not in the original firmware).
+
 A pwnagotchi-style WiFi hunter with a cat-face UI — the flagship app of this fork.
 It passively watches 2.4 GHz WiFi, hops channels, discovers access points and
 their clients, and captures WPA handshakes to the SD card. A mood face and live

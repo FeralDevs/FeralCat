@@ -1,5 +1,7 @@
 # Boot Splash
 
+> 🐱 **Custom** — built for this fork (not in the original firmware).
+
 The boot screen is a small **MeowGotchi + version** title with a **progress bar
 that tracks the real boot stages** — SD card → Apps → Display → Interface → done —
 then fades into the home screen.

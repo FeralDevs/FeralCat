@@ -1,5 +1,7 @@
 # BLE Spam Detector
 
+> 🐱 **Custom** — built for this fork (not in the original firmware).
+
 Passively scans BLE for the **pop-up spam floods** that phones show (fake AirPods,
 SwiftPair, Fast Pair, etc.) and alerts when one is happening near you.
 

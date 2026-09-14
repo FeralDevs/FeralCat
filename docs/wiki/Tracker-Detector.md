@@ -1,5 +1,7 @@
 # Tracker Detector
 
+> 🐱 **Custom** — built for this fork (not in the original firmware).
+
 An **anti-stalking** BLE scanner: it looks for item trackers that follow you.
 
 ## Controls

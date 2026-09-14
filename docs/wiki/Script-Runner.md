@@ -1,5 +1,7 @@
 # Script Runner (Berry)
 
+> 🐱 **Custom** — built for this fork (not in the original firmware).
+
 Run small **[Berry](https://berry-lang.github.io/)** scripts from the SD card to
 poke the LED, GPIO and buttons — no reflashing. Berry is a tiny Python-ish
 language embedded in the firmware (the VM adds only ~120 KB).

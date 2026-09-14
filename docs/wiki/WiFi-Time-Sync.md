@@ -1,5 +1,7 @@
 # WiFi Time Sync
 
+> 🐱 **Custom** — built for this fork (not in the original firmware).
+
 Sets the clock correctly over WiFi with **no manual timezone**.
 
 ## Use it

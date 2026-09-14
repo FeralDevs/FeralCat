@@ -1,5 +1,7 @@
 # On-Device Screenshots
 
+> 🐱 **Custom** — built for this fork (not in the original firmware).
+
 Capture what's on screen to the SD card — no computer.
 
 ## Use it

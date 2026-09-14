@@ -1,5 +1,7 @@
 # Deauth Detector
 
+> 🐱 **Custom** — built for this fork (not in the original firmware).
+
 Passively watches for **deauthentication / disassociation** frames — the
 signature of a WiFi "kick" attack — and helps you locate the attacker.
 

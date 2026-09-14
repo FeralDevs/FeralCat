@@ -1,5 +1,7 @@
 # MeowKit-S3 Custom Firmware — "MeowGotchi" build
 
+> **Legend:** throughout this wiki, 🐱 marks features **built for this fork** and 📦 marks features **from the original MeowKit firmware**.
+
 Custom, community firmware for the **MeowKit-S3** (ESP32-S3) pocket multi-tool.
 It fixes the boot bugs that stop the open-source firmware running on retail
 hardware, repairs half-finished stock UI, fills the empty app slots with working

@@ -1,5 +1,7 @@
 # BLE Spam
 
+> 📦 **From the original MeowKit firmware.**
+
 Sends bursts of BLE advertisements (the transmit side of the popup-spam
 phenomenon). Educational / testing tool.
 

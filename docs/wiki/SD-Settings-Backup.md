@@ -1,5 +1,7 @@
 # SD Settings Backup & Restore
 
+> 🐱 **Custom** — built for this fork (not in the original firmware).
+
 Keeps your settings (and **WiFi credentials**) on the SD card so they **survive a
 reflash**. Settings normally live in NVS (internal flash), which a full USB reflash
 erases.

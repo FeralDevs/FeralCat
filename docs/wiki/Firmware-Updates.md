@@ -1,5 +1,7 @@
 # Firmware Updates
 
+> 🐱 **Custom** — built for this fork (not in the original firmware).
+
 Once you're on this firmware you never need a computer to update again — the
 device can pull a new build over WiFi or flash one from the SD card. Both use a
 **dual-OTA** flash layout so a failed/interrupted write rolls back to the current
