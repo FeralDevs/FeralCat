@@ -37,6 +37,7 @@
 #if MEOWKIT_ENABLE_PLAYER
 #include "app_19/app_19.h"      /* MeowPlayer (WIP)  */
 #endif
+#include "app_20/app_20.h"      /* ELF Test (spike)  */
 #include "app_lua/app_lua.h"    /* SD-installed Lua apps */
 
 #include <mooncake.h>
@@ -75,6 +76,7 @@ inline MOONCAKE::APPS::AppLua* registerAllApps(mooncake::Mooncake& mc, DEVICES* 
 #if MEOWKIT_ENABLE_PLAYER
     mc.installApp(std::make_unique<MOONCAKE::APPS::App19>(dev));     /* app_19  MeowPlayer    */
 #endif
+    mc.installApp(std::make_unique<MOONCAKE::APPS::App20>(dev));     /* app_20  ELF Test      */
     /* Lua installable-app platform — opt-in (Settings ▸ Features). When off it is
      * not installed at all: no App-manager tile, no /apps scan, no Lua behavior
      * (every launcher hook is gated on this returned pointer). Still compiled in. */
@@ -113,6 +115,7 @@ static const void* const APP_BUILTIN_ICONS[] = {
 #if MEOWKIT_ENABLE_PLAYER
     &ui_img_vu_meter_png,    /* app_19  MeowPlayer (audio) */
 #endif
+    &ui_img_webserial_png,   /* app_20  ELF Test */
     &ui_img_webserial_png,   /* Lua app manager */
 };
 static const int APP_BUILTIN_ICONS_COUNT =
