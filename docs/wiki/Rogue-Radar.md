@@ -1,5 +1,7 @@
 # Rogue Radar
 
+<img src="screenshots/rogue-evil-twin.png" width="320" alt="Rogue-Radar screenshot">
+
 > 🐱 **Custom** — built for this fork (not in the original firmware).
 
 Two rogue-AP detectors in one app.

@@ -1,5 +1,7 @@
 # Script Runner (Berry)
 
+<img src="screenshots/script-runner.png" width="320" alt="Script-Runner screenshot">
+
 > 🐱 **Custom** — built for this fork (not in the original firmware).
 
 Run small **[Berry](https://berry-lang.github.io/)** scripts from the SD card to

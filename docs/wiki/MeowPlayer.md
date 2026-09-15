@@ -1,5 +1,7 @@
 # MeowPlayer (MP3 player)
 
+<img src="screenshots/meowplayer.png" width="320" alt="MeowPlayer screenshot">
+
 > 🐱 **Custom** — built for this fork. The player UI is custom; the audio engine
 > underneath is contributed (see credit below).
 

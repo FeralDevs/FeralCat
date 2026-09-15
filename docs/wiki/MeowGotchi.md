@@ -1,5 +1,7 @@
 # MeowGotchi
 
+<img src="screenshots/meowgotchi.png" width="320" alt="MeowGotchi screenshot">
+
 > 🐱 **Custom** — built for this fork (not in the original firmware).
 
 A pwnagotchi-style WiFi hunter with a cat-face UI — the flagship app of this fork.

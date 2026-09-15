@@ -1,5 +1,7 @@
 # BLE Spam Detector
 
+<img src="screenshots/ble-spam-detector.png" width="320" alt="BLE-Spam-Detector screenshot">
+
 > 🐱 **Custom** — built for this fork (not in the original firmware).
 
 Passively scans BLE for the **pop-up spam floods** that phones show (fake AirPods,

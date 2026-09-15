@@ -1,5 +1,7 @@
 # Deauth Detector
 
+<img src="screenshots/deauth-detector.png" width="320" alt="Deauth-Detector screenshot">
+
 > 🐱 **Custom** — built for this fork (not in the original firmware).
 
 Passively watches for **deauthentication / disassociation** frames — the

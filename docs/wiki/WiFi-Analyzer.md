@@ -1,5 +1,7 @@
 # WiFi Analyzer
 
+<img src="screenshots/wifi-analyzer.png" width="320" alt="WiFi-Analyzer screenshot">
+
 > 🐱 **Custom** — built for this fork (not in the original firmware).
 
 A 2.4 GHz WiFi scanner. Lists nearby access points ranked by signal, and drills

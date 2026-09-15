@@ -1,5 +1,7 @@
 # Probe Sniffer
 
+<img src="screenshots/probe-sniffer.png" width="320" alt="Probe-Sniffer screenshot">
+
 > 🐱 **Custom** — built for this fork (not in the original firmware).
 
 Passively logs the **802.11 probe-request** frames that nearby phones and laptops

@@ -1,11 +1,14 @@
-# MeowKit-S3 Custom Firmware — "MeowGotchi" build
+# FeralCat — MeowKit-S3 custom firmware (by FeralDevs)
 
 > **Legend:** throughout this wiki, 🐱 marks features **built for this fork** and 📦 marks features **from the original MeowKit firmware**.
 
 Custom, community firmware for the **MeowKit-S3** (ESP32-S3) pocket multi-tool.
 It fixes the boot bugs that stop the open-source firmware running on retail
 hardware, repairs half-finished stock UI, fills the empty app slots with working
-WiFi/BLE security tools, updates itself over WiFi or SD, and runs Berry scripts.
+WiFi/BLE security tools, updates itself over WiFi or SD, runs Berry scripts, and
+adds a **red theme** with **signed native SD apps** (see [[Releases]]).
+
+💬 **Community:** [discord.gg/BQkmxPj9Me](https://discord.gg/BQkmxPj9Me)
 
 > ## ⚠️ Experimental / testing firmware — flash at your own risk
 > Unofficial, experimental firmware, **as-is with no warranty**. You are solely

@@ -1,5 +1,7 @@
 # Firmware Updates
 
+<img src="screenshots/firmware-menu.png" width="320" alt="Firmware-Updates screenshot">
+
 > 🐱 **Custom** — built for this fork (not in the original firmware).
 
 Once you're on this firmware you never need a computer to update again — the

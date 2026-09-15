@@ -6,6 +6,24 @@ See **[[Flashing and Recovery]]** for how to apply them.
 
 ---
 
+## v0.10.1 — FeralCat icons + fast boot
+- **App icons** — new red FeralCat icons for the six native security apps and the
+  MeowGotchi tile; each app now has its own icon.
+- **Fast-boot fix** — the SD `/apps` scan no longer runs at boot (it stalled the
+  splash for a few seconds once several apps were installed); it's done lazily the
+  first time the Apps menu is opened.
+
+## v0.10.0 — FeralCat: native signed apps + rebrand
+- **Native signed apps** — load, verify and run **signed native ELF apps** from
+  the SD card through a stable app SDK, each with its own launcher tile. **Ed25519**
+  signatures verified on-device; unsigned apps are opt-in (Settings ▸ Features).
+- Six security tools now ship as **signed SD apps**: [[WiFi Analyzer]], [[Deauth
+  Detector]], [[Rogue Radar]], [[BLE Spam Detector]], [[Probe Sniffer]] and
+  [[Tracker Detector]].
+- **FeralCat rebrand + red theme** — new name, red UI, new mascot.
+- **Firmware updater** moved into **Settings ▸ System ▸ Update** (a system module,
+  no longer an app).
+
 ## v0.9.0 — MeowPlayer + Lua apps
 - **[[MeowPlayer]]** — a real MP3/WAV music player. Plays from `/mp3`, with
   play/pause, seek, volume, a Songs list and a Speaker/Jack output switch. Native

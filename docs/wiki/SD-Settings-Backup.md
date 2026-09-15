@@ -1,5 +1,7 @@
 # SD Settings Backup & Restore
 
+<img src="screenshots/settings-backup.png" width="320" alt="SD-Settings-Backup screenshot">
+
 > 🐱 **Custom** — built for this fork (not in the original firmware).
 
 Keeps your settings (and **WiFi credentials**) on the SD card so they **survive a
