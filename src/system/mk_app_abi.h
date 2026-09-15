@@ -69,6 +69,9 @@ void mk_gfx_text_sz(int x, int y, const char* s, uint32_t color, int size);  /* 
 void mk_gfx_fill_rect(int x, int y, int w, int h, uint32_t color);
 void mk_gfx_rect(int x, int y, int w, int h, uint32_t color);               /* outline */
 void mk_gfx_fill_round_rect(int x, int y, int w, int h, int r, uint32_t color);
+void mk_gfx_circle(int x, int y, int r, uint32_t color);                  /* outline */
+void mk_gfx_fill_circle(int x, int y, int r, uint32_t color);
+void mk_gfx_fill_triangle(int x0,int y0,int x1,int y1,int x2,int y2, uint32_t color);
 void mk_gfx_present(void);
 int  mk_content_rows(void);   /* number of visible menu rows */
 
@@ -223,6 +226,36 @@ void mk_tracker_stop(void);
 int  mk_tracker_running(void);
 void mk_tracker_stats(mk_tracker_stats_t* out);
 int  mk_tracker_list(mk_tracker_t* out, int max);      /* up to MK_TRK_MAXTRK */
+
+/* ── Media / audio player (MeowPlayer) ─────────────────────────────────────
+ * The audio engine (ES8311 DAC + Helix MP3 decoder + I2S on a core-0 worker)
+ * stays in firmware; the app drives it with commands and polls a status
+ * snapshot. Files are scanned from /music (.mp3). */
+enum { MK_MEDIA_SCAN = 0, MK_MEDIA_PLAY, MK_MEDIA_PAUSE, MK_MEDIA_STOP,
+       MK_MEDIA_VOLUME, MK_MEDIA_SEEK, MK_MEDIA_EQ };
+
+typedef struct {
+    char     state[16];   /* idle/scanning/loading/playing/paused/stopped/ended/error */
+    char     title[96];
+    uint32_t position;    /* seconds */
+    uint32_t duration;    /* seconds (approx for MP3) */
+    uint32_t generation;  /* bumps when a catalog scan completes */
+    uint16_t tracks;
+    uint8_t  volume;      /* 0..100 */
+    uint32_t finished;    /* increments once on natural end-of-track */
+} mk_media_status_t;
+
+typedef struct {
+    uint16_t id;          /* stable track id for MK_MEDIA_PLAY value */
+    char     title[96];
+} mk_track_t;
+
+int  mk_media_begin(void);                 /* start engine; 1 = ok. Sets speaker on. */
+void mk_media_end(void);                   /* stop engine + amp */
+void mk_media_cmd(int action, int value);  /* MK_MEDIA_*; value = track id / volume / seek sec */
+void mk_media_status(mk_media_status_t* out);
+int  mk_media_tracks(int offset, mk_track_t* out, int max);  /* fills up to min(max,8); returns count */
+void mk_media_set_output(int speaker);     /* 1 = speaker, 0 = headphone jack */
 
 /* ── Input ─────────────────────────────────────────────────────────────── */
 void mk_input_poll(void);       /* call once per loop before reading buttons */

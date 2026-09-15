@@ -27,9 +27,6 @@
 #include "app_09/infrared.h"    /* Infrared     */
 #include "app_10/app_10.h"      /* MeowGotchi    */
 #include "app_18/app_18.h"      /* Script Runner     */
-#if MEOWKIT_ENABLE_PLAYER
-#include "app_19/app_19.h"      /* MeowPlayer (WIP)  */
-#endif
 #include "app_lua/app_lua.h"    /* SD-installed Lua apps */
 
 #include <mooncake.h>
@@ -68,9 +65,6 @@ inline MOONCAKE::APPS::AppLua* registerAllApps(mooncake::Mooncake& mc, DEVICES* 
     mc.installApp(std::make_unique<MOONCAKE::APPS::App09>(dev));     /* app_09  Infrared     */
     mc.installApp(std::make_unique<MOONCAKE::APPS::App10>(dev));     /* app_10  MeowGotchi   */
     mc.installApp(std::make_unique<MOONCAKE::APPS::App18>(dev));     /* app_18  Script Runner */
-#if MEOWKIT_ENABLE_PLAYER
-    mc.installApp(std::make_unique<MOONCAKE::APPS::App19>(dev));     /* app_19  MeowPlayer    */
-#endif
     /* Lua installable-app platform — opt-in (Settings ▸ Features). When off it is
      * not installed at all: no App-manager tile, no /apps scan, no Lua behavior
      * (every launcher hook is gated on this returned pointer). Still compiled in. */
@@ -99,9 +93,6 @@ static const void* const APP_BUILTIN_ICONS[] = {
     &ui_img_infrared_png,    /* app_09  Infrared    */
     &ui_img_ic_meowgotchi,   /* app_10  MeowGotchi  */
     &ui_img_webserial_png,   /* app_18  Script Runner */
-#if MEOWKIT_ENABLE_PLAYER
-    &ui_img_vu_meter_png,    /* app_19  MeowPlayer (audio) */
-#endif
     &ui_img_webserial_png,   /* Lua app manager */
 };
 static const int APP_BUILTIN_ICONS_COUNT =

@@ -17,6 +17,8 @@
 #include "ble_spam_monitor.h"
 #include "probe_monitor.h"
 #include "tracker_monitor.h"
+#include "media/audio_service.h"     /* MeowPlayer audio engine */
+#include "../bsp/config.h"           /* HAL_IOEXP_PA_EN */
 #include "esp_elf.h"                 /* esp_elf_register_symbol / esp_elfsym */
 
 /* Active device + lazily-allocated offscreen canvas for the current app run. */
@@ -31,6 +33,7 @@ static BeaconFlood    s_flood;
 static BleSpamMonitor s_blespam;
 static ProbeMonitor   s_probe;
 static TrackerMonitor s_tracker;
+static meow::media::AudioService s_media;
 
 /* Draw target: the canvas if it allocated, else straight to the LCD. */
 static inline void ensure_canvas()
@@ -119,6 +122,24 @@ void mk_gfx_fill_round_rect(int x, int y, int w, int h, int r, uint32_t color)
 {
     if (s_have) s_canvas->fillRoundRect(x, y, w, h, r, color);
     else if (s_dev) s_dev->Lcd.fillRoundRect(x, y, w, h, r, color);
+}
+
+void mk_gfx_circle(int x, int y, int r, uint32_t color)
+{
+    if (s_have) s_canvas->drawCircle(x, y, r, color);
+    else if (s_dev) s_dev->Lcd.drawCircle(x, y, r, color);
+}
+
+void mk_gfx_fill_circle(int x, int y, int r, uint32_t color)
+{
+    if (s_have) s_canvas->fillCircle(x, y, r, color);
+    else if (s_dev) s_dev->Lcd.fillCircle(x, y, r, color);
+}
+
+void mk_gfx_fill_triangle(int x0,int y0,int x1,int y1,int x2,int y2, uint32_t color)
+{
+    if (s_have) s_canvas->fillTriangle(x0,y0,x1,y1,x2,y2,color);
+    else if (s_dev) s_dev->Lcd.fillTriangle(x0,y0,x1,y1,x2,y2,color);
 }
 
 void mk_gfx_present(void)
@@ -347,6 +368,60 @@ int mk_tracker_list(mk_tracker_t* out, int max)
     return n;
 }
 
+/* ── Media / audio player service ───────────────────────────────────────── */
+int mk_media_begin(void)
+{
+    if (!s_dev) return 0;
+    bool ok = s_media.begin(s_dev);
+    if (ok) s_dev->io_exp.digitalWrite(HAL_IOEXP_PA_EN, HIGH);   /* speaker on */
+    return ok ? 1 : 0;
+}
+
+void mk_media_end(void)
+{
+    s_media.end();
+    if (s_dev) s_dev->io_exp.digitalWrite(HAL_IOEXP_PA_EN, LOW);
+}
+
+void mk_media_cmd(int action, int value)
+{
+    s_media.command(meow::media::Command{ (meow::media::Action)action, (int32_t)value });
+}
+
+void mk_media_status(mk_media_status_t* out)
+{
+    if (!out) return;
+    meow::media::Status s;
+    if (!s_media.status(s)) { memset(out, 0, sizeof(*out)); return; }
+    memcpy(out->state, s.state, sizeof(out->state));
+    memcpy(out->title, s.title, sizeof(out->title));
+    out->position   = s.position;
+    out->duration   = s.duration;
+    out->generation = s.generation;
+    out->tracks     = s.tracks;
+    out->volume     = s.volume;
+    out->finished   = s.finished;
+}
+
+int mk_media_tracks(int offset, mk_track_t* out, int max)
+{
+    if (!out || max <= 0) return 0;
+    int lim = max < (int)meow::media::MaxPage ? max : (int)meow::media::MaxPage;
+    meow::media::Page pg{};
+    if (!s_media.tracks(0, (size_t)offset, (size_t)lim, pg)) return 0;
+    for (size_t i = 0; i < pg.count; i++) {
+        out[i].id = pg.entries[i].id;
+        memcpy(out[i].title, pg.entries[i].title, sizeof(out[i].title));
+        out[i].title[sizeof(out[i].title) - 1] = '\0';
+    }
+    return (int)pg.count;
+}
+
+void mk_media_set_output(int speaker)
+{
+    if (s_dev) s_dev->io_exp.digitalWrite(HAL_IOEXP_PA_EN, speaker ? HIGH : LOW);
+}
+
 void mk_input_poll(void)
 {
     if (!s_dev) return;
@@ -396,6 +471,9 @@ static const struct esp_elfsym MK_SDK_SYMS[] = {
     { "mk_gfx_fill_rect", (const void*)&mk_gfx_fill_rect },
     { "mk_gfx_rect",      (const void*)&mk_gfx_rect },
     { "mk_gfx_fill_round_rect", (const void*)&mk_gfx_fill_round_rect },
+    { "mk_gfx_circle",        (const void*)&mk_gfx_circle },
+    { "mk_gfx_fill_circle",   (const void*)&mk_gfx_fill_circle },
+    { "mk_gfx_fill_triangle", (const void*)&mk_gfx_fill_triangle },
     { "mk_gfx_present",   (const void*)&mk_gfx_present },
     { "mk_content_rows",  (const void*)&mk_content_rows },
     { "mk_wifi_begin",    (const void*)&mk_wifi_begin },
@@ -442,6 +520,12 @@ static const struct esp_elfsym MK_SDK_SYMS[] = {
     { "mk_tracker_running", (const void*)&mk_tracker_running },
     { "mk_tracker_stats",   (const void*)&mk_tracker_stats },
     { "mk_tracker_list",    (const void*)&mk_tracker_list },
+    { "mk_media_begin",      (const void*)&mk_media_begin },
+    { "mk_media_end",        (const void*)&mk_media_end },
+    { "mk_media_cmd",        (const void*)&mk_media_cmd },
+    { "mk_media_status",     (const void*)&mk_media_status },
+    { "mk_media_tracks",     (const void*)&mk_media_tracks },
+    { "mk_media_set_output", (const void*)&mk_media_set_output },
     { "mk_input_poll",    (const void*)&mk_input_poll },
     { "mk_btn",           (const void*)&mk_btn },
     { "mk_btn_long",      (const void*)&mk_btn_long },
