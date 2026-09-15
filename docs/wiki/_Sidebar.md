@@ -37,3 +37,4 @@
 
 ---
 [Releases ↗](https://github.com/FeralDevs/FeralCat/releases)
+[Discord ↗](https://discord.gg/BQkmxPj9Me)

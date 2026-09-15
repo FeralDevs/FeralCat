@@ -1,5 +1,9 @@
 # FeralCat — MeowKit‑S3 custom firmware (by FeralDevs)
 
+[![Discord](https://img.shields.io/badge/Discord-join%20the%20community-5865F2?logo=discord&logoColor=white)](https://discord.gg/BQkmxPj9Me)
+
+💬 **Community & support:** [discord.gg/BQkmxPj9Me](https://discord.gg/BQkmxPj9Me)
+
 **FeralCat v0.10.0** is the current build: signed **native ELF apps** loaded from
 the SD card through a stable app SDK, the firmware updater as a system module,
 a red UI theme, and the FeralCat rebrand — on top of v0.9.0's Lua platform and
