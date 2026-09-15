@@ -82,6 +82,33 @@ Two artifacts in [`releases/`](releases/) (checksums in
 
 Full guide: [`docs/SD-UPDATE.md`](docs/SD-UPDATE.md).
 
+### 📂 SD‑card files (required for the apps)
+
+The firmware image alone does **not** contain the native apps or their assets —
+those live on the SD card. Copy the contents of [`sd files/`](sd%20files/) to the
+**root of the SD card**, so you end up with:
+
+```
+SD root/
+├─ apps/                     ← native signed apps (each: app.elf + app.elf.sig + manifest.ini)
+│  ├─ wifianalyzer/          ← WiFi Analyzer
+│  ├─ deauthdetect/          ← Deauth Detect
+│  ├─ rogueradar/            ← Rogue Radar
+│  ├─ blespamdetect/         ← BLE Spam Detect
+│  ├─ probesniffer/          ← Probe Sniffer
+│  └─ trackerdetect/         ← Tracker Detect
+├─ scripts/                  ← Berry .be scripts (Script Runner)
+├─ mp3/                      ← music for MeowPlayer
+└─ firmware.bin              ← optional, for SD updates
+```
+
+- Each app is a **signed** `app.elf` + detached `app.elf.sig` + a `manifest.ini`
+  (name + icon). Keep the three together — an app with a **missing or invalid
+  signature won't run** unless you enable *Settings ▸ Features ▸ Allow unsigned
+  apps*. The apps appear as tiles the first time you open the **Apps** menu.
+- Building your own signed app? See [`tools/app_signing/`](tools/app_signing/)
+  and [`sd files/apps/build_app.sh`](sd%20files/apps/build_app.sh).
+
 > Built **DIO** flash mode to match the hardware (a QIO build boots once then
 > crash‑loops). The flash uses a **dual‑OTA** layout (two ~7.9 MB app slots) so
 > it can safely self‑update — a failed/interrupted write rolls back to the
@@ -94,6 +121,40 @@ Docker only — see [`docs/CUSTOM-FIRMWARE.md` §3](docs/CUSTOM-FIRMWARE.md).
 ---
 
 ## Changelog — all changes vs. stock
+
+### v0.10.1 — FeralCat icons + fast boot
+- New red **FeralCat app icons** for the six native apps and the MeowGotchi tile;
+  each app now has its own icon.
+- **Fast‑boot fix** — the SD `/apps` scan no longer runs at boot (it stalled the
+  splash for a few seconds once several apps were installed); it's done lazily the
+  first time the Apps menu is opened.
+
+### v0.10.0 — FeralCat: native signed apps + rebrand
+- **Native signed apps** — load, verify and run **signed native ELF apps** from
+  the SD card through a stable app SDK, each with its own launcher tile. **Ed25519**
+  signatures verified on‑device (Monocypher); unsigned apps are opt‑in via
+  *Settings ▸ Features*. Offline signing tool in [`tools/app_signing/`](tools/app_signing/).
+- Six security tools now ship as **signed SD apps**: WiFi Analyzer, Deauth Detect,
+  Rogue Radar, BLE Spam Detect, Probe Sniffer, Tracker Detect.
+- **FeralCat rebrand** — new name, **red UI theme**, new mascot.
+- **Firmware updater** is now a system module at **Settings ▸ System ▸ Update**
+  (no longer an app).
+
+### v0.9.0 — MeowPlayer + Lua apps
+- **MeowPlayer** — an MP3/WAV music player (plays from `/mp3`; play/pause, seek,
+  volume, Songs list, Speaker/Jack output) on a native audio engine.
+- **Lua app platform** — opt‑in installable Lua apps from `/apps` with launcher
+  tiles (*Settings ▸ Features ▸ Lua apps*, off by default).
+
+### v0.8.1 — Keyboard symbols
+- T9 keyboard gained the full ASCII symbol set (semicolon, brackets, etc.) across
+  paged symbol screens.
+
+### v0.8.0 — Meow XP (device‑wide leveling)
+- **Meow XP** — a system‑wide XP/level system: earn XP for using the device and
+  for finds; level shown on the home screen. Stored in NVS + mirrored to SD
+  (checksum‑guarded), with Backup/Restore in Settings. Also fixed a navigation
+  crash when scrolling screens.
 
 ### v0.7.0 — Script Runner (Berry) + lightweight boot splash
 - **Script Runner** — run small **[Berry](https://berry-lang.github.io/)** scripts
