@@ -19,7 +19,7 @@
 
 /* GitHub repo that hosts the releases. "latest" always resolves to the newest
  * published release, so these URLs never need bumping per version. */
-#define OTA_REPO      "janud/MeowKitCustomFW"
+#define OTA_REPO      "FeralDevs/FeralCat"
 #define OTA_LATEST    "https://github.com/" OTA_REPO "/releases/latest"
 #define OTA_FIRMWARE  OTA_LATEST "/download/firmware.bin"
 #define OTA_UA        "MeowGotchi-OTA"

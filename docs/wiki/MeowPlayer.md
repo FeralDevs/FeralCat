@@ -36,7 +36,7 @@ DMA flushing on pause/seek — which is what makes playback smooth.
 ## Credit
 The audio engine (`meow::media` service + ESP32-audioI2S / ES8311 fixes) comes
 from **[Caliun](https://github.com/Caliun)** via
-[PR #2](https://github.com/janud/MeowKitCustomFW/pull/2). This fork pairs it with
+[PR #2](https://github.com/FeralDevs/FeralCat/pull/2). This fork pairs it with
 a custom native player UI. Thank you!
 
 See also **[[Lua Apps]]** (the optional app platform from the same PR).

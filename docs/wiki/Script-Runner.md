@@ -9,7 +9,7 @@ language embedded in the firmware (the VM adds only ~120 KB).
 ## Using it
 
 1. Put `.be` files in a **`/scripts`** folder on the SD card (created on first run
-   if missing). The four examples in the repo's [`docs/scripts/`](https://github.com/janud/MeowKitCustomFW/tree/main/docs/scripts)
+   if missing). The four examples in the repo's [`docs/scripts/`](https://github.com/FeralDevs/FeralCat/tree/main/docs/scripts)
    are a good start.
 2. Open the **Script Runner** app.
 3. **Up/Down** to pick a script, **A** to run, **A** again to return to the list,

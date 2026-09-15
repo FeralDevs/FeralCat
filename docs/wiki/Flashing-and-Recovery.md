@@ -12,7 +12,7 @@ The **merged image** is the whole chip (bootloader + partition table + app). You
 need it once because a plain app flash can't fix the bootloader (it must be
 **DIO** or it bootloops) or install the dual-OTA partition table. After that,
 updates are just `firmware.bin`. Downloads are on the
-[Releases page](https://github.com/janud/MeowKitCustomFW/releases);
+[Releases page](https://github.com/FeralDevs/FeralCat/releases);
 verify against `SHA256SUMS.txt`.
 
 ## Entering download mode

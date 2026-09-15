@@ -59,7 +59,7 @@ to NVS and reused by the updater).
 
 1. Open the **Firmware** app → **Update over WiFi** → **A**.
 2. It joins the saved network and reads the latest release tag from
-   `github.com/janud/MeowKitCustomFW/releases/latest` (via the redirect header —
+   `github.com/FeralDevs/FeralCat/releases/latest` (via the redirect header —
    no API token, no rate limit). If it matches the running version you get
    *"Up to date"*; otherwise a *"vX → vY / Download"* prompt.
 3. On **Download**, it streams `firmware.bin` to the SD card

@@ -36,4 +36,4 @@
 - [[Hardware and Gotchas]]
 
 ---
-[Releases ↗](https://github.com/janud/MeowKitCustomFW/releases)
+[Releases ↗](https://github.com/FeralDevs/FeralCat/releases)

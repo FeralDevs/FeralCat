@@ -1,7 +1,7 @@
 # Releases
 
 Every tagged release, newest first. Downloads (firmware + merged image +
-checksums) are on the [Releases page](https://github.com/janud/MeowKitCustomFW/releases).
+checksums) are on the [Releases page](https://github.com/FeralDevs/FeralCat/releases).
 See **[[Flashing and Recovery]]** for how to apply them.
 
 ---
@@ -16,7 +16,7 @@ See **[[Flashing and Recovery]]** for how to apply them.
   *Hello Meow* example.
 - New **Settings ▸ Features** tab for opt-in/experimental toggles.
 - **Credit:** the audio engine and the Lua runtime/app platform were contributed
-  by **[Caliun](https://github.com/Caliun)** ([PR #2](https://github.com/janud/MeowKitCustomFW/pull/2)). Thank you!
+  by **[Caliun](https://github.com/Caliun)** ([PR #2](https://github.com/FeralDevs/FeralCat/pull/2)). Thank you!
 
 ## v0.8.1 — Keyboard symbols
 - **On-screen keyboard now types every ASCII symbol.** The password/text keyboard's

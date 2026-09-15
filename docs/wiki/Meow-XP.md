@@ -82,5 +82,5 @@ settings backup entries. See **[[SD Settings Backup]]**.
 (the time trickle, driven each frame by the launcher), `meow_xp_add()` /
 `meow_xp_add_handshake()` / `meow_xp_app_open()` for the earners, and
 `meow_xp_level()/pct()/title()` for the Home bar. State persists via
-[`persist`](https://github.com/janud/MeowKitCustomFW/tree/main/src/system/persist.h)
+[`persist`](https://github.com/FeralDevs/FeralCat/tree/main/src/system/persist.h)
 (NVS) and `/system/xp.txt` (SD).

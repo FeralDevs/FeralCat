@@ -1,7 +1,7 @@
 # Lua Apps (installable app platform)
 
 > 🐱📦 **Contributed** — the Lua runtime + app platform were contributed by
-> [Caliun](https://github.com/Caliun) ([PR #2](https://github.com/janud/MeowKitCustomFW/pull/2));
+> [Caliun](https://github.com/Caliun) ([PR #2](https://github.com/FeralDevs/FeralCat/pull/2));
 > integrated here as an **opt-in** feature.
 
 > ⚠️ **Experimental — off by default.** You must enable it in Settings before it
@@ -24,7 +24,7 @@ with a tile for each installed package.
 Copy a package folder to **`/apps/<name>`** on the SD card (each has a
 `manifest.ini` + `main.lua`). It appears in the launcher after the next scan
 (or open **App manager**). A **Hello Meow** example ships in the repo under
-[`sd files/apps/hello_meow`](https://github.com/janud/MeowKitCustomFW/tree/main/sd%20files/apps/hello_meow).
+[`sd files/apps/hello_meow`](https://github.com/FeralDevs/FeralCat/tree/main/sd%20files/apps/hello_meow).
 
 ## What Lua apps can do
 - Draw a simple button/label UI on screen.
@@ -33,9 +33,9 @@ Copy a package folder to **`/apps/<name>`** on the SD card (each has a
 - Access the media/audio service (the same engine [[MeowPlayer]] uses).
 
 APIs and packaging: see the in-repo docs
-[`LUA-APPS.md`](https://github.com/janud/MeowKitCustomFW/blob/main/docs/LUA-APPS.md),
-[`LUA-AUDIO-API.md`](https://github.com/janud/MeowKitCustomFW/blob/main/docs/LUA-AUDIO-API.md),
-and [`LUA-BUILD.md`](https://github.com/janud/MeowKitCustomFW/blob/main/docs/LUA-BUILD.md).
+[`LUA-APPS.md`](https://github.com/FeralDevs/FeralCat/blob/main/docs/LUA-APPS.md),
+[`LUA-AUDIO-API.md`](https://github.com/FeralDevs/FeralCat/blob/main/docs/LUA-AUDIO-API.md),
+and [`LUA-BUILD.md`](https://github.com/FeralDevs/FeralCat/blob/main/docs/LUA-BUILD.md).
 
 ## Notes
 - The Lua runtime is always compiled in (~3% flash) but dormant until enabled.
