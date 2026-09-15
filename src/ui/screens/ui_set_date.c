@@ -53,7 +53,7 @@ static void make_save_hint(void)
     lv_obj_t * lbl = lv_label_create(bg);
     lv_obj_set_align(lbl, LV_ALIGN_CENTER);
     lv_label_set_text(lbl, "Saved");
-    lv_obj_set_style_text_color(lbl, lv_color_hex(0xBDE600), LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_text_color(lbl, lv_color_hex(0xFF2A3D), LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_text_font(lbl, &ui_font_name_14, LV_PART_MAIN | LV_STATE_DEFAULT);
 }
 
@@ -189,12 +189,12 @@ void ui_date_picker_screen_init(void)
     lv_obj_set_width(ui_date_Roller_M, LV_SIZE_CONTENT);
     lv_obj_set_align(ui_date_Roller_M, LV_ALIGN_CENTER);
     lv_obj_set_x(ui_date_Roller_M, -100); lv_obj_set_y(ui_date_Roller_M, 6);
-    lv_obj_set_style_text_color(ui_date_Roller_M, lv_color_hex(0xBDE600), LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_text_color(ui_date_Roller_M, lv_color_hex(0xFF2A3D), LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_text_opa(ui_date_Roller_M, 120, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_text_font(ui_date_Roller_M, &ui_font_name_24, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_bg_opa(ui_date_Roller_M, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_border_opa(ui_date_Roller_M, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_text_color(ui_date_Roller_M, lv_color_hex(0xBDE600), LV_PART_SELECTED | LV_STATE_DEFAULT);
+    lv_obj_set_style_text_color(ui_date_Roller_M, lv_color_hex(0xFF2A3D), LV_PART_SELECTED | LV_STATE_DEFAULT);
     lv_obj_set_style_text_opa(ui_date_Roller_M, 255, LV_PART_SELECTED | LV_STATE_DEFAULT);
     lv_obj_set_style_bg_opa(ui_date_Roller_M, 0, LV_PART_SELECTED | LV_STATE_DEFAULT);
 
@@ -210,12 +210,12 @@ void ui_date_picker_screen_init(void)
     lv_obj_set_width(ui_date_Roller_D, LV_SIZE_CONTENT);
     lv_obj_set_align(ui_date_Roller_D, LV_ALIGN_CENTER);
     lv_obj_set_x(ui_date_Roller_D, 0); lv_obj_set_y(ui_date_Roller_D, 6);
-    lv_obj_set_style_text_color(ui_date_Roller_D, lv_color_hex(0xBDE600), LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_text_color(ui_date_Roller_D, lv_color_hex(0xFF2A3D), LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_text_opa(ui_date_Roller_D, 120, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_text_font(ui_date_Roller_D, &ui_font_name_24, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_bg_opa(ui_date_Roller_D, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_border_opa(ui_date_Roller_D, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_text_color(ui_date_Roller_D, lv_color_hex(0xBDE600), LV_PART_SELECTED | LV_STATE_DEFAULT);
+    lv_obj_set_style_text_color(ui_date_Roller_D, lv_color_hex(0xFF2A3D), LV_PART_SELECTED | LV_STATE_DEFAULT);
     lv_obj_set_style_text_opa(ui_date_Roller_D, 255, LV_PART_SELECTED | LV_STATE_DEFAULT);
     lv_obj_set_style_bg_opa(ui_date_Roller_D, 0, LV_PART_SELECTED | LV_STATE_DEFAULT);
 
@@ -229,12 +229,12 @@ void ui_date_picker_screen_init(void)
     lv_obj_set_width(ui_date_Roller_Y, LV_SIZE_CONTENT);
     lv_obj_set_align(ui_date_Roller_Y, LV_ALIGN_CENTER);
     lv_obj_set_x(ui_date_Roller_Y, 100); lv_obj_set_y(ui_date_Roller_Y, 6);
-    lv_obj_set_style_text_color(ui_date_Roller_Y, lv_color_hex(0xBDE600), LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_text_color(ui_date_Roller_Y, lv_color_hex(0xFF2A3D), LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_text_opa(ui_date_Roller_Y, 120, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_text_font(ui_date_Roller_Y, &ui_font_name_24, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_bg_opa(ui_date_Roller_Y, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_border_opa(ui_date_Roller_Y, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_text_color(ui_date_Roller_Y, lv_color_hex(0xBDE600), LV_PART_SELECTED | LV_STATE_DEFAULT);
+    lv_obj_set_style_text_color(ui_date_Roller_Y, lv_color_hex(0xFF2A3D), LV_PART_SELECTED | LV_STATE_DEFAULT);
     lv_obj_set_style_text_opa(ui_date_Roller_Y, 255, LV_PART_SELECTED | LV_STATE_DEFAULT);
     lv_obj_set_style_bg_opa(ui_date_Roller_Y, 0, LV_PART_SELECTED | LV_STATE_DEFAULT);
 

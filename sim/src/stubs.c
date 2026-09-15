@@ -256,3 +256,10 @@ void recovery_factory_reset(void)
 int usb_msc_is_active(void) { return 0; }
 int usb_manager_request(usb_mode_t mode) { (void)mode; return 0; }
 uint64_t usb_msc_bytes_transferred(void) { return 0; }
+
+/* Firmware updater is a system module (src/system/firmware_update.cpp), not
+ * compiled into the LVGL sim — stub the Settings-button request. */
+void firmware_update_request(void)
+{
+    printf("[stub] firmware_update_request() — updater takeover (device only).\n");
+}

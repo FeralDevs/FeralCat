@@ -26,7 +26,7 @@
 
 // ── Color palette ─────────────────────────────────────────────────────────
 #define TV_BG      0x0A0B09
-#define TV_LIME    0xC4EE1F
+#define TV_LIME    0xFF2A3D
 #define TV_INK     0x14180C
 #define TV_TEXT    0xE9EFE2
 #define TV_MUTED   0x9AA394
@@ -440,7 +440,7 @@ static lv_obj_t * mk_switch(lv_obj_t * p, lv_coord_t y, bool checked)
     lv_obj_set_style_outline_width(sw, 0,                      LV_PART_MAIN | LV_STATE_FOCUSED);
 
     // Indicator (the lime fill, visible when checked)
-    lv_obj_set_style_bg_color(sw, lv_color_hex(0xC4F000),     LV_PART_INDICATOR | LV_STATE_CHECKED);
+    lv_obj_set_style_bg_color(sw, lv_color_hex(0xFF2A3D),     LV_PART_INDICATOR | LV_STATE_CHECKED);
     lv_obj_set_style_bg_opa(sw,   LV_OPA_COVER,               LV_PART_INDICATOR | LV_STATE_CHECKED);
     lv_obj_set_style_radius(sw,   LV_RADIUS_CIRCLE,           LV_PART_INDICATOR | LV_STATE_CHECKED);
     lv_obj_set_style_border_color(sw, lv_color_hex(0xFFFFFF), LV_PART_INDICATOR | LV_STATE_CHECKED);
@@ -922,13 +922,13 @@ static void build_tab_system(lv_obj_t * page)
     lv_obj_t * c_fw = mk_card(sc, y, 66);
     mk_lbl(c_fw, "Update", 0, 0, TV_TEXT, &ui_font_name_14);
     mk_lbl(c_fw, "SD card / GitHub / USB", 0, 30, TV_MUTED, &ui_font_name_14);
-    mk_outline_btn(c_fw, CARD_INN - 90, 7, 90, 36, "Open", 0xBEE700, tab_fw_update_cb);
+    mk_outline_btn(c_fw, CARD_INN - 90, 7, 90, 36, "Open", 0xFF2A3D, tab_fw_update_cb);
     y += 66 + 8;
 
     lv_obj_t * c_rb = mk_card(sc, y, 66);
     mk_lbl(c_rb, "Reboot", 0, 0, TV_TEXT, &ui_font_name_14);
     mk_lbl(c_rb, "soft restart", 0, 30, TV_MUTED, &ui_font_name_14);
-    mk_outline_btn(c_rb, CARD_INN - 90, 7, 90, 36, "Reboot", 0xBEE700, tab_reboot_cb);
+    mk_outline_btn(c_rb, CARD_INN - 90, 7, 90, 36, "Reboot", 0xFF2A3D, tab_reboot_cb);
     y += 66 + 8;
 
     // ── STORAGE ──────────────────────────────────────────────────────────────
@@ -1044,25 +1044,25 @@ static void build_tab_backup(lv_obj_t * page)
     lv_obj_t * c_b = mk_card(sc, y, 66);
     mk_lbl(c_b, "Backup now", 0, 0, TV_TEXT, &ui_font_name_14);
     mk_lbl(c_b, "save all to SD", 0, 30, TV_MUTED, &ui_font_name_14);
-    mk_outline_btn(c_b, CARD_INN - 90, 7, 90, 36, "Save", 0xBEE700, tab_backup_now_cb);
+    mk_outline_btn(c_b, CARD_INN - 90, 7, 90, 36, "Save", 0xFF2A3D, tab_backup_now_cb);
     y += 66 + 8;
 
     lv_obj_t * c_ra = mk_card(sc, y, 66);
     mk_lbl(c_ra, "Restore all", 0, 0, TV_TEXT, &ui_font_name_14);
     mk_lbl(c_ra, "settings + WiFi, reboots", 0, 30, TV_MUTED, &ui_font_name_14);
-    mk_outline_btn(c_ra, CARD_INN - 90, 7, 90, 36, "Restore", 0xBEE700, tab_restore_all_cb);
+    mk_outline_btn(c_ra, CARD_INN - 90, 7, 90, 36, "Restore", 0xFF2A3D, tab_restore_all_cb);
     y += 66 + 8;
 
     lv_obj_t * c_rw = mk_card(sc, y, 66);
     mk_lbl(c_rw, "Restore WiFi only", 0, 0, TV_TEXT, &ui_font_name_14);
     mk_lbl(c_rw, "credentials, reboots", 0, 30, TV_MUTED, &ui_font_name_14);
-    mk_outline_btn(c_rw, CARD_INN - 90, 7, 90, 36, "Restore", 0xBEE700, tab_restore_wifi_cb);
+    mk_outline_btn(c_rw, CARD_INN - 90, 7, 90, 36, "Restore", 0xFF2A3D, tab_restore_wifi_cb);
     y += 66 + 8;
 
     lv_obj_t * c_rs = mk_card(sc, y, 66);
     mk_lbl(c_rs, "Restore settings only", 0, 0, TV_TEXT, &ui_font_name_14);
     mk_lbl(c_rs, "everything but WiFi", 0, 30, TV_MUTED, &ui_font_name_14);
-    mk_outline_btn(c_rs, CARD_INN - 90, 7, 90, 36, "Restore", 0xBEE700, tab_restore_settings_cb);
+    mk_outline_btn(c_rs, CARD_INN - 90, 7, 90, 36, "Restore", 0xFF2A3D, tab_restore_settings_cb);
     y += 66 + 8;
 
     mk_lbl(sc, "MEOW XP  -  auto-syncs; buttons are manual", TAB_MARG, y, TV_MUTED, &ui_font_name_14);
@@ -1071,13 +1071,13 @@ static void build_tab_backup(lv_obj_t * page)
     lv_obj_t * c_xb = mk_card(sc, y, 66);
     mk_lbl(c_xb, "Backup XP", 0, 0, TV_TEXT, &ui_font_name_14);
     mk_lbl(c_xb, "level & lifetime stats to SD", 0, 30, TV_MUTED, &ui_font_name_14);
-    mk_outline_btn(c_xb, CARD_INN - 90, 7, 90, 36, "Save", 0xBEE700, tab_xp_backup_cb);
+    mk_outline_btn(c_xb, CARD_INN - 90, 7, 90, 36, "Save", 0xFF2A3D, tab_xp_backup_cb);
     y += 66 + 8;
 
     lv_obj_t * c_xr = mk_card(sc, y, 66);
     mk_lbl(c_xr, "Restore XP", 0, 0, TV_TEXT, &ui_font_name_14);
     mk_lbl(c_xr, "level from SD, no reboot", 0, 30, TV_MUTED, &ui_font_name_14);
-    mk_outline_btn(c_xr, CARD_INN - 90, 7, 90, 36, "Restore", 0xBEE700, tab_xp_restore_cb);
+    mk_outline_btn(c_xr, CARD_INN - 90, 7, 90, 36, "Restore", 0xFF2A3D, tab_xp_restore_cb);
     y += 66 + 8;
 }
 

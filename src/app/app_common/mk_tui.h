@@ -30,15 +30,15 @@
 namespace MK_PAL {
     static constexpr uint32_t BLACK       = 0x000000;
     static constexpr uint32_t WHITE       = 0xFFFFFF;
-    static constexpr uint32_t ACCENT      = 0xBBE700;  /* MeowKit yellow-green */
-    static constexpr uint32_t ACCENT_DIM  = 0x667A00;
-    static constexpr uint32_t ACCENT_DARK = 0x1E2800;
+    static constexpr uint32_t ACCENT      = 0xFF2A3D;  /* FeralCat red */
+    static constexpr uint32_t ACCENT_DIM  = 0x8A0016;
+    static constexpr uint32_t ACCENT_DARK = 0x2E0009;
     static constexpr uint32_t TEXT_PRI    = 0xFFFFFF;
     static constexpr uint32_t TEXT_SEC    = 0x888888;
-    static constexpr uint32_t TEXT_TITLE  = 0xBBE700;
+    static constexpr uint32_t TEXT_TITLE  = 0xFF2A3D;
     static constexpr uint32_t ITEM_BG     = 0x1A1A1A;
     static constexpr uint32_t ITEM_BG_ALT = 0x222222;
-    static constexpr uint32_t SEL_BG      = 0xBBE700;
+    static constexpr uint32_t SEL_BG      = 0xFF2A3D;
     static constexpr uint32_t SEL_TEXT    = 0x000000;
     static constexpr uint32_t BORDER      = 0x333333;
     static constexpr uint32_t OK          = 0x00DD44;

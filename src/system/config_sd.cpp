@@ -44,7 +44,7 @@ void config_sd_backup(void)
     f.printf("vol=%d\n",       persist_get_int(PKEY_VOLUME, 50));
     f.printf("key_snd=%d\n",   persist_get_int(PKEY_KEY_SOUND, 1));
     f.printf("led=%d\n",       persist_get_int(PKEY_LED_BRIGHT, 50));
-    f.printf("led_color=%06x\n", (unsigned)persist_get_u32(PKEY_LED_COLOR, 0xBBE700));
+    f.printf("led_color=%06x\n", (unsigned)persist_get_u32(PKEY_LED_COLOR, 0xFF2A3D));
     f.printf("led_fx=%d\n",    persist_get_int(PKEY_LED_EFFECT, 1));
     f.printf("wifi_en=%d\n",   persist_get_int(PKEY_WIFI_EN, 1));
     f.printf("ble_en=%d\n",    persist_get_int(PKEY_BLE_EN, 0));

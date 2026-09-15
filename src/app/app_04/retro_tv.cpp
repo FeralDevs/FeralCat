@@ -35,7 +35,7 @@ namespace MOONCAKE::APPS {
 
 // ─── palette (RGB888) ────────────────────────────────────────────────────────
 static constexpr uint32_t C_BG    = 0x0C1400;  // very dark green
-static constexpr uint32_t C_FG    = 0xBBE700;  // lime accent (system color)
+static constexpr uint32_t C_FG    = 0xFF2A3D;  // lime accent (system color)
 static constexpr uint32_t C_DIM   = 0x384600;  // dim accent
 static constexpr uint32_t C_SCRN  = 0x040800;  // TV screen bg (near-black)
 static constexpr uint32_t C_ERR   = 0xFF3333;  // error red

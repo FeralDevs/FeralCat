@@ -11,7 +11,7 @@ static constexpr int W = 320, H = 240;
 static constexpr int BW = 220, BH = 12;
 static constexpr int BX = (W - BW) / 2, BY = 176;
 
-static uint32_t c_lime(LGFX_Class& l)  { return l.color888(0xC4, 0xEE, 0x1F); }
+static uint32_t c_lime(LGFX_Class& l)  { return l.color888(0xFF, 0x2A, 0x3D); }
 static uint32_t c_muted(LGFX_Class& l) { return l.color888(0x9A, 0xA3, 0x94); }
 
 void SplashScreen::begin(LGFX_Class& lcd)
@@ -21,9 +21,9 @@ void SplashScreen::begin(LGFX_Class& lcd)
 
     lcd.setFont(&fonts::efontCN_24);
     lcd.setTextColor(c_lime(lcd), 0x0000);
-    int tw = lcd.textWidth("MeowGotchi");
+    int tw = lcd.textWidth("FeralCat");
     lcd.setCursor((W - tw) / 2, 86);
-    lcd.print("MeowGotchi");
+    lcd.print("FeralCat");
 
     lcd.setFont(&fonts::efontCN_16);
     lcd.setTextColor(lcd.color888(0xE9, 0xEF, 0xE2), 0x0000);
@@ -31,9 +31,9 @@ void SplashScreen::begin(LGFX_Class& lcd)
     lcd.setCursor((W - tw) / 2, 118);
     lcd.print(MEOWGOTCHI_FW_VERSION);
     lcd.setTextColor(c_muted(lcd), 0x0000);
-    tw = lcd.textWidth("Fork: Janud");
+    tw = lcd.textWidth("by FeralDevs");
     lcd.setCursor((W - tw) / 2, 138);
-    lcd.print("Fork: Janud");
+    lcd.print("by FeralDevs");
 
     lcd.drawRoundRect(BX - 2, BY - 2, BW + 4, BH + 4, 4, lcd.color888(0x2A, 0x2D, 0x26));
 

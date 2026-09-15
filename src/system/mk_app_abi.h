@@ -23,13 +23,13 @@ extern "C" {
 /* ── Colors (0xRRGGBB) ─────────────────────────────────────────────────── */
 #define MK_COL_BLACK   0x000000u
 #define MK_COL_WHITE   0xFFFFFFu
-#define MK_COL_ACCENT  0xBBE700u   /* MeowKit yellow-green */
+#define MK_COL_ACCENT  0xFF2A3Du   /* FeralCat red */
 #define MK_COL_TEXT    0xFFFFFFu
 #define MK_COL_MUTED   0x888888u
 #define MK_COL_OK      0x00DD44u
 #define MK_COL_WARN    0xFFAA00u
 #define MK_COL_ERR     0xFF3333u
-#define MK_COL_ACCENT_DARK 0x1E2800u
+#define MK_COL_ACCENT_DARK 0x2E0009u
 #define MK_COL_ITEM_BG     0x1A1A1Au
 #define MK_COL_BORDER      0x333333u
 

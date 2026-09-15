@@ -121,7 +121,7 @@ void ui_multi_column_picker_screen_init(void)
     lv_obj_set_x(ui_Roller_month, -100);
     lv_obj_set_y(ui_Roller_month, 6);
     lv_obj_set_align(ui_Roller_month, LV_ALIGN_CENTER);
-    lv_obj_set_style_text_color(ui_Roller_month, lv_color_hex(0xBDE600), LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_text_color(ui_Roller_month, lv_color_hex(0xFF2A3D), LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_text_opa(ui_Roller_month, 120, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_text_font(ui_Roller_month, &ui_font_name_24, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_bg_color(ui_Roller_month, lv_color_hex(0xFFFFFF), LV_PART_MAIN | LV_STATE_DEFAULT);
@@ -129,7 +129,7 @@ void ui_multi_column_picker_screen_init(void)
     lv_obj_set_style_border_color(ui_Roller_month, lv_color_hex(0x000000), LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_border_opa(ui_Roller_month, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
 
-    lv_obj_set_style_text_color(ui_Roller_month, lv_color_hex(0xBDE600), LV_PART_SELECTED | LV_STATE_DEFAULT);
+    lv_obj_set_style_text_color(ui_Roller_month, lv_color_hex(0xFF2A3D), LV_PART_SELECTED | LV_STATE_DEFAULT);
     lv_obj_set_style_text_opa(ui_Roller_month, 255, LV_PART_SELECTED | LV_STATE_DEFAULT);
     lv_obj_set_style_bg_color(ui_Roller_month, lv_color_hex(0xFFFFFF), LV_PART_SELECTED | LV_STATE_DEFAULT);
     lv_obj_set_style_bg_opa(ui_Roller_month, 0, LV_PART_SELECTED | LV_STATE_DEFAULT);
@@ -143,7 +143,7 @@ void ui_multi_column_picker_screen_init(void)
     lv_obj_set_x(ui_Roller_day, 0);
     lv_obj_set_y(ui_Roller_day, 6);
     lv_obj_set_align(ui_Roller_day, LV_ALIGN_CENTER);
-    lv_obj_set_style_text_color(ui_Roller_day, lv_color_hex(0xBDE600), LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_text_color(ui_Roller_day, lv_color_hex(0xFF2A3D), LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_text_opa(ui_Roller_day, 120, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_text_font(ui_Roller_day, &ui_font_name_24, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_bg_color(ui_Roller_day, lv_color_hex(0xFFFFFF), LV_PART_MAIN | LV_STATE_DEFAULT);
@@ -151,7 +151,7 @@ void ui_multi_column_picker_screen_init(void)
     lv_obj_set_style_border_color(ui_Roller_day, lv_color_hex(0x000000), LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_border_opa(ui_Roller_day, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
 
-    lv_obj_set_style_text_color(ui_Roller_day, lv_color_hex(0xBDE600), LV_PART_SELECTED | LV_STATE_DEFAULT);
+    lv_obj_set_style_text_color(ui_Roller_day, lv_color_hex(0xFF2A3D), LV_PART_SELECTED | LV_STATE_DEFAULT);
     lv_obj_set_style_text_opa(ui_Roller_day, 255, LV_PART_SELECTED | LV_STATE_DEFAULT);
     lv_obj_set_style_bg_color(ui_Roller_day, lv_color_hex(0xFFFFFF), LV_PART_SELECTED | LV_STATE_DEFAULT);
     lv_obj_set_style_bg_opa(ui_Roller_day, 0, LV_PART_SELECTED | LV_STATE_DEFAULT);
@@ -165,7 +165,7 @@ void ui_multi_column_picker_screen_init(void)
     lv_obj_set_x(ui_Roller_year, 100);
     lv_obj_set_y(ui_Roller_year, 6);
     lv_obj_set_align(ui_Roller_year, LV_ALIGN_CENTER);
-    lv_obj_set_style_text_color(ui_Roller_year, lv_color_hex(0xBDE600), LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_text_color(ui_Roller_year, lv_color_hex(0xFF2A3D), LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_text_opa(ui_Roller_year, 120, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_text_font(ui_Roller_year, &ui_font_name_24, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_bg_color(ui_Roller_year, lv_color_hex(0xFFFFFF), LV_PART_MAIN | LV_STATE_DEFAULT);
@@ -173,7 +173,7 @@ void ui_multi_column_picker_screen_init(void)
     lv_obj_set_style_border_color(ui_Roller_year, lv_color_hex(0x000000), LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_border_opa(ui_Roller_year, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
 
-    lv_obj_set_style_text_color(ui_Roller_year, lv_color_hex(0xBDE600), LV_PART_SELECTED | LV_STATE_DEFAULT);
+    lv_obj_set_style_text_color(ui_Roller_year, lv_color_hex(0xFF2A3D), LV_PART_SELECTED | LV_STATE_DEFAULT);
     lv_obj_set_style_text_opa(ui_Roller_year, 255, LV_PART_SELECTED | LV_STATE_DEFAULT);
     lv_obj_set_style_bg_color(ui_Roller_year, lv_color_hex(0xFFFFFF), LV_PART_SELECTED | LV_STATE_DEFAULT);
     lv_obj_set_style_bg_opa(ui_Roller_year, 0, LV_PART_SELECTED | LV_STATE_DEFAULT);

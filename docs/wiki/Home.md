@@ -18,7 +18,7 @@ WiFi/BLE security tools, updates itself over WiFi or SD, and runs Berry scripts.
 > handshake capture are off by default and opt-in. Obey your local laws.
 
 ## Quick start
-1. **First install (USB, once):** flash `meowgotchi-OTA-merged-0x0.bin` at `0x0` —
+1. **First install (USB, once):** flash `feralcat-OTA-merged-0x0.bin` at `0x0` —
    see [[Flashing and Recovery]].
 2. **After that:** update on-device via **[[Firmware Updates|Firmware → Update over
    WiFi]]** or from SD.

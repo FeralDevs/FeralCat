@@ -37,7 +37,7 @@ firmware grows past a slot, the OTA build will fail the size check.
 Changing the partition table needs a full flash, so do this **once** over USB:
 
 1. Enter download mode (Flash Mode app, or hold **BOOT**).
-2. Flash **`releases/meowgotchi-OTA-merged-0x0.bin`** at offset **`0x0`**
+2. Flash **`releases/feralcat-OTA-merged-0x0.bin`** at offset **`0x0`**
    (Web‑Serial flasher; "Erase Flash" recommended for the layout change).
 
 That lays down the dual‑OTA layout + firmware.

@@ -103,7 +103,7 @@ static void _visit_entry(const char * name, int is_dir, void * user)
     lv_obj_set_x(btn, 0);
     lv_obj_set_y(btn, (lv_coord_t)(ctx->row * 46));
     lv_obj_set_style_bg_opa(btn,   LV_OPA_TRANSP, LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_bg_color(btn, lv_color_hex(0xBBE700), LV_PART_MAIN | LV_STATE_PRESSED);
+    lv_obj_set_style_bg_color(btn, lv_color_hex(0xFF2A3D), LV_PART_MAIN | LV_STATE_PRESSED);
     lv_obj_set_style_bg_opa(btn,   80,            LV_PART_MAIN | LV_STATE_PRESSED);
     lv_obj_set_style_radius(btn,   4, 0);
     lv_obj_set_style_border_width(btn, 0, 0);
@@ -244,7 +244,7 @@ void ui_sd_card_files_screen_init(void)
     lv_obj_set_style_radius(_file_list,     0, 0);
     lv_obj_set_scroll_dir(_file_list, LV_DIR_VER);
     lv_obj_set_scrollbar_mode(_file_list, LV_SCROLLBAR_MODE_AUTO);
-    lv_obj_set_style_bg_color(_file_list, lv_color_hex(0xBBE700),
+    lv_obj_set_style_bg_color(_file_list, lv_color_hex(0xFF2A3D),
                                LV_PART_SCROLLBAR | LV_STATE_DEFAULT);
     lv_obj_set_style_bg_opa(_file_list, 255,
                              LV_PART_SCROLLBAR | LV_STATE_DEFAULT);

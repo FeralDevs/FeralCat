@@ -4,7 +4,7 @@
 
 | Situation | File | How |
 |---|---|---|
-| **First install / coming from stock** | `meowgotchi-OTA-merged-0x0.bin` | USB flash at `0x0` (once) |
+| **First install / coming from stock** | `feralcat-OTA-merged-0x0.bin` | USB flash at `0x0` (once) |
 | **Already on this firmware** | *nothing* | **Firmware → Update over WiFi**, or SD |
 | **Updating manually** | `firmware.bin` | SD → **Update from SD**, or USB at `0x10000` |
 
@@ -29,7 +29,7 @@ Web-Serial** flasher such as <https://esp.huhn.me> (or ESP-Launchpad):
 1. Enter download mode (above).
 2. **Connect**.
 3. **First install:** *Erase Flash* (safe — it's a partition-layout change), then
-   add `meowgotchi-OTA-merged-0x0.bin` at offset **`0x0`** → **Program**.
+   add `feralcat-OTA-merged-0x0.bin` at offset **`0x0`** → **Program**.
    **App-only update:** add `firmware.bin` at **`0x10000`** → **Program** (do
    **not** erase).
 4. Power-cycle.

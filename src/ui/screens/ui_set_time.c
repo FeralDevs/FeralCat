@@ -42,7 +42,7 @@ static void make_save_hint(void)
     lv_obj_t * lbl = lv_label_create(bg);
     lv_obj_set_align(lbl, LV_ALIGN_CENTER);
     lv_label_set_text(lbl, "Saved");
-    lv_obj_set_style_text_color(lbl, lv_color_hex(0xBDE600), LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_text_color(lbl, lv_color_hex(0xFF2A3D), LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_text_font(lbl, &ui_font_name_14, LV_PART_MAIN | LV_STATE_DEFAULT);
 }
 
@@ -172,12 +172,12 @@ void ui_time_picker_screen_init(void)
     lv_obj_set_width(ui_time_Roller_W, LV_SIZE_CONTENT);
     lv_obj_set_align(ui_time_Roller_W, LV_ALIGN_CENTER);
     lv_obj_set_x(ui_time_Roller_W, -100); lv_obj_set_y(ui_time_Roller_W, 6);
-    lv_obj_set_style_text_color(ui_time_Roller_W, lv_color_hex(0xBDE600), LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_text_color(ui_time_Roller_W, lv_color_hex(0xFF2A3D), LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_text_opa(ui_time_Roller_W, 120, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_text_font(ui_time_Roller_W, &ui_font_name_24, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_bg_opa(ui_time_Roller_W, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_border_opa(ui_time_Roller_W, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_text_color(ui_time_Roller_W, lv_color_hex(0xBDE600), LV_PART_SELECTED | LV_STATE_DEFAULT);
+    lv_obj_set_style_text_color(ui_time_Roller_W, lv_color_hex(0xFF2A3D), LV_PART_SELECTED | LV_STATE_DEFAULT);
     lv_obj_set_style_text_opa(ui_time_Roller_W, 255, LV_PART_SELECTED | LV_STATE_DEFAULT);
     lv_obj_set_style_bg_opa(ui_time_Roller_W, 0, LV_PART_SELECTED | LV_STATE_DEFAULT);
 
@@ -191,12 +191,12 @@ void ui_time_picker_screen_init(void)
     lv_obj_set_width(ui_time_Roller_H, LV_SIZE_CONTENT);
     lv_obj_set_align(ui_time_Roller_H, LV_ALIGN_CENTER);
     lv_obj_set_x(ui_time_Roller_H, 0); lv_obj_set_y(ui_time_Roller_H, 6);
-    lv_obj_set_style_text_color(ui_time_Roller_H, lv_color_hex(0xBDE600), LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_text_color(ui_time_Roller_H, lv_color_hex(0xFF2A3D), LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_text_opa(ui_time_Roller_H, 120, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_text_font(ui_time_Roller_H, &ui_font_name_24, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_bg_opa(ui_time_Roller_H, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_border_opa(ui_time_Roller_H, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_text_color(ui_time_Roller_H, lv_color_hex(0xBDE600), LV_PART_SELECTED | LV_STATE_DEFAULT);
+    lv_obj_set_style_text_color(ui_time_Roller_H, lv_color_hex(0xFF2A3D), LV_PART_SELECTED | LV_STATE_DEFAULT);
     lv_obj_set_style_text_opa(ui_time_Roller_H, 255, LV_PART_SELECTED | LV_STATE_DEFAULT);
     lv_obj_set_style_bg_opa(ui_time_Roller_H, 0, LV_PART_SELECTED | LV_STATE_DEFAULT);
 
@@ -214,12 +214,12 @@ void ui_time_picker_screen_init(void)
     lv_obj_set_width(ui_time_Roller_M, LV_SIZE_CONTENT);
     lv_obj_set_align(ui_time_Roller_M, LV_ALIGN_CENTER);
     lv_obj_set_x(ui_time_Roller_M, 100); lv_obj_set_y(ui_time_Roller_M, 6);
-    lv_obj_set_style_text_color(ui_time_Roller_M, lv_color_hex(0xBDE600), LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_text_color(ui_time_Roller_M, lv_color_hex(0xFF2A3D), LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_text_opa(ui_time_Roller_M, 120, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_text_font(ui_time_Roller_M, &ui_font_name_24, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_bg_opa(ui_time_Roller_M, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_border_opa(ui_time_Roller_M, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_text_color(ui_time_Roller_M, lv_color_hex(0xBDE600), LV_PART_SELECTED | LV_STATE_DEFAULT);
+    lv_obj_set_style_text_color(ui_time_Roller_M, lv_color_hex(0xFF2A3D), LV_PART_SELECTED | LV_STATE_DEFAULT);
     lv_obj_set_style_text_opa(ui_time_Roller_M, 255, LV_PART_SELECTED | LV_STATE_DEFAULT);
     lv_obj_set_style_bg_opa(ui_time_Roller_M, 0, LV_PART_SELECTED | LV_STATE_DEFAULT);
 

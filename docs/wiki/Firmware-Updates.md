@@ -50,5 +50,5 @@ coredump  0xFF0000  64 KB
 
 The two app slots are why the app has ~7.94 MB (not 16 MB) to live in — the spare
 copy is what makes self-update safe. A **one-time USB flash** of
-`meowgotchi-OTA-merged-0x0.bin` at `0x0` installs this layout when coming from
+`feralcat-OTA-merged-0x0.bin` at `0x0` installs this layout when coming from
 stock.

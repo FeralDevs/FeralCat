@@ -99,7 +99,7 @@ void AppLua::createScreen() {
     lv_obj_clear_flag(screen_, LV_OBJ_FLAG_SCROLLABLE);
     lv_obj_set_style_bg_color(screen_, lv_color_hex(0x10121A), 0);
     title_ = lv_label_create(screen_);
-    styleText(title_, 0xBEE700);
+    styleText(title_, 0xFF2A3D);
     lv_obj_set_pos(title_, 10, 7);
     lv_obj_set_width(title_, 300);
     lv_label_set_long_mode(title_, LV_LABEL_LONG_DOT);
@@ -123,7 +123,7 @@ void AppLua::createScreen() {
         lv_obj_set_height(buttons_[i], 44);
         lv_obj_set_style_bg_color(buttons_[i], lv_color_hex(0x263048), 0);
         lv_obj_set_style_shadow_width(buttons_[i], 0, 0);
-        lv_obj_set_style_outline_color(buttons_[i], lv_color_hex(0xBEE700), 0);
+        lv_obj_set_style_outline_color(buttons_[i], lv_color_hex(0xFF2A3D), 0);
         lv_obj_add_event_cb(buttons_[i], clicked, LV_EVENT_ALL, &session_->click[i]);
         labels_[i] = lv_label_create(buttons_[i]);
         styleText(labels_[i], 0xFFFFFF);

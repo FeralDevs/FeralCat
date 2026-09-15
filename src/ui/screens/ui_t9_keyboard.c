@@ -252,7 +252,7 @@ static void _overlay_show(void)
     lv_obj_t * spin = lv_spinner_create(card, 1000, 60);
     lv_obj_set_size(spin, 36, 36);
     lv_obj_align(spin, LV_ALIGN_CENTER, 0, -20);
-    lv_obj_set_style_arc_color(spin, lv_color_hex(0xC4F000), LV_PART_INDICATOR);
+    lv_obj_set_style_arc_color(spin, lv_color_hex(0xFF2A3D), LV_PART_INDICATOR);
     lv_obj_set_style_arc_width(spin, 4, LV_PART_INDICATOR);
     lv_obj_set_style_arc_color(spin, lv_color_hex(0x3A3A3C), LV_PART_MAIN);
     lv_obj_set_style_arc_width(spin, 4, LV_PART_MAIN);
@@ -493,7 +493,7 @@ void ui_t9_keyboard_screen_init(void)
     /* control_1: "Send" text label (yellow) */
     ui_send = lv_label_create(ui_control_1);
     lv_label_set_text(ui_send, "Send");
-    lv_obj_set_style_text_color(ui_send, lv_color_hex(0xC4F000), 0);
+    lv_obj_set_style_text_color(ui_send, lv_color_hex(0xFF2A3D), 0);
     lv_obj_set_style_text_font(ui_send, &ui_font_name_24, 0);
     lv_obj_set_align(ui_send, LV_ALIGN_CENTER);
 
@@ -605,7 +605,7 @@ void ui_t9_keyboard_screen_init(void)
     /* Labels are not clickable by default — taps fall through to ui_control_2 → _ctrl2_cb */
     s_sym_icon = lv_label_create(ui_control_2);
     lv_label_set_text(s_sym_icon, LV_SYMBOL_LEFT " " LV_SYMBOL_RIGHT);
-    lv_obj_set_style_text_color(s_sym_icon, lv_color_hex(0xC4F000), 0);
+    lv_obj_set_style_text_color(s_sym_icon, lv_color_hex(0xFF2A3D), 0);
     lv_obj_set_align(s_sym_icon, LV_ALIGN_CENTER);
     lv_obj_add_flag(s_sym_icon, LV_OBJ_FLAG_HIDDEN);
 

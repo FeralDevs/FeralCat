@@ -1,24 +1,11 @@
-# MeowKit‑S3 Custom Firmware — "MeowGotchi" build
+# FeralCat — MeowKit‑S3 custom firmware (by FeralDevs)
 
-**v0.8.1-lua.2** adds separately installable Lua apps with direct launcher tiles
-and a native SD audio service on top of v0.8.1. The [MP3 Player](docs/MP3-PLAYER.md)
-is a separate app package with large touch controls, M3U playlists, JPEG covers
-and four equalizer presets. Copy apps from `sd files/apps` onto the SD card
-after installing a firmware built from this branch.
-
-MP3 Player **1.1.1**, Hello Meow **1.0.1**, and the **App manager** use English
-menus, controls, status messages, and errors.
-
-See [app installation and API](docs/LUA-APPS.md), [build and tests](docs/LUA-BUILD.md)
-and [implementation and verification](docs/MP3-PLAYER-1.1.md). Existing `releases/`
-binaries are the unchanged upstream v0.8.1 images and do **not** include Lua apps.
-The upstream experimental native MeowPlayer remains disabled by default.
-
-| Lua MP3 player | Large volume controls |
-| --- | --- |
-| ![MP3 player](docs/images/lua-mp3-player.png) | ![Volume controls](docs/images/lua-mp3-volume.png) |
-
-The previews above use the production LVGL renderer with synthetic track data.
+**FeralCat v0.10.0** is the current build: signed **native ELF apps** loaded from
+the SD card through a stable app SDK, the firmware updater as a system module,
+a red UI theme, and the FeralCat rebrand — on top of v0.9.0's Lua platform and
+MP3 player. Six security tools (WiFi Analyzer, Deauth Detect, Rogue Radar, BLE
+Spam Detect, Probe Sniffer, Tracker Detect) now ship as **signed SD apps** in
+`sd files/apps`; copy them onto the card after flashing.
 
 Custom, community firmware for the **MeowKit‑S3** (ESP32‑S3) pocket multi‑tool.
 It fixes the boot bugs that stop the open‑source firmware from running on retail
@@ -71,14 +58,14 @@ Built entirely in Docker (nothing installed on the host). Full technical guide:
 
 Two artifacts in [`releases/`](releases/) (checksums in
 [`SHA256SUMS.txt`](releases/SHA256SUMS.txt)):
-- **`meowgotchi-OTA-merged-0x0.bin`** — the complete image, flashed **once** over USB.
+- **`feralcat-OTA-merged-0x0.bin`** — the complete image, flashed **once** over USB.
 - **`firmware.bin`** — the app image used for **SD‑card updates** afterwards.
 
 **First time (USB):**
 1. Enter download mode — open **Firmware → USB Download Mode → A**, or power off,
    hold **BOOT**, plug USB, hold ~3 s, release.
 2. Web‑Serial flasher (Chrome/Edge, e.g. <https://esp.huhn.me>): **Connect** →
-   add `meowgotchi-OTA-merged-0x0.bin` at offset **`0x0`** → **Program** →
+   add `feralcat-OTA-merged-0x0.bin` at offset **`0x0`** → **Program** →
    power‑cycle. Do an **Erase Flash** first (it's a partition‑layout change).
 
 **Updates after that — no computer:**

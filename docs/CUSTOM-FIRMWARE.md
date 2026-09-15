@@ -81,7 +81,7 @@ docker run --rm -v meowkit-pio:/root/.platformio \
 docker run --rm --entrypoint bash -v meowkit-pio:/root/.platformio \
   -v "$PWD/firmware-upstream":/work -w /work meowkit-pio:local -c '
   BA=$(find /root/.platformio -name boot_app0.bin | head -1)
-  python -m esptool --chip esp32s3 merge-bin -o dist/meowgotchi-OTA-merged-0x0.bin \
+  python -m esptool --chip esp32s3 merge-bin -o dist/feralcat-OTA-merged-0x0.bin \
     --flash-mode dio --flash-size 16MB \
     0x0 .pio/build/esp32s3box/bootloader.bin \
     0x8000 .pio/build/esp32s3box/partitions.bin \
@@ -89,7 +89,7 @@ docker run --rm --entrypoint bash -v meowkit-pio:/root/.platformio \
     0x10000 .pio/build/esp32s3box/firmware.bin'
 ```
 
-Result: **`dist/meowgotchi-OTA-merged-0x0.bin`**, flashed at offset `0x0`.
+Result: **`dist/feralcat-OTA-merged-0x0.bin`**, flashed at offset `0x0`.
 
 ---
 
@@ -101,7 +101,7 @@ Docker on macOS can't reach USB, so flash from a browser (Chrome/Edge, Web Seria
    Mode** → **A**, or (fallback) power off, hold **BOOT**, plug USB, hold ~3 s,
    release.
 2. In **esp.huhn.me** (or ESP‑Launchpad DIY): **Connect** → add
-   `dist/meowgotchi-OTA-merged-0x0.bin` at **`0x0`** → **Program**.
+   `dist/feralcat-OTA-merged-0x0.bin` at **`0x0`** → **Program**.
 3. Power‑cycle.
 
 Because it's a complete image at `0x0`, an "Erase Flash" first is safe (and cures

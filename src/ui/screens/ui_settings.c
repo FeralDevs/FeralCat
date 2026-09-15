@@ -84,8 +84,8 @@ static void ui_event_info_button_click(lv_event_t * e)
 
     char body[256];
     lv_snprintf(body, sizeof(body),
-        "MeowGotchi %s\n"
-        "Fork: Janud\n"
+        "FeralCat %s\n"
+        "by FeralDevs\n"
         "SoC: ESP32-S3  N16R8\n"
         "Flash 16MB DIO  PSRAM 8MB\n"
         "MAC %02X:%02X:%02X:%02X:%02X:%02X\n"
@@ -109,14 +109,14 @@ static void ui_event_info_button_click(lv_event_t * e)
     lv_obj_set_size(panel, 280, 190);
     lv_obj_center(panel);
     lv_obj_set_style_bg_color(panel, lv_color_hex(0x111111), 0);
-    lv_obj_set_style_border_color(panel, lv_color_hex(0xBBE700), 0);
+    lv_obj_set_style_border_color(panel, lv_color_hex(0xFF2A3D), 0);
     lv_obj_set_style_border_width(panel, 2, 0);
     lv_obj_set_style_radius(panel, 8, 0);
     lv_obj_clear_flag(panel, LV_OBJ_FLAG_SCROLLABLE);
 
     lv_obj_t * title = lv_label_create(panel);
     lv_label_set_text(title, "About");
-    lv_obj_set_style_text_color(title, lv_color_hex(0xBBE700), 0);
+    lv_obj_set_style_text_color(title, lv_color_hex(0xFF2A3D), 0);
     lv_obj_align(title, LV_ALIGN_TOP_LEFT, 0, 0);
 
     lv_obj_t * lbl = lv_label_create(panel);
@@ -127,7 +127,7 @@ static void ui_event_info_button_click(lv_event_t * e)
     lv_obj_t * close = lv_btn_create(panel);
     lv_obj_set_size(close, 90, 30);
     lv_obj_align(close, LV_ALIGN_BOTTOM_MID, 0, 4);
-    lv_obj_set_style_bg_color(close, lv_color_hex(0xBBE700), 0);
+    lv_obj_set_style_bg_color(close, lv_color_hex(0xFF2A3D), 0);
     lv_obj_t * cl = lv_label_create(close);
     lv_label_set_text(cl, "Close");
     lv_obj_set_style_text_color(cl, lv_color_hex(0x000000), 0);
@@ -300,7 +300,7 @@ void ui_settings_screen_init(void)
     lv_obj_add_flag(ui_settings_button, LV_OBJ_FLAG_SCROLL_ON_FOCUS);     /// Flags
     lv_obj_clear_flag(ui_settings_button, LV_OBJ_FLAG_SCROLLABLE);      /// Flags
     lv_obj_set_style_radius(ui_settings_button, 43, LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_bg_color(ui_settings_button, lv_color_hex(0xBEE700), LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_bg_color(ui_settings_button, lv_color_hex(0xFF2A3D), LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_bg_opa(ui_settings_button, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_bg_img_src(ui_settings_button, &ui_img_detailed_settings_png, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_outline_color(ui_settings_button, lv_color_hex(0x9DDE00), LV_PART_MAIN | LV_STATE_PRESSED);
@@ -335,7 +335,7 @@ void ui_settings_screen_init(void)
     lv_obj_add_flag(ui_msc_button, LV_OBJ_FLAG_SCROLL_ON_FOCUS);     /// Flags
     lv_obj_clear_flag(ui_msc_button, LV_OBJ_FLAG_SCROLLABLE);      /// Flags
     lv_obj_set_style_radius(ui_msc_button, 43, LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_bg_color(ui_msc_button, lv_color_hex(0xBEE700), LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_bg_color(ui_msc_button, lv_color_hex(0xFF2A3D), LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_bg_opa(ui_msc_button, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_bg_img_src(ui_msc_button, &ui_img_usb_msc_png, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_outline_color(ui_msc_button, lv_color_hex(0x9DDE00), LV_PART_MAIN | LV_STATE_PRESSED);
@@ -354,7 +354,7 @@ void ui_settings_screen_init(void)
     lv_obj_add_flag(ui_info_button, LV_OBJ_FLAG_SCROLL_ON_FOCUS);     /// Flags
     lv_obj_clear_flag(ui_info_button, LV_OBJ_FLAG_SCROLLABLE);      /// Flags
     lv_obj_set_style_radius(ui_info_button, 43, LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_bg_color(ui_info_button, lv_color_hex(0xBEE700), LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_bg_color(ui_info_button, lv_color_hex(0xFF2A3D), LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_bg_opa(ui_info_button, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_bg_img_src(ui_info_button, &ui_img_info_png, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_outline_color(ui_info_button, lv_color_hex(0x9DDE00), LV_PART_MAIN | LV_STATE_PRESSED);

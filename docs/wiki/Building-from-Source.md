@@ -25,7 +25,7 @@ Fuse the flash-at-`0x0` image (**DIO!**):
 docker run --rm --entrypoint bash -v meowkit-pio:/root/.platformio \
   -v "$PWD/firmware-upstream":/work -w /work meowkit-pio:local -c '
   BA=$(find /root/.platformio -name boot_app0.bin | head -1)
-  python -m esptool --chip esp32s3 merge-bin -o dist/meowgotchi-OTA-merged-0x0.bin \
+  python -m esptool --chip esp32s3 merge-bin -o dist/feralcat-OTA-merged-0x0.bin \
     --flash-mode dio --flash-size 16MB \
     0x0 .pio/build/esp32s3box/bootloader.bin \
     0x8000 .pio/build/esp32s3box/partitions.bin \

@@ -69,7 +69,7 @@ static void build_tiles(void)
         lv_obj_add_flag(btn, LV_OBJ_FLAG_SCROLL_ON_FOCUS);     /// Flags
         lv_obj_clear_flag(btn, LV_OBJ_FLAG_SCROLLABLE);      /// Flags
         lv_obj_set_style_radius(btn, 35, LV_PART_MAIN | LV_STATE_DEFAULT);
-        lv_obj_set_style_bg_color(btn, lv_color_hex(0xBEE700), LV_PART_MAIN | LV_STATE_DEFAULT);
+        lv_obj_set_style_bg_color(btn, lv_color_hex(0xFF2A3D), LV_PART_MAIN | LV_STATE_DEFAULT);
         lv_obj_set_style_bg_opa(btn, 255, LV_PART_MAIN | LV_STATE_DEFAULT);
         if (s_entries[i].icon)
             lv_obj_set_style_bg_img_src(btn, s_entries[i].icon, LV_PART_MAIN | LV_STATE_DEFAULT);
@@ -159,7 +159,7 @@ void ui_apps_menu_screen_init(void)
     lv_obj_set_style_radius(_scroll_cont,     0, 0);
     lv_obj_set_scroll_dir(_scroll_cont, LV_DIR_VER);
     lv_obj_set_scrollbar_mode(_scroll_cont, LV_SCROLLBAR_MODE_AUTO);
-    lv_obj_set_style_bg_color(_scroll_cont, lv_color_hex(0xBBE700),
+    lv_obj_set_style_bg_color(_scroll_cont, lv_color_hex(0xFF2A3D),
                                LV_PART_SCROLLBAR | LV_STATE_DEFAULT);
     lv_obj_set_style_bg_opa(_scroll_cont, 255,
                              LV_PART_SCROLLBAR | LV_STATE_DEFAULT);

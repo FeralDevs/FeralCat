@@ -328,7 +328,7 @@ static void _wifi_build_list(void)
         lv_obj_t * spin = lv_spinner_create(row, 800, 60);
         lv_obj_set_size(spin, 18, 18);
         lv_obj_align(spin, LV_ALIGN_LEFT_MID, 4, 0);
-        lv_obj_set_style_arc_color(spin, lv_color_hex(0xC4F000), LV_PART_INDICATOR);
+        lv_obj_set_style_arc_color(spin, lv_color_hex(0xFF2A3D), LV_PART_INDICATOR);
         lv_obj_set_style_arc_width(spin, 3, LV_PART_INDICATOR);
         lv_obj_set_style_arc_color(spin, lv_color_hex(0x444444), LV_PART_MAIN);
         lv_obj_set_style_arc_width(spin, 3, LV_PART_MAIN);
@@ -437,7 +437,7 @@ static void _wifi_build_list(void)
         if(is_connected) {
             lv_obj_t * tick = lv_label_create(row);
             lv_label_set_text(tick, LV_SYMBOL_OK);
-            lv_obj_set_style_text_color(tick, lv_color_hex(0xC4F000), 0);
+            lv_obj_set_style_text_color(tick, lv_color_hex(0xFF2A3D), 0);
             lv_obj_set_style_text_font(tick, LV_FONT_DEFAULT, 0);
             lv_obj_align(tick, LV_ALIGN_LEFT_MID, 18, 0);
             ssid_x = 32;
@@ -458,7 +458,7 @@ static void _wifi_build_list(void)
 
         // Signal color: ≥70% green, 40–69% white, <40% gray
         lv_color_t sig_color;
-        if(aps[i].pct >= 70)      sig_color = lv_color_hex(0xC4F000);
+        if(aps[i].pct >= 70)      sig_color = lv_color_hex(0xFF2A3D);
         else if(aps[i].pct >= 40) sig_color = lv_color_hex(0xFFFFFF);
         else                      sig_color = lv_color_hex(0x888888);
 
@@ -468,7 +468,7 @@ static void _wifi_build_list(void)
             lv_snprintf(right_buf, sizeof(right_buf), "%d%%", aps[i].pct);
         } else if(aps[i].saved) {
             lv_snprintf(right_buf, sizeof(right_buf), "%d%% Saved", aps[i].pct);
-            sig_color = lv_color_hex(0x80C800);
+            sig_color = lv_color_hex(0xFF2A3D);
         } else if(!aps[i].encrypted) {
             lv_snprintf(right_buf, sizeof(right_buf), "%d%% Open", aps[i].pct);
         } else {
@@ -516,7 +516,7 @@ static void _conn_poll_cb(lv_timer_t * t)
             lv_snprintf(msg, sizeof(msg), "%s  %s", ui_wifi_bridge_get_current_ssid(), ip);
         else
             lv_snprintf(msg, sizeof(msg), "Connected: %s", ui_wifi_bridge_get_current_ssid());
-        _wifi_show_toast(msg, lv_color_hex(0xC4F000));
+        _wifi_show_toast(msg, lv_color_hex(0xFF2A3D));
         _wifi_start_scan();   /* refresh list with connected checkmark */
         _wifi_build_list();
 
@@ -710,7 +710,7 @@ void ui_wifi_screen_init(void)
     lv_obj_set_style_bg_opa(ui_wifi_scan_switch, 255, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_radius(ui_wifi_scan_switch, LV_RADIUS_CIRCLE,
                              LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_bg_color(ui_wifi_scan_switch, lv_color_hex(0xC4F000),
+    lv_obj_set_style_bg_color(ui_wifi_scan_switch, lv_color_hex(0xFF2A3D),
                                LV_PART_INDICATOR | LV_STATE_CHECKED);
     lv_obj_set_style_bg_opa(ui_wifi_scan_switch, 255, LV_PART_INDICATOR | LV_STATE_CHECKED);
     lv_obj_set_style_radius(ui_wifi_scan_switch, LV_RADIUS_CIRCLE,
@@ -781,7 +781,7 @@ void ui_wifi_screen_init(void)
             else
                 lv_snprintf(msg, sizeof(msg), "Connected: %s",
                             ui_wifi_bridge_get_current_ssid());
-            _wifi_show_toast(msg, lv_color_hex(0xC4F000));
+            _wifi_show_toast(msg, lv_color_hex(0xFF2A3D));
         }
     }
     _wifi_build_list();
