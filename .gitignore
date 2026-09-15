@@ -29,3 +29,9 @@ sim/tui/build/
 .build/
 build/
 build-native/
+
+# App-signing: compiled host tool (rebuild via tools/app_signing/build.sh).
+# The private signing seed is kept OUTSIDE the repo (~/Projects/MeowKit/keys).
+tools/app_signing/meowsign
+tools/app_signing/*.seed
+*.seed.bin

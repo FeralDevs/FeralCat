@@ -61,6 +61,10 @@ extern "C" {
 
 /* Features (Settings ▸ Features) — opt-in experimental subsystems, off by default. */
 #define PKEY_LUA_EN         "lua_en"     /* int  0|1      Lua installable-app platform */
+#define PKEY_ELF_UNSIGNED   "elf_unsig"  /* int  0|1      allow unsigned native ELF apps */
+
+/* ELF-loader spike: crash breadcrumb (survives reboot to locate a hard fault). */
+#define PKEY_ELF_STAGE      "elf_stg"    /* int  last ELF-load step reached           */
 
 /* Internal — do not read/write from application code */
 #define PKEY_NVS_VER        "nvs_ver"   /* int  schema version sentinel             */

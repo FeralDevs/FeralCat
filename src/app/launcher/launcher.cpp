@@ -52,6 +52,10 @@
 #include "../../ui/ui_wifi_bridge.h"
 #include "../../ui/screens/ui_sd_card_files.h"
 #include "../../system/usb_msc.h"
+#include "../../system/firmware_update.h"    /* Firmware updater — system module */
+#include "../../system/app_sdk.h"            /* Native-app ABI exported to ELF apps */
+#include "../../system/native_apps.h"        /* /apps ELF-app catalog (grid tiles) */
+#include "../../system/elf_runner.h"         /* meow_elf_run_file */
 #include "../../system/usb_manager.h"
 #include "../../system/settings_bridge.h"  /* includes persist internally */
 #include "../../system/persist.h"           /* PKEY_LUA_EN + persist_get_int */
@@ -328,6 +332,16 @@ void Launcher::onLoop()
         uint32_t next_ms = lv_timer_handler();
         handleAppSelection();
 
+        /* Firmware updater (system module, not an app): Settings ▸ System ▸
+         * Update sets a pending request. Run the blocking full-screen takeover
+         * here — LVGL is idle during the call — then rebuild the persistent UI. */
+        if (firmware_update_take_pending()) {
+            firmware_update_run(_device);
+            power_reset_sleep_timer();   /* the takeover bypassed the idle timer */
+            returnToUI();
+            return;
+        }
+
         /* Detect touchscreen activity → reset sleep timer + restore screen. */
         {
             lv_indev_t* indev = lv_indev_get_next(NULL);
@@ -519,6 +533,10 @@ void Launcher::buildUI()
     sys_settings_bridge_attach(_device);
     settings_load_all();
 
+    /* Native-app SDK: export the mk_* ABI to the ELF loader so signed SD apps
+     * can call into the firmware (drivers + MK_TUI). */
+    app_sdk_init(_device);
+
     /* Populate menu grid */
     loadAppsMenu();
 
@@ -566,6 +584,16 @@ void Launcher::loadAppsMenu()
         strncpy(entries[i].id,   allInfo[i].name.c_str(), sizeof(entries[i].id)   - 1);
         strncpy(entries[i].name, allInfo[i].name.c_str(), sizeof(entries[i].name) - 1);
         entries[i].icon = (i < APP_BUILTIN_ICONS_COUNT) ? APP_BUILTIN_ICONS[i] : nullptr;
+    }
+
+    /* Native ELF apps installed on the SD card (/apps/<dir> with app.elf +
+     * manifest.ini). Launched by the "elf:" id prefix in handleAppSelection. */
+    native_apps_scan();
+    for (int i = 0; i < native_apps_count() && count < APPS_MENU_MAX_APPS; i++, count++) {
+        const native_app_t* a = native_apps_get(i);
+        snprintf(entries[count].id,   sizeof(entries[count].id),   "elf:%s", a->dir);
+        snprintf(entries[count].name, sizeof(entries[count].name), "%s",     a->name);
+        entries[count].icon = native_icon_by_name(a->icon);   /* from manifest icon= */
     }
 
     if (_luaApps) {
@@ -647,6 +675,21 @@ void Launcher::handleAppSelection()
     if (!selId || selId[0] == '\0') return;
 
     Serial.printf("[Launcher] Selected: %s\n", selId);
+
+    /* Native ELF app (from the /apps catalog): run it as a blocking full-screen
+     * takeover, then rebuild the persistent UI — same model as the firmware
+     * updater. The loader enforces the signature gate. */
+    if (strncmp(selId, "elf:", 4) == 0) {
+        char path[80];
+        snprintf(path, sizeof(path), "/apps/%s/app.elf", selId + 4);
+        ui_apps_menu_clear_selected();
+        char msg[64] = {0};
+        meow_elf_run_file(path, 0, nullptr, msg, sizeof(msg));
+        Serial.printf("[Launcher] ELF app %s: %s\n", path, msg);
+        power_reset_sleep_timer();   /* the takeover bypassed the idle timer */
+        returnToUI();
+        return;
+    }
 
     if (_luaApps && _luaHostId >= 0 && strncmp(selId, "lua:", 4) == 0) {
         _luaApps->selectPackage(selId + 4);
