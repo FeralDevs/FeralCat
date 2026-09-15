@@ -26,22 +26,15 @@
 #include "app_08/badusb.h"      /* Bad USB      */
 #include "app_09/infrared.h"    /* Infrared     */
 #include "app_10/app_10.h"      /* MeowGotchi    */
-#include "app_11/app_11.h"      /* WiFi Analyzer */
-#include "app_12/app_12.h"      /* Flash Mode      */
-#include "app_13/app_13.h"      /* Deauth Detector   */
-#include "app_14/app_14.h"      /* BLE Spam Detector */
-#include "app_15/app_15.h"      /* Rogue Radar       */
-#include "app_16/app_16.h"      /* Probe Sniffer     */
-#include "app_17/app_17.h"      /* Tracker Detector  */
 #include "app_18/app_18.h"      /* Script Runner     */
 #if MEOWKIT_ENABLE_PLAYER
 #include "app_19/app_19.h"      /* MeowPlayer (WIP)  */
 #endif
-#include "app_20/app_20.h"      /* ELF Test (spike)  */
 #include "app_lua/app_lua.h"    /* SD-installed Lua apps */
 
 #include <mooncake.h>
 #include <memory>
+#include <cstring>
 
 /* Menu-tile icons defined in src/ui/images/ but not declared in ui.h. */
 extern "C" const lv_img_dsc_t ui_img_wifispam_png;
@@ -65,18 +58,10 @@ inline MOONCAKE::APPS::AppLua* registerAllApps(mooncake::Mooncake& mc, DEVICES* 
     mc.installApp(std::make_unique<MOONCAKE::APPS::AppBadUSB>(dev)); /* app_08  Bad USB      */
     mc.installApp(std::make_unique<MOONCAKE::APPS::App09>(dev));     /* app_09  Infrared     */
     mc.installApp(std::make_unique<MOONCAKE::APPS::App10>(dev));     /* app_10  MeowGotchi   */
-    mc.installApp(std::make_unique<MOONCAKE::APPS::App11>(dev));     /* app_11  WiFi Analyzer */
-    mc.installApp(std::make_unique<MOONCAKE::APPS::App12>(dev));     /* app_12  Flash Mode   */
-    mc.installApp(std::make_unique<MOONCAKE::APPS::App13>(dev));     /* app_13  Deauth Detect */
-    mc.installApp(std::make_unique<MOONCAKE::APPS::App14>(dev));     /* app_14  BLE Spam Det. */
-    mc.installApp(std::make_unique<MOONCAKE::APPS::App15>(dev));     /* app_15  Rogue Radar  */
-    mc.installApp(std::make_unique<MOONCAKE::APPS::App16>(dev));     /* app_16  Probe Sniffer */
-    mc.installApp(std::make_unique<MOONCAKE::APPS::App17>(dev));     /* app_17  Tracker Det. */
     mc.installApp(std::make_unique<MOONCAKE::APPS::App18>(dev));     /* app_18  Script Runner */
 #if MEOWKIT_ENABLE_PLAYER
     mc.installApp(std::make_unique<MOONCAKE::APPS::App19>(dev));     /* app_19  MeowPlayer    */
 #endif
-    mc.installApp(std::make_unique<MOONCAKE::APPS::App20>(dev));     /* app_20  ELF Test      */
     /* Lua installable-app platform — opt-in (Settings ▸ Features). When off it is
      * not installed at all: no App-manager tile, no /apps scan, no Lua behavior
      * (every launcher hook is gated on this returned pointer). Still compiled in. */
@@ -104,19 +89,26 @@ static const void* const APP_BUILTIN_ICONS[] = {
     &ui_img_badusb_png,      /* app_08  Bad USB     */
     &ui_img_infrared_png,    /* app_09  Infrared    */
     &ui_img_wifi_killer_png, /* app_10  stub        */
-    &ui_img_wifispam_png,    /* app_11  WiFi Analyzer */
-    &ui_img_usb_msc_png,     /* app_12  Flash Mode  */
-    &ui_img_webserial_png,   /* app_13  stub        */
-    &ui_img_ble_spam_png,    /* app_14  BLE Spam Det. */
-    &ui_img_wifi_killer_png, /* app_15  Rogue Radar */
-    &ui_img_wifispam_png,    /* app_16  Probe Sniffer */
-    &ui_img_ble_spam_png,    /* app_17  Tracker Detector */
     &ui_img_webserial_png,   /* app_18  Script Runner */
 #if MEOWKIT_ENABLE_PLAYER
     &ui_img_vu_meter_png,    /* app_19  MeowPlayer (audio) */
 #endif
-    &ui_img_webserial_png,   /* app_20  ELF Test */
     &ui_img_webserial_png,   /* Lua app manager */
 };
 static const int APP_BUILTIN_ICONS_COUNT =
     (int)(sizeof(APP_BUILTIN_ICONS) / sizeof(APP_BUILTIN_ICONS[0]));
+
+/* Map a manifest icon= name to a built-in icon for native SD apps.
+ * Unknown/empty names fall back to a generic icon. */
+inline const void* native_icon_by_name(const char* name)
+{
+    if (name && name[0]) {
+        if (!strcmp(name, "wifi"))     return &ui_img_wifispam_png;
+        if (!strcmp(name, "wifikill")) return &ui_img_wifi_killer_png;
+        if (!strcmp(name, "ble"))      return &ui_img_ble_spam_png;
+        if (!strcmp(name, "music"))    return &ui_img_music_png;
+        if (!strcmp(name, "ir"))       return &ui_img_infrared_png;
+        if (!strcmp(name, "usb"))      return &ui_img_badusb_png;
+    }
+    return &ui_img_webserial_png;   /* generic */
+}

@@ -19,6 +19,7 @@
 #include <esp_system.h>
 #include "../../system/recovery.h"
 #include "../../system/power_mgmt.h"
+#include "../../system/firmware_update.h"
 #include "../../ui/screens/ui_set_date.h"
 #include "../../ui/screens/ui_set_time.h"
 #include <nvs.h>
@@ -144,12 +145,13 @@ static void tab_reboot_cb(lv_event_t * e)
     esp_restart();
 }
 
-/* Open the Firmware app (SD / WiFi‑GitHub / USB update) from Settings — works
- * even if the apps grid is unavailable, since the launcher opens it by name. */
+/* Open the Firmware updater (SD / WiFi‑GitHub / USB) from Settings. It is a
+ * system module, not an app: request it here and the launcher runs the
+ * full-screen takeover from its main loop. */
 static void tab_fw_update_cb(lv_event_t * e)
 {
     if(lv_event_get_code(e) != LV_EVENT_CLICKED) return;
-    ui_apps_menu_request_open("Firmware");
+    firmware_update_request();
 }
 
 /* ── Backup / Restore (Backup tab) ───────────────────────────────────────── */
@@ -1101,6 +1103,20 @@ static void tab_lua_sw_cb(lv_event_t * e)
     lv_obj_add_event_cb(m, _features_reboot_cb, LV_EVENT_VALUE_CHANGED, NULL);
 }
 
+static void tab_unsigned_sw_cb(lv_event_t * e)
+{
+    if (lv_event_get_code(e) != LV_EVENT_VALUE_CHANGED) return;
+    lv_obj_t * sw = lv_event_get_target(e);
+    int on = lv_obj_has_state(sw, LV_STATE_CHECKED) ? 1 : 0;
+    persist_set_int(PKEY_ELF_UNSIGNED, on);   /* applies immediately (checked per load) */
+    static const char * btns[] = { "OK", "" };
+    lv_obj_t * m = lv_msgbox_create(lv_scr_act(), "Unsigned apps",
+        on ? "Unsigned native apps allowed.\nOnly run apps you trust."
+           : "Unsigned native apps blocked.\nOnly signed apps will run.", btns, false);
+    _style_msgbox(m, on ? TV_DANGER : TV_LIME);
+    lv_obj_add_event_cb(m, _info_msgbox_close_cb, LV_EVENT_VALUE_CHANGED, NULL);
+}
+
 static void build_tab_features(lv_obj_t * page)
 {
     lv_obj_set_style_bg_opa(page,       LV_OPA_TRANSP, 0);
@@ -1128,6 +1144,14 @@ static void build_tab_features(lv_obj_t * page)
     mk_lbl(c, "reboots to apply", 0, 46, TV_MUTED, &ui_font_name_14);
     lv_obj_t * sw = mk_card_switch(c, CARD_INN - 42, 8, persist_get_int(PKEY_LUA_EN, 0) != 0);
     lv_obj_add_event_cb(sw, tab_lua_sw_cb, LV_EVENT_VALUE_CHANGED, NULL);
+
+    y += 82 + 8;
+    lv_obj_t * c2 = mk_card(page, y, 82);
+    mk_lbl(c2, "Allow unsigned apps", 0, 0, TV_TEXT, &ui_font_name_14);
+    mk_lbl(c2, "run native apps without a", 0, 28, TV_MUTED, &ui_font_name_14);
+    mk_lbl(c2, "valid signature (risky)", 0, 46, TV_MUTED, &ui_font_name_14);
+    lv_obj_t * sw2 = mk_card_switch(c2, CARD_INN - 42, 8, persist_get_int(PKEY_ELF_UNSIGNED, 0) != 0);
+    lv_obj_add_event_cb(sw2, tab_unsigned_sw_cb, LV_EVENT_VALUE_CHANGED, NULL);
 }
 
 #if MEOWKIT_DEBUG_TAB

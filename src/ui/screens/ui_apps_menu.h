@@ -31,9 +31,6 @@ typedef struct {
 extern void        ui_apps_menu_load_apps(const AppMenuEntry_t * entries, int count);
 extern const char *ui_apps_menu_get_selected_id(void);
 extern void        ui_apps_menu_clear_selected(void);
-/** Request that the launcher open an app by name (e.g. from the Settings menu),
- *  as if its tile was tapped. The launcher opens it on its next GUI loop. */
-extern void        ui_apps_menu_request_open(const char * id);
 // CUSTOM VARIABLES
 
 #ifdef __cplusplus
