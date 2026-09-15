@@ -17,7 +17,7 @@
 #define PROJECT_NAME                "MeowKit"
 
 /* Custom firmware (this fork) version — shown in Settings > About. */
-#define MEOWGOTCHI_FW_VERSION       "v0.10.0"
+#define MEOWGOTCHI_FW_VERSION       "v0.10.1"
 
 /* Settings > Debug tab (live Input Monitor) — developer tool, off in releases. */
 #define MEOWKIT_DEBUG_TAB           0

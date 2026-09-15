@@ -45,6 +45,7 @@ private:
     bool _lvgl_inited    = false;   /* lv_init + drivers done (one-time) */
     bool _ui_ready       = false;   /* UI screens exist (stays true after buildUI) */
     bool _app_running    = false;
+    bool _nativeScanned  = false;   /* /apps scanned once (lazy, off the boot path) */
     int  _running_app_id = -1;
 
     /* SD card (mounted via SD_MMC native API) */

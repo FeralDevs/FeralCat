@@ -40,6 +40,15 @@
 extern "C" const lv_img_dsc_t ui_img_wifispam_png;
 extern "C" const lv_img_dsc_t ui_img_usb_msc_png;
 
+/* FeralCat app icons (docs/branding → src/ui/images/ui_img_ic_*.c). */
+extern "C" const lv_img_dsc_t ui_img_ic_meowgotchi;
+extern "C" const lv_img_dsc_t ui_img_ic_wifianalyzer;
+extern "C" const lv_img_dsc_t ui_img_ic_deauth;
+extern "C" const lv_img_dsc_t ui_img_ic_rogueradar;
+extern "C" const lv_img_dsc_t ui_img_ic_blespam;
+extern "C" const lv_img_dsc_t ui_img_ic_probe;
+extern "C" const lv_img_dsc_t ui_img_ic_tracker;
+
 /**
  * @brief Register active apps into Mooncake (order determines menu slot index).
  *        Keep in sync with APP_BUILTIN_ICONS below.
@@ -88,7 +97,7 @@ static const void* const APP_BUILTIN_ICONS[] = {
     &ui_img_ble_spam_png,    /* app_07  BLE Spam    */
     &ui_img_badusb_png,      /* app_08  Bad USB     */
     &ui_img_infrared_png,    /* app_09  Infrared    */
-    &ui_img_wifi_killer_png, /* app_10  stub        */
+    &ui_img_ic_meowgotchi,   /* app_10  MeowGotchi  */
     &ui_img_webserial_png,   /* app_18  Script Runner */
 #if MEOWKIT_ENABLE_PLAYER
     &ui_img_vu_meter_png,    /* app_19  MeowPlayer (audio) */
@@ -103,6 +112,14 @@ static const int APP_BUILTIN_ICONS_COUNT =
 inline const void* native_icon_by_name(const char* name)
 {
     if (name && name[0]) {
+        /* FeralCat per-app icons */
+        if (!strcmp(name, "wifianalyzer")) return &ui_img_ic_wifianalyzer;
+        if (!strcmp(name, "deauth"))       return &ui_img_ic_deauth;
+        if (!strcmp(name, "rogueradar"))   return &ui_img_ic_rogueradar;
+        if (!strcmp(name, "blespam"))      return &ui_img_ic_blespam;
+        if (!strcmp(name, "probe"))        return &ui_img_ic_probe;
+        if (!strcmp(name, "tracker"))      return &ui_img_ic_tracker;
+        /* generic families (fallbacks) */
         if (!strcmp(name, "wifi"))     return &ui_img_wifispam_png;
         if (!strcmp(name, "wifikill")) return &ui_img_wifi_killer_png;
         if (!strcmp(name, "ble"))      return &ui_img_ble_spam_png;

@@ -587,8 +587,9 @@ void Launcher::loadAppsMenu()
     }
 
     /* Native ELF apps installed on the SD card (/apps/<dir> with app.elf +
-     * manifest.ini). Launched by the "elf:" id prefix in handleAppSelection. */
-    native_apps_scan();
+     * manifest.ini). The SD scan (native_apps_scan) is NOT run here — it would
+     * block boot; it's done lazily the first time the Apps menu is opened. This
+     * loop just uses whatever the last scan found (0 tiles until first opened). */
     for (int i = 0; i < native_apps_count() && count < APPS_MENU_MAX_APPS; i++, count++) {
         const native_app_t* a = native_apps_get(i);
         snprintf(entries[count].id,   sizeof(entries[count].id),   "elf:%s", a->dir);
@@ -653,6 +654,7 @@ void Launcher::updateStatusBar()
         if (sd_present != _sd_ready) {
             mk_event_push(sd_present ? MK_EVT_SD_INSERTED : MK_EVT_SD_REMOVED);
             if (_luaApps && !usb_msc_is_active()) _luaApps->refreshCatalog();
+            _nativeScanned = false;   /* re-scan /apps next time the Apps menu opens */
         }
         _sd_ready = sd_present;
         if (ui_sd_on && ui_sd_null) {
@@ -814,7 +816,17 @@ void Launcher::processNavEvents()
 
         /* ── Home: joystick → cross navigation ── */
         if (cur == ui_home) {
-            if (left)       _ui_screen_change(&ui_apps_menu,     LV_SCR_LOAD_ANIM_MOVE_RIGHT,  500, 0, &ui_apps_menu_screen_init);
+            if (left) {
+                /* Lazy /apps scan: first time the Apps menu is opened, scan the
+                 * SD and rebuild the grid with native tiles (kept off the boot
+                 * path so boot stays fast). */
+                if (!_nativeScanned) {
+                    native_apps_scan();
+                    _nativeScanned = true;
+                    loadAppsMenu();
+                }
+                _ui_screen_change(&ui_apps_menu,     LV_SCR_LOAD_ANIM_MOVE_RIGHT,  500, 0, &ui_apps_menu_screen_init);
+            }
             else if (right) _ui_screen_change(&ui_settings,      LV_SCR_LOAD_ANIM_MOVE_LEFT,   500, 0, &ui_settings_screen_init);
             else if (up)    _ui_screen_change(&ui_clock,         LV_SCR_LOAD_ANIM_MOVE_BOTTOM, 500, 0, &ui_clock_screen_init);
             else if (down)  _ui_screen_change(&ui_sd_card_files, LV_SCR_LOAD_ANIM_MOVE_TOP,    500, 0, &ui_sd_card_files_screen_init);
