@@ -1,0 +1,53 @@
+name: Announce release to Discord
+
+# Posts a rich embed (title, notes, link) to the #releases channel whenever a
+# GitHub release is published. Deployed to janud/MeowKitCustomFW at
+# .github/workflows/discord-release.yml; the webhook URL is the repo secret
+# DISCORD_RELEASE_WEBHOOK (the plain Discord webhook URL, WITHOUT /github).
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  announce:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Post release embed
+        env:
+          WEBHOOK: ${{ secrets.DISCORD_RELEASE_WEBHOOK }}
+          R_NAME: ${{ github.event.release.name }}
+          R_TAG: ${{ github.event.release.tag_name }}
+          R_URL: ${{ github.event.release.html_url }}
+          R_BODY: ${{ github.event.release.body }}
+          R_AUTHOR: ${{ github.event.release.author.login }}
+          R_AVATAR: ${{ github.event.release.author.avatar_url }}
+          R_PRERELEASE: ${{ github.event.release.prerelease }}
+          REPO: ${{ github.repository }}
+        run: |
+          python3 - <<'PY'
+          import json, os, urllib.request
+
+          body = (os.environ.get("R_BODY") or "").strip() or "_No release notes provided._"
+          url = os.environ["R_URL"]
+          if len(body) > 4000:  # Discord embed description hard-limits at 4096
+              body = body[:3900].rstrip() + f"\n\n… [read the full notes]({url})"
+
+          name = (os.environ.get("R_NAME") or "").strip() or os.environ["R_TAG"]
+          pre = os.environ.get("R_PRERELEASE") == "true"
+          embed = {
+              "title": "🐾 " + name + (" (pre-release)" if pre else ""),
+              "url": url,
+              "description": body,
+              "color": 0x2EC5D3,
+              "footer": {"text": f"{os.environ['REPO']} · {os.environ['R_TAG']}"},
+          }
+          if os.environ.get("R_AUTHOR"):
+              embed["author"] = {"name": os.environ["R_AUTHOR"], "icon_url": os.environ.get("R_AVATAR", "")}
+
+          data = json.dumps({"embeds": [embed]}).encode()
+          req = urllib.request.Request(os.environ["WEBHOOK"], data=data,
+                                       headers={"Content-Type": "application/json"})
+          with urllib.request.urlopen(req) as r:
+              print("posted, HTTP", r.status)
+          PY
