@@ -76,7 +76,7 @@ bool normalizeMediaPath(const char* base, const char* text, size_t length,
     if (!base || !length || !validMediaText(text, length)) return false;
     // Neither URI schemes nor Windows drive prefixes are local media paths.
     for (size_t i = 0; i < length; ++i) if (text[i] == ':') return false;
-    char normalized[192] = "/mp3";
+    char normalized[192] = "/music";
     size_t used = 4, position = 0;
     if (separator(text[0])) {
         if (!rootPrefix(text, length, position)) return false;

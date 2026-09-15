@@ -22,7 +22,7 @@
 /* Settings > Debug tab (live Input Monitor) — developer tool, off in releases. */
 #define MEOWKIT_DEBUG_TAB           0
 
-/* MeowPlayer (app_19) — MP3/WAV audio player. Work-in-progress (audio path not
+/* MeowPlayer (app_19) — MP3 audio player. Work-in-progress (audio path not
  * yet solid), so hidden from the menu in releases. When 0, app_19 is not built
  * but the decoder remains available to the native Lua audio service. */
 #define MEOWKIT_ENABLE_PLAYER       1

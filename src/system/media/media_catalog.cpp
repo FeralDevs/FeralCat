@@ -65,7 +65,7 @@ MediaCatalog::ScanResult MediaCatalog::scan(fs::FS& source, Cancel cancel, void*
     std::memset(records_, 0, sizeof(Track) * MaxTracks);
     std::memset(lists_, 0, sizeof(Playlist) * MaxPlaylists);
     std::memset(indices_, 0, sizeof(uint16_t) * MaxPlaylists * MaxTracks);
-    if (!walk(source, "/mp3", 0)) {
+    if (!walk(source, "/music", 0)) {
         const bool cancelled = cancelled_;
         char reason[sizeof(error_)]; std::memcpy(reason, error_, sizeof(reason));
         clear(); std::memcpy(error_, reason, sizeof(error_));
@@ -93,7 +93,7 @@ bool MediaCatalog::walk(fs::FS& source, const char* path, unsigned depth)
     File directory = source.open(path, FILE_READ);
     if (!directory || !directory.isDirectory()) {
         directory.close();
-        if (!depth) { std::snprintf(error_, sizeof(error_), "MP3 folder /mp3 is unavailable"); return false; }
+        if (!depth) { std::snprintf(error_, sizeof(error_), "Music folder /music is unavailable"); return false; }
         skip(); return true;
     }
     while (!exhausted_) {

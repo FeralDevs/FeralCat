@@ -30,7 +30,7 @@ argument type and range violations raise a script error.
 
 | Action | Value | Behavior |
 |---|---|---|
-| `scan` | Omit | Stop playback and rescan `/mp3` |
+| `scan` | Omit | Stop playback and rescan `/music` |
 | `play` | Track ID 1–512 | Open a track from the current catalog generation |
 | `pause` | Omit | Toggle playing/paused state when applicable |
 | `stop` | Omit | Stop playback and close the file |
@@ -87,10 +87,10 @@ duplicates are preserved. `playlists(offset, limit)` defaults to `(0, 8)`;
 its entry `count` is the playlist length. Pages are unavailable during a scan,
 so an old catalog is not exposed as the newly scanned one.
 
-The catalog indexes local MP3 files under `/mp3`, including subdirectories,
+The catalog indexes local MP3 files under `/music`, including subdirectories,
 and local M3U lists. Bounds are 512 tracks, 16 playlists, 4096 inspected
 directory entries, depth four, 191-byte canonical paths, 64 KiB per playlist
-and 255 bytes per playlist line. Paths must remain inside `/mp3`.
+and 255 bytes per playlist line. Paths must remain inside `/music`.
 See the [catalog limits](../src/system/media/media_catalog.h) and
 [path validation](../src/system/media/media_paths.cpp).
 

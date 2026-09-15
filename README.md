@@ -4,7 +4,7 @@
 
 💬 **Community & support:** [discord.gg/BQkmxPj9Me](https://discord.gg/BQkmxPj9Me)
 
-**FeralCat v0.10.0** is the current build: signed **native ELF apps** loaded from
+**FeralCat v0.10.1** is the current build: signed **native ELF apps** loaded from
 the SD card through a stable app SDK, the firmware updater as a system module,
 a red UI theme, and the FeralCat rebrand — on top of v0.9.0's Lua platform and
 MP3 player. Six security tools (WiFi Analyzer, Deauth Detect, Rogue Radar, BLE
@@ -98,7 +98,7 @@ SD root/
 │  ├─ probesniffer/          ← Probe Sniffer
 │  └─ trackerdetect/         ← Tracker Detect
 ├─ scripts/                  ← Berry .be scripts (Script Runner)
-├─ mp3/                      ← music for MeowPlayer
+├─ music/                   ← music for MeowPlayer
 └─ firmware.bin              ← optional, for SD updates
 ```
 
@@ -141,7 +141,7 @@ Docker only — see [`docs/CUSTOM-FIRMWARE.md` §3](docs/CUSTOM-FIRMWARE.md).
   (no longer an app).
 
 ### v0.9.0 — MeowPlayer + Lua apps
-- **MeowPlayer** — an MP3/WAV music player (plays from `/mp3`; play/pause, seek,
+- **MeowPlayer** — an MP3 music player (plays from `/music`; play/pause, seek,
   volume, Songs list, Speaker/Jack output) on a native audio engine.
 - **Lua app platform** — opt‑in installable Lua apps from `/apps` with launcher
   tiles (*Settings ▸ Features ▸ Lua apps*, off by default).

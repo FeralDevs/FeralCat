@@ -96,7 +96,7 @@ struct AudioService::Impl final : DecoderObserver {
         // The library also calls its EOF callback for corrupt files. Preserve
         // that distinction so a playlist never advances after a decode error.
         // Match decoder-owned prefixes only: a legitimate filename such as
-        // /mp3/error.mp3 must never turn a successful EOF into an error.
+        // /music/error.mp3 must never turn a successful EOF into an error.
         if (!std::strncmp(message, "MP3 decode error ", 17) ||
             !std::strncmp(message, "MP3 seek error:", 15) ||
             !std::strncmp(message, "Audio read error:", 17) ||

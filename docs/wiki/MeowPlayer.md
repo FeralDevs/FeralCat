@@ -5,12 +5,12 @@
 > 🐱 **Custom** — built for this fork. The player UI is custom; the audio engine
 > underneath is contributed (see credit below).
 
-A music player for MP3/WAV files on the SD card, with a proper transport UI and
+A music player for MP3 files on the SD card, with a proper transport UI and
 speaker / 3.5mm-jack output.
 
 ## Using it
-1. Put audio files in a **`/mp3`** folder on the SD card (`.mp3` or `.wav`).
-2. Open **MeowPlayer**. It scans `/mp3` and starts the first track.
+1. Put audio files in a **`/music`** folder on the SD card (`.mp3`).
+2. Open **MeowPlayer**. It scans `/music` and starts the first track.
 
 ## Controls
 | Key | Action |
@@ -26,7 +26,7 @@ speaker and the 3.5mm jack (the speaker amp is gated by `PA_EN`; volume to the
 1 W speaker is capped for safety).
 
 ## Supported audio
-MP3 and WAV at **22.05, 32, 44.1 or 48 kHz** (the rates that share this board's
+MP3 at **22.05, 32, 44.1 or 48 kHz** (the rates that share this board's
 ES8311 clock divider). Other rates are skipped with a notice.
 
 ## Under the hood

@@ -289,7 +289,7 @@ CoverResult loadTrackCover(fs::FS& source, const char* trackPath, uint16_t* pixe
     size_t length = 0;
     while (length <= PathLimit && trackPath[length]) ++length;
     char canonical[PathLimit + 1];
-    if (length > PathLimit || !normalizeMediaPath("/mp3", trackPath, length, canonical, sizeof(canonical)) ||
+    if (length > PathLimit || !normalizeMediaPath("/music", trackPath, length, canonical, sizeof(canonical)) ||
         std::strcmp(canonical, trackPath)) return CoverResult::Invalid;
     char* slash = std::strrchr(canonical, '/');
     if (!slash || slash == canonical || !slash[1]) return CoverResult::Invalid;

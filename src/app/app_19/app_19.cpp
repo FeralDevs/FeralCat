@@ -3,7 +3,7 @@
  * @brief MeowPlayer (native, AudioService-backed) — see app_19.h.
  *
  * The meow::media::AudioService owns the ES8311 codec, the ESP32-audioI2S
- * decoder and I2S on a core-0 worker; it scans /mp3 into a catalog. This app is
+ * decoder and I2S on a core-0 worker; it scans /music into a catalog. This app is
  * a thin UI: it sends Commands (Play/Pause/Stop/Volume/Seek) and renders the
  * Status snapshot. PA_EN (speaker vs 3.5mm jack) is the only bit we drive here.
  */
@@ -80,7 +80,7 @@ void App19::onOpen()
         _haveCanvas = _canvas->createSprite(MK_LAYOUT::W, MK_LAYOUT::H);
     }
 
-    _svcReady   = _svc.begin(_device);   /* spawns worker; scans /mp3 async */
+    _svcReady   = _svc.begin(_device);   /* spawns worker; scans /music async */
     _ampOn      = true;                   /* begin() drives PA_EN HIGH       */
     _screen     = Screen::Now;
     _ntracks    = 0;
@@ -110,7 +110,7 @@ void App19::_present()
     v.ampOn    = _ampOn;
     v.playing  = !strcmp(_st.state, "playing");
     v.title    = _st.title[0] ? _st.title
-               : (!strcmp(_st.state, "scanning") ? "Scanning /mp3..." : "(no track)");
+               : (!strcmp(_st.state, "scanning") ? "Scanning /music..." : "(no track)");
     v.posSec   = (int)_st.position;
     v.durSec   = (int)_st.duration;
     v.vol      = _st.volume;

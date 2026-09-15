@@ -152,7 +152,7 @@ static inline void drawMenu(LCD& lcd, const MenuView& m)
     if (m.count == 0) {
         lcd.setTextColor((uint32_t)MK_PAL::TEXT_SEC, (uint32_t)MK_PAL::BLACK);
         lcd.setCursor(MK_LAYOUT::PAD, y + 20);
-        lcd.printf("No music in /music (.mp3/.wav)");
+        lcd.printf("No music in /music (.mp3)");
     }
     for (int r = 0; r < rows; r++) {
         int i = m.top + r;

@@ -25,7 +25,7 @@ See **[[Flashing and Recovery]]** for how to apply them.
   no longer an app).
 
 ## v0.9.0 — MeowPlayer + Lua apps
-- **[[MeowPlayer]]** — a real MP3/WAV music player. Plays from `/mp3`, with
+- **[[MeowPlayer]]** — a real MP3 music player. Plays from `/music`, with
   play/pause, seek, volume, a Songs list and a Speaker/Jack output switch. Native
   player UI on a contributed audio engine.
 - **[[Lua Apps]]** — an **opt-in** installable-app platform: drop Lua apps in
