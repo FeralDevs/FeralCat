@@ -17,6 +17,7 @@
 #include "ble_spam_monitor.h"
 #include "probe_monitor.h"
 #include "tracker_monitor.h"
+#include "tracker_finder.h"
 #include "media/audio_service.h"     /* MeowPlayer audio engine */
 #include "../bsp/config.h"           /* HAL_IOEXP_PA_EN */
 #include "esp_elf.h"                 /* esp_elf_register_symbol / esp_elfsym */
@@ -33,6 +34,8 @@ static BeaconFlood    s_flood;
 static BleSpamMonitor s_blespam;
 static ProbeMonitor   s_probe;
 static TrackerMonitor s_tracker;
+static TrackerFinder  s_trkfinder;
+static uint32_t       s_trk_sel = 0;   /* selected candidate id (0 = none) */
 static meow::media::AudioService s_media;
 
 /* Draw target: the canvas if it allocated, else straight to the LCD. */
@@ -140,6 +143,11 @@ void mk_gfx_fill_triangle(int x0,int y0,int x1,int y1,int x2,int y2, uint32_t co
 {
     if (s_have) s_canvas->fillTriangle(x0,y0,x1,y1,x2,y2,color);
     else if (s_dev) s_dev->Lcd.fillTriangle(x0,y0,x1,y1,x2,y2,color);
+}
+void mk_gfx_line(int x0, int y0, int x1, int y1, uint32_t color)
+{
+    if (s_have) s_canvas->drawLine(x0, y0, x1, y1, color);
+    else if (s_dev) s_dev->Lcd.drawLine(x0, y0, x1, y1, color);
 }
 
 void mk_gfx_present(void)
@@ -334,12 +342,26 @@ int mk_probe_devices(mk_probe_dev_t* out, int max)
 }
 
 /* ── Tracker detector service ───────────────────────────────────────────── */
-void mk_tracker_begin(void)  { s_tracker.begin(); }
+void mk_tracker_begin(void)
+{
+    s_trk_sel = 0;
+    s_trkfinder.reset();
+    s_tracker.begin();
+}
 void mk_tracker_loop(void)   { s_tracker.loop(); }
 void mk_tracker_pause(void)  { s_tracker.pause(); }
 void mk_tracker_resume(void) { s_tracker.resume(); }
-void mk_tracker_stop(void)   { s_tracker.stop(); }
-int  mk_tracker_running(void) { return s_tracker.running() ? 1 : 0; }
+void mk_tracker_stop(void)   { s_tracker.stop(); s_trk_sel = 0; s_trkfinder.reset(); }
+int  mk_tracker_running(void)  { return s_tracker.running()  ? 1 : 0; }
+int  mk_tracker_starting(void) { return s_tracker.starting() ? 1 : 0; }
+
+int mk_tracker_error(char* out, int max)
+{
+    const char* e = s_tracker.error();
+    if (!e || !e[0]) return 0;
+    if (out && max > 0) { strncpy(out, e, max - 1); out[max - 1] = 0; }
+    return 1;
+}
 
 void mk_tracker_stats(mk_tracker_stats_t* out)
 {
@@ -359,13 +381,66 @@ int mk_tracker_list(mk_tracker_t* out, int max)
     int n = s_tracker.trackers(e, cap);
     for (int i = 0; i < n; i++) {
         memcpy(out[i].mac, e[i].mac, 6);
-        out[i].type     = e[i].type;
-        out[i].rssi     = e[i].rssi;
-        out[i].count    = e[i].count;
-        out[i].first_ms = e[i].first_ms;
-        out[i].last_ms  = e[i].last_ms;
+        out[i].type          = e[i].type;
+        out[i].rssi          = e[i].rssi;
+        out[i].count         = e[i].count;
+        out[i].first_ms      = e[i].first_ms;
+        out[i].last_ms       = e[i].last_ms;
+        out[i].id            = e[i].id;
+        out[i].filtered_rssi = e[i].filtered_rssi;
+        out[i].scan_fresh    = e[i].scan_fresh ? 1 : 0;
     }
     return n;
+}
+
+int mk_tracker_select(uint32_t id)
+{
+    const bool ok = s_tracker.select(id);
+    if (!ok && id) return 0;
+    s_trk_sel = id;
+    const uint32_t now = millis();
+    const bool running = s_tracker.running();
+    TrackerEntry e{};
+    if (id && s_tracker.tracker(id, e)) s_trkfinder.select(e, now, running);
+    else s_trkfinder.reset();
+    return 1;
+}
+
+void mk_tracker_finder(mk_tracker_finder_t* out)
+{
+    if (!out) return;
+    const uint32_t now = millis();
+    const bool running = s_tracker.running();
+
+    TrackerEntry e{};
+    const bool have = s_trk_sel && s_tracker.tracker(s_trk_sel, e);
+    s_trkfinder.update(have ? &e : nullptr, now, running);
+
+    memset(out, 0, sizeof(*out));
+    out->has_target = s_trkfinder.hasTarget() ? 1 : 0;
+    switch (s_trkfinder.state(now, running)) {
+        case TrackerFinder::State::Live:    out->state = MK_TRK_LIVE;    break;
+        case TrackerFinder::State::Waiting: out->state = MK_TRK_WAITING; break;
+        case TrackerFinder::State::Lost:    out->state = MK_TRK_LOST;    break;
+        default:                            out->state = MK_TRK_PAUSED;  break;
+    }
+    out->strength = (int16_t)s_trkfinder.strength();
+    int dir = 0;
+    out->trend_ready = s_trkfinder.trend(now, running, dir) ? 1 : 0;
+    out->trend       = (int8_t)dir;
+
+    const TrackerEntry& t = s_trkfinder.target();
+    out->filtered_rssi = t.filtered_rssi;
+    out->age_ms        = s_trkfinder.hasTarget() ? s_trkfinder.age(now) : 0;
+    out->target_id     = t.id;
+    memcpy(out->mac, t.mac, 6);
+    out->type          = t.type;
+    out->scan_fresh    = t.scan_fresh ? 1 : 0;
+
+    unsigned hc = s_trkfinder.historyCount();
+    if (hc > MK_TRK_HISTORY) hc = MK_TRK_HISTORY;
+    out->history_count = (uint16_t)hc;
+    for (unsigned i = 0; i < hc; i++) out->history[i] = s_trkfinder.history(i);
 }
 
 /* ── Media / audio player service ───────────────────────────────────────── */
@@ -474,6 +549,7 @@ static const struct esp_elfsym MK_SDK_SYMS[] = {
     { "mk_gfx_circle",        (const void*)&mk_gfx_circle },
     { "mk_gfx_fill_circle",   (const void*)&mk_gfx_fill_circle },
     { "mk_gfx_fill_triangle", (const void*)&mk_gfx_fill_triangle },
+    { "mk_gfx_line",          (const void*)&mk_gfx_line },
     { "mk_gfx_present",   (const void*)&mk_gfx_present },
     { "mk_content_rows",  (const void*)&mk_content_rows },
     { "mk_wifi_begin",    (const void*)&mk_wifi_begin },
@@ -518,8 +594,12 @@ static const struct esp_elfsym MK_SDK_SYMS[] = {
     { "mk_tracker_resume",  (const void*)&mk_tracker_resume },
     { "mk_tracker_stop",    (const void*)&mk_tracker_stop },
     { "mk_tracker_running", (const void*)&mk_tracker_running },
+    { "mk_tracker_starting",(const void*)&mk_tracker_starting },
+    { "mk_tracker_error",   (const void*)&mk_tracker_error },
     { "mk_tracker_stats",   (const void*)&mk_tracker_stats },
     { "mk_tracker_list",    (const void*)&mk_tracker_list },
+    { "mk_tracker_select",  (const void*)&mk_tracker_select },
+    { "mk_tracker_finder",  (const void*)&mk_tracker_finder },
     { "mk_media_begin",      (const void*)&mk_media_begin },
     { "mk_media_end",        (const void*)&mk_media_end },
     { "mk_media_cmd",        (const void*)&mk_media_cmd },
