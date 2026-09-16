@@ -5,18 +5,28 @@ name: Announce release to Discord
 # the repo secret DISCORD_RELEASE_WEBHOOK — the plain Discord webhook URL
 # (https://discord.com/api/webhooks/<id>/<token>), WITHOUT a trailing /github.
 #
-# Run it manually (Actions ▸ this workflow ▸ Run workflow) to post a test embed
-# and confirm the webhook works without cutting a real release.
+# Manual run (Actions ▸ this workflow ▸ Run workflow):
+#   - leave inputs empty            → posts a test embed (confirms the webhook)
+#   - set "tag" to an existing tag  → re-announces that release with its real
+#                                     notes (use this to backfill a release
+#                                     whose automatic post failed)
 
 on:
   release:
     types: [published]
   workflow_dispatch:
     inputs:
-      message:
-        description: "Test message to post (optional)"
+      tag:
+        description: "Release tag to (re)announce, e.g. v0.10.3 (blank = test post)"
         required: false
         default: ""
+      message:
+        description: "Test message when no tag is given (optional)"
+        required: false
+        default: ""
+
+permissions:
+  contents: read
 
 jobs:
   announce:
@@ -25,7 +35,10 @@ jobs:
       - name: Post release embed
         env:
           WEBHOOK: ${{ secrets.DISCORD_RELEASE_WEBHOOK }}
+          GH_TOKEN: ${{ github.token }}
+          API_URL: ${{ github.api_url }}
           EVENT: ${{ github.event_name }}
+          INPUT_TAG: ${{ inputs.tag }}
           INPUT_MSG: ${{ inputs.message }}
           SERVER_URL: ${{ github.server_url }}
           R_NAME: ${{ github.event.release.name }}
@@ -40,6 +53,8 @@ jobs:
           python3 - <<'PY'
           import json, os, sys, urllib.request, urllib.error
 
+          UA = "FeralCat-Release-Bot/1.0 (+https://github.com/FeralDevs/FeralCat)"
+
           webhook = (os.environ.get("WEBHOOK") or "").strip()
           if not webhook:
               sys.exit("DISCORD_RELEASE_WEBHOOK secret is empty — set it in repo settings.")
@@ -52,8 +67,47 @@ jobs:
           repo = os.environ["REPO"]
           repo_url = f"{os.environ.get('SERVER_URL', 'https://github.com')}/{repo}"
 
-          if os.environ.get("EVENT") == "workflow_dispatch":
-              # Manual test post — no release payload is present.
+          def release_embed(name, tag, url, body, prerelease, author, avatar):
+              body = (body or "").strip() or "_No release notes provided._"
+              url = (url or "").strip() or repo_url
+              if len(body) > 4000:  # Discord embed description hard-limits at 4096
+                  body = body[:3900].rstrip() + f"\n\n… [read the full notes]({url})"
+              embed = {
+                  "title": "🐾 " + ((name or "").strip() or tag or "New release")
+                           + (" (pre-release)" if prerelease else ""),
+                  "url": url,
+                  "description": body,
+                  "color": 0xFF2A3D,  # FeralCat red
+                  "footer": {"text": f"{repo} · {tag or ''}".rstrip(' ·')},
+              }
+              if author:
+                  embed["author"] = {"name": author, "icon_url": avatar or ""}
+              return embed
+
+          def fetch_release(tag):
+              api = os.environ.get("API_URL", "https://api.github.com")
+              req = urllib.request.Request(
+                  f"{api}/repos/{repo}/releases/tags/{tag}",
+                  headers={"Authorization": f"Bearer {os.environ['GH_TOKEN']}",
+                           "Accept": "application/vnd.github+json",
+                           "X-GitHub-Api-Version": "2022-11-28",
+                           "User-Agent": UA})
+              try:
+                  with urllib.request.urlopen(req) as r:
+                      return json.load(r)
+              except urllib.error.HTTPError as e:
+                  sys.exit(f"Could not fetch release '{tag}': HTTP {e.code} {e.reason}")
+
+          event = os.environ.get("EVENT")
+          tag_in = (os.environ.get("INPUT_TAG") or "").strip()
+
+          if event == "workflow_dispatch" and tag_in:
+              rel = fetch_release(tag_in)
+              author = (rel.get("author") or {})
+              embed = release_embed(rel.get("name"), rel.get("tag_name"), rel.get("html_url"),
+                                    rel.get("body"), rel.get("prerelease"),
+                                    author.get("login"), author.get("avatar_url"))
+          elif event == "workflow_dispatch":
               msg = (os.environ.get("INPUT_MSG") or "").strip() or \
                     "✅ Test post — the release webhook is working."
               embed = {
@@ -64,30 +118,16 @@ jobs:
                   "footer": {"text": f"{repo} · manual test"},
               }
           else:
-              body = (os.environ.get("R_BODY") or "").strip() or "_No release notes provided._"
-              url = (os.environ.get("R_URL") or "").strip() or repo_url
-              if len(body) > 4000:  # Discord embed description hard-limits at 4096
-                  body = body[:3900].rstrip() + f"\n\n… [read the full notes]({url})"
-              name = (os.environ.get("R_NAME") or "").strip() or os.environ.get("R_TAG") or "New release"
-              pre = os.environ.get("R_PRERELEASE") == "true"
-              embed = {
-                  "title": "🐾 " + name + (" (pre-release)" if pre else ""),
-                  "url": url,
-                  "description": body,
-                  "color": 0xFF2A3D,  # FeralCat red
-                  "footer": {"text": f"{repo} · {os.environ.get('R_TAG', '')}".rstrip(' ·')},
-              }
-              if os.environ.get("R_AUTHOR"):
-                  embed["author"] = {"name": os.environ["R_AUTHOR"],
-                                     "icon_url": os.environ.get("R_AVATAR", "")}
+              embed = release_embed(os.environ.get("R_NAME"), os.environ.get("R_TAG"),
+                                    os.environ.get("R_URL"), os.environ.get("R_BODY"),
+                                    os.environ.get("R_PRERELEASE") == "true",
+                                    os.environ.get("R_AUTHOR"), os.environ.get("R_AVATAR"))
 
           data = json.dumps({"embeds": [embed]}).encode()
           # Discord's edge (Cloudflare) rejects the default Python-urllib
           # User-Agent with 403 Forbidden, so a descriptive UA is REQUIRED.
           req = urllib.request.Request(webhook, data=data, headers={
-              "Content-Type": "application/json",
-              "User-Agent": "FeralCat-Release-Bot/1.0 (+https://github.com/FeralDevs/FeralCat)",
-          })
+              "Content-Type": "application/json", "User-Agent": UA})
           try:
               with urllib.request.urlopen(req) as r:
                   print("posted, HTTP", r.status)
