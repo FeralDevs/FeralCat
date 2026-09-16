@@ -4,10 +4,19 @@ name: Announce release to Discord
 # GitHub release is published. Lives in FeralDevs/FeralCat. The webhook URL is
 # the repo secret DISCORD_RELEASE_WEBHOOK — the plain Discord webhook URL
 # (https://discord.com/api/webhooks/<id>/<token>), WITHOUT a trailing /github.
+#
+# Run it manually (Actions ▸ this workflow ▸ Run workflow) to post a test embed
+# and confirm the webhook works without cutting a real release.
 
 on:
   release:
     types: [published]
+  workflow_dispatch:
+    inputs:
+      message:
+        description: "Test message to post (optional)"
+        required: false
+        default: ""
 
 jobs:
   announce:
@@ -16,6 +25,9 @@ jobs:
       - name: Post release embed
         env:
           WEBHOOK: ${{ secrets.DISCORD_RELEASE_WEBHOOK }}
+          EVENT: ${{ github.event_name }}
+          INPUT_MSG: ${{ inputs.message }}
+          SERVER_URL: ${{ github.server_url }}
           R_NAME: ${{ github.event.release.name }}
           R_TAG: ${{ github.event.release.tag_name }}
           R_URL: ${{ github.event.release.html_url }}
@@ -37,22 +49,37 @@ jobs:
                        "https://discord.com/api/webhooks/<id>/<token> (Channel ▸ "
                        "Integrations ▸ Webhooks ▸ Copy Webhook URL), not an invite link.")
 
-          body = (os.environ.get("R_BODY") or "").strip() or "_No release notes provided._"
-          url = os.environ["R_URL"]
-          if len(body) > 4000:  # Discord embed description hard-limits at 4096
-              body = body[:3900].rstrip() + f"\n\n… [read the full notes]({url})"
+          repo = os.environ["REPO"]
+          repo_url = f"{os.environ.get('SERVER_URL', 'https://github.com')}/{repo}"
 
-          name = (os.environ.get("R_NAME") or "").strip() or os.environ["R_TAG"]
-          pre = os.environ.get("R_PRERELEASE") == "true"
-          embed = {
-              "title": "🐾 " + name + (" (pre-release)" if pre else ""),
-              "url": url,
-              "description": body,
-              "color": 0xFF2A3D,  # FeralCat red
-              "footer": {"text": f"{os.environ['REPO']} · {os.environ['R_TAG']}"},
-          }
-          if os.environ.get("R_AUTHOR"):
-              embed["author"] = {"name": os.environ["R_AUTHOR"], "icon_url": os.environ.get("R_AVATAR", "")}
+          if os.environ.get("EVENT") == "workflow_dispatch":
+              # Manual test post — no release payload is present.
+              msg = (os.environ.get("INPUT_MSG") or "").strip() or \
+                    "✅ Test post — the release webhook is working."
+              embed = {
+                  "title": "🐾 FeralCat webhook test",
+                  "url": repo_url,
+                  "description": msg,
+                  "color": 0xFF2A3D,  # FeralCat red
+                  "footer": {"text": f"{repo} · manual test"},
+              }
+          else:
+              body = (os.environ.get("R_BODY") or "").strip() or "_No release notes provided._"
+              url = (os.environ.get("R_URL") or "").strip() or repo_url
+              if len(body) > 4000:  # Discord embed description hard-limits at 4096
+                  body = body[:3900].rstrip() + f"\n\n… [read the full notes]({url})"
+              name = (os.environ.get("R_NAME") or "").strip() or os.environ.get("R_TAG") or "New release"
+              pre = os.environ.get("R_PRERELEASE") == "true"
+              embed = {
+                  "title": "🐾 " + name + (" (pre-release)" if pre else ""),
+                  "url": url,
+                  "description": body,
+                  "color": 0xFF2A3D,  # FeralCat red
+                  "footer": {"text": f"{repo} · {os.environ.get('R_TAG', '')}".rstrip(' ·')},
+              }
+              if os.environ.get("R_AUTHOR"):
+                  embed["author"] = {"name": os.environ["R_AUTHOR"],
+                                     "icon_url": os.environ.get("R_AVATAR", "")}
 
           data = json.dumps({"embeds": [embed]}).encode()
           # Discord's edge (Cloudflare) rejects the default Python-urllib
