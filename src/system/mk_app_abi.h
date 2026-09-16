@@ -30,6 +30,7 @@ extern "C" {
 #define MK_COL_WARN    0xFFAA00u
 #define MK_COL_ERR     0xFF3333u
 #define MK_COL_ACCENT_DARK 0x2E0009u
+#define MK_COL_ACCENT_DIM  0x8A0016u   /* dim red — inactive radar rings */
 #define MK_COL_ITEM_BG     0x1A1A1Au
 #define MK_COL_BORDER      0x333333u
 
@@ -72,6 +73,7 @@ void mk_gfx_fill_round_rect(int x, int y, int w, int h, int r, uint32_t color);
 void mk_gfx_circle(int x, int y, int r, uint32_t color);                  /* outline */
 void mk_gfx_fill_circle(int x, int y, int r, uint32_t color);
 void mk_gfx_fill_triangle(int x0,int y0,int x1,int y1,int x2,int y2, uint32_t color);
+void mk_gfx_line(int x0, int y0, int x1, int y1, uint32_t color);
 void mk_gfx_present(void);
 int  mk_content_rows(void);   /* number of visible menu rows */
 
@@ -216,7 +218,29 @@ typedef struct {
     uint16_t count;
     uint32_t first_ms;
     uint32_t last_ms;
+    uint32_t id;             /* stable, nonzero within this scan session */
+    int16_t  filtered_rssi;  /* median + EWMA, in dBm */
+    uint8_t  scan_fresh;     /* 1 = valid observation since last pause */
 } mk_tracker_t;
+
+/* Signal-finder state for a selected candidate (see mk_tracker_finder). */
+enum { MK_TRK_LIVE = 0, MK_TRK_WAITING, MK_TRK_LOST, MK_TRK_PAUSED };
+#define MK_TRK_HISTORY 48
+typedef struct {
+    uint8_t  has_target;     /* 0/1 */
+    uint8_t  state;          /* MK_TRK_LIVE / WAITING / LOST / PAUSED */
+    uint8_t  trend_ready;    /* 0/1 — enough samples for a trend */
+    int8_t   trend;          /* -1 weaker · 0 steady · +1 stronger */
+    int16_t  strength;       /* 0..100 relative received strength (not range) */
+    int16_t  filtered_rssi;  /* dBm */
+    uint32_t age_ms;         /* since last reception of the target */
+    uint32_t target_id;
+    uint8_t  mac[6];
+    uint8_t  type;           /* MK_TRK_* */
+    uint8_t  scan_fresh;     /* 0/1 */
+    uint16_t history_count;  /* 0..MK_TRK_HISTORY */
+    int16_t  history[MK_TRK_HISTORY];  /* oldest→newest filtered RSSI */
+} mk_tracker_finder_t;
 
 void mk_tracker_begin(void);
 void mk_tracker_loop(void);
@@ -224,8 +248,12 @@ void mk_tracker_pause(void);
 void mk_tracker_resume(void);
 void mk_tracker_stop(void);
 int  mk_tracker_running(void);
+int  mk_tracker_starting(void);                        /* 1 while BLE scan spins up */
+int  mk_tracker_error(char* out, int max);             /* 1 + copies reason if failed */
 void mk_tracker_stats(mk_tracker_stats_t* out);
 int  mk_tracker_list(mk_tracker_t* out, int max);      /* up to MK_TRK_MAXTRK */
+int  mk_tracker_select(uint32_t id);                   /* 0 releases; 1 if present */
+void mk_tracker_finder(mk_tracker_finder_t* out);      /* finder state for selection */
 
 /* ── Media / audio player (MeowPlayer) ─────────────────────────────────────
  * The audio engine (ES8311 DAC + Helix MP3 decoder + I2S on a core-0 worker)

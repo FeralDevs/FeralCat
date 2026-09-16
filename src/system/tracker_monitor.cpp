@@ -3,6 +3,7 @@
  * @brief Unwanted-tracker detector implementation (see tracker_monitor.h).
  */
 #include "tracker_monitor.h"
+#include "tracker_store.h"
 #include <Arduino.h>
 #include <cstring>
 #include <BLEDevice.h>
@@ -12,24 +13,51 @@ namespace {
 constexpr int MAXTRK = TrackerMonitor::MAXTRK;
 portMUX_TYPE  s_mux = portMUX_INITIALIZER_UNLOCKED;
 
-TrackerEntry  s_trk[MAXTRK];
-int           s_trk_n = 0;
+TrackerStore s_store;
+enum class ScanPhase { Off, Parameters, Ready, Starting, Running, Stopping, Failed };
+ScanPhase s_phase = ScanPhase::Off;
+bool s_enabled = false;
+bool s_wanted = false;
+uint32_t s_phase_since = 0;
+const char* s_error = nullptr;
+constexpr uint32_t SCAN_ACK_TIMEOUT_MS = 3000;
 
-/* Record/refresh a tracker sighting (called from the BLE callback context). */
-inline void trk_record(const uint8_t* mac, uint8_t type, int8_t rssi, uint32_t now)
+// All control fields and the store are protected by s_mux. Callbacks only
+// acknowledge commands; only foreground code issues start/stop requests.
+void fail_locked(const char* reason)
 {
-    for (int i = 0; i < s_trk_n; i++) {
-        if (memcmp(s_trk[i].mac, mac, 6) == 0) {
-            if (s_trk[i].count < 0xFFFF) s_trk[i].count++;
-            s_trk[i].rssi = rssi; s_trk[i].last_ms = now; s_trk[i].type = type;
-            return;
+    s_error = reason;
+    s_wanted = false;
+    s_phase = ScanPhase::Failed;
+}
+
+void drive_scan(uint32_t now)
+{
+    enum class Action { None, Start, Stop } action = Action::None;
+    portENTER_CRITICAL(&s_mux);
+    if (s_enabled && !s_error) {
+        if ((s_phase == ScanPhase::Parameters || s_phase == ScanPhase::Starting ||
+             s_phase == ScanPhase::Stopping) && now - s_phase_since >= SCAN_ACK_TIMEOUT_MS) {
+            fail_locked("BLE scan timed out");
+        } else if (s_phase == ScanPhase::Ready && s_wanted) {
+            s_phase = ScanPhase::Starting;
+            s_phase_since = now;
+            action = Action::Start;
+        } else if (s_phase == ScanPhase::Running && !s_wanted) {
+            s_phase = ScanPhase::Stopping;
+            s_phase_since = now;
+            action = Action::Stop;
         }
     }
-    if (s_trk_n < MAXTRK) {
-        TrackerEntry& e = s_trk[s_trk_n++];
-        memcpy(e.mac, mac, 6);
-        e.type = type; e.rssi = rssi; e.count = 1;
-        e.first_ms = now; e.last_ms = now;
+    portEXIT_CRITICAL(&s_mux);
+
+    esp_err_t result = ESP_OK;
+    if (action == Action::Start) result = esp_ble_gap_start_scanning(0);
+    if (action == Action::Stop) result = esp_ble_gap_stop_scanning();
+    if (result != ESP_OK) {
+        portENTER_CRITICAL(&s_mux);
+        if (s_enabled) fail_locked(action == Action::Start ? "BLE scan start failed" : "BLE scan stop failed");
+        portEXIT_CRITICAL(&s_mux);
     }
 }
 
@@ -53,59 +81,106 @@ bool classify(uint8_t* adv, uint8_t* type_out)
     return false;
 }
 
-esp_ble_scan_params_t s_scan_params = {
-    .scan_type          = BLE_SCAN_TYPE_PASSIVE,
-    .own_addr_type      = BLE_ADDR_TYPE_PUBLIC,
-    .scan_filter_policy = BLE_SCAN_FILTER_ALLOW_ALL,
-    .scan_interval      = 0x50,
-    .scan_window        = 0x50,
-    .scan_duplicate     = BLE_SCAN_DUPLICATE_DISABLE,
-};
+esp_ble_scan_params_t s_scan_params = [] {
+    esp_ble_scan_params_t params{};
+    params.scan_type = BLE_SCAN_TYPE_PASSIVE;
+    params.own_addr_type = BLE_ADDR_TYPE_PUBLIC;
+    params.scan_filter_policy = BLE_SCAN_FILTER_ALLOW_ALL;
+    params.scan_interval = 0x50;
+    params.scan_window = 0x50;
+    params.scan_duplicate = BLE_SCAN_DUPLICATE_DISABLE;
+    return params;
+}();
 
 void gap_cb(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param_t* p)
 {
+    if (!p) return;
+    portENTER_CRITICAL(&s_mux);
+    if (!s_enabled) { portEXIT_CRITICAL(&s_mux); return; }
     switch (event) {
         case ESP_GAP_BLE_SCAN_PARAM_SET_COMPLETE_EVT:
-            esp_ble_gap_start_scanning(0);
+            if (s_phase == ScanPhase::Parameters) {
+                if (p->scan_param_cmpl.status == ESP_BT_STATUS_SUCCESS) s_phase = ScanPhase::Ready;
+                else fail_locked("BLE scan setup failed");
+            }
+            break;
+        case ESP_GAP_BLE_SCAN_START_COMPLETE_EVT:
+            if (s_phase == ScanPhase::Starting) {
+                if (p->scan_start_cmpl.status == ESP_BT_STATUS_SUCCESS) s_phase = ScanPhase::Running;
+                else fail_locked("BLE scan start failed");
+            }
+            break;
+        case ESP_GAP_BLE_SCAN_STOP_COMPLETE_EVT:
+            if (s_phase == ScanPhase::Stopping) {
+                if (p->scan_stop_cmpl.status == ESP_BT_STATUS_SUCCESS) s_phase = ScanPhase::Ready;
+                else fail_locked("BLE scan stop failed");
+            }
             break;
         case ESP_GAP_BLE_SCAN_RESULT_EVT: {
-            if (p->scan_rst.search_evt != ESP_GAP_SEARCH_INQ_RES_EVT) break;
+            if (!s_wanted || s_phase != ScanPhase::Running ||
+                p->scan_rst.search_evt != ESP_GAP_SEARCH_INQ_RES_EVT) break;
             uint8_t type = 0;
             if (classify(p->scan_rst.ble_adv, &type)) {
-                portENTER_CRITICAL_ISR(&s_mux);
-                trk_record(p->scan_rst.bda, type, (int8_t)p->scan_rst.rssi, millis());
-                portEXIT_CRITICAL_ISR(&s_mux);
+                s_store.record(p->scan_rst.bda, static_cast<uint8_t>(p->scan_rst.ble_addr_type),
+                               type, p->scan_rst.rssi, millis());
             }
             break;
         }
         default: break;
     }
+    portEXIT_CRITICAL(&s_mux);
 }
 } // namespace
 
 void TrackerMonitor::begin()
 {
-    _running   = true;
+    stop();
+    _running   = false;
+    _starting  = true;
     _stats     = TrackerStats{};
     _accum_ms  = 0;
     _run_since = millis();
     _last_tick = millis();
 
-    portENTER_CRITICAL(&s_mux);
-    s_trk_n = 0;
-    portEXIT_CRITICAL(&s_mux);
-
+    // This app retains the existing exclusive BLE-stack lifecycle. It does
+    // not share the stack with advertising/HID apps; see their own lifecycle.
     BLEDevice::deinit(false);
     delay(50);
     BLEDevice::init("");
-    _inited = true;
-    esp_ble_gap_register_callback(&gap_cb);
-    esp_ble_gap_set_scan_params(&s_scan_params);
+    _inited = BLEDevice::getInitialized();
+    portENTER_CRITICAL(&s_mux);
+    s_store.clear();
+    s_error = nullptr;
+    s_enabled = _inited;
+    s_wanted = _inited;
+    s_phase = ScanPhase::Parameters;
+    s_phase_since = millis();
+    if (!_inited) fail_locked("BLE initialization failed");
+    portEXIT_CRITICAL(&s_mux);
+    if (_inited) {
+        esp_err_t result = esp_ble_gap_register_callback(&gap_cb);
+        if (result == ESP_OK) result = esp_ble_gap_set_scan_params(&s_scan_params);
+        if (result != ESP_OK) {
+            portENTER_CRITICAL(&s_mux);
+            fail_locked("BLE scan setup failed");
+            portEXIT_CRITICAL(&s_mux);
+        }
+    }
+    loop();
 }
 
 void TrackerMonitor::stop()
 {
+    if (_running) _accum_ms += millis() - _run_since;
     _running = false;
+    _starting = false;
+    // Gate callbacks before requesting asynchronous stop or deinitialization.
+    portENTER_CRITICAL(&s_mux);
+    s_enabled = false;
+    s_wanted = false;
+    s_store.invalidateScan();
+    s_phase = ScanPhase::Off;
+    portEXIT_CRITICAL(&s_mux);
     if (_inited) {
         esp_ble_gap_stop_scanning();
         BLEDevice::deinit(false);
@@ -115,19 +190,33 @@ void TrackerMonitor::stop()
 
 void TrackerMonitor::pause()
 {
-    if (!_running) return;
-    _accum_ms += millis() - _run_since;
+    if (!_inited) return;
+    if (_running) _accum_ms += millis() - _run_since;
     _running = false;
-    esp_ble_gap_stop_scanning();
+    _starting = false;
+    portENTER_CRITICAL(&s_mux);
+    s_wanted = false;
+    s_store.invalidateScan();
+    portEXIT_CRITICAL(&s_mux);
+    drive_scan(millis());
 }
 
 void TrackerMonitor::resume()
 {
-    if (_running) return;
-    _run_since = millis();
-    _last_tick = millis();
-    _running = true;
-    esp_ble_gap_start_scanning(0);
+    if (!_inited || _running || _starting || error()) return;
+    portENTER_CRITICAL(&s_mux);
+    s_wanted = true;
+    portEXIT_CRITICAL(&s_mux);
+    _starting = true;
+    loop();
+}
+
+const char* TrackerMonitor::error() const
+{
+    portENTER_CRITICAL(&s_mux);
+    const char* result = s_error;
+    portEXIT_CRITICAL(&s_mux);
+    return result;
 }
 
 uint32_t TrackerMonitor::uptime_s() const
@@ -138,43 +227,76 @@ uint32_t TrackerMonitor::uptime_s() const
 
 int TrackerMonitor::trackers(TrackerEntry* out, int max) const
 {
+    if (!out || max <= 0) return 0;
+    TrackerEntry snapshot[MAXTRK];
     portENTER_CRITICAL(&s_mux);
-    int n = s_trk_n < max ? s_trk_n : max;
-    for (int i = 0; i < n; i++) out[i] = s_trk[i];
+    int n = s_store.snapshot(snapshot, MAXTRK);
     portEXIT_CRITICAL(&s_mux);
-    /* Closest first (strongest RSSI). */
+    /* Stable ties avoid shuffling equal-strength rows. */
     for (int i = 0; i < n; i++)
         for (int j = i + 1; j < n; j++)
-            if (out[j].rssi > out[i].rssi) { TrackerEntry t = out[i]; out[i] = out[j]; out[j] = t; }
+            if (snapshot[j].filtered_rssi > snapshot[i].filtered_rssi ||
+                (snapshot[j].filtered_rssi == snapshot[i].filtered_rssi && snapshot[j].id < snapshot[i].id)) {
+                TrackerEntry t = snapshot[i]; snapshot[i] = snapshot[j]; snapshot[j] = t;
+            }
+    if (n > max) n = max;
+    for (int i = 0; i < n; ++i) out[i] = snapshot[i];
     return n;
+}
+
+bool TrackerMonitor::tracker(uint32_t id, TrackerEntry& out) const
+{
+    portENTER_CRITICAL(&s_mux);
+    const bool found = s_store.get(id, out);
+    portEXIT_CRITICAL(&s_mux);
+    return found;
+}
+
+bool TrackerMonitor::select(uint32_t id)
+{
+    portENTER_CRITICAL(&s_mux);
+    const bool selected = s_store.select(id);
+    portEXIT_CRITICAL(&s_mux);
+    return selected;
 }
 
 void TrackerMonitor::loop()
 {
-    if (!_running) return;
     const uint32_t now = millis();
+    drive_scan(now);
+    portENTER_CRITICAL(&s_mux);
+    const bool running = s_enabled && s_wanted && s_phase == ScanPhase::Running;
+    const bool starting = s_enabled && s_wanted && !running && !s_error;
+    const bool failed = s_error != nullptr;
+    portEXIT_CRITICAL(&s_mux);
+    if (_running && !running) _accum_ms += now - _run_since;
+    if (!_running && running) _run_since = now;
+    _running = running;
+    _starting = starting;
+    // A rejected command/ack timeout must not leave an unobserved radio scan
+    // running. Keep the diagnostic available until the next begin().
+    if (failed && _inited) stop();
     if (now - _last_tick < 1000) return;
-    _last_tick += 1000;
+    _last_tick = now;
 
     uint16_t nearby = 0, persistent = 0;
+    TrackerEntry snapshot[MAXTRK];
     portENTER_CRITICAL(&s_mux);
-    /* Drop stale entries (compact the array), then tally nearby/persistent. */
-    int w = 0;
-    for (int i = 0; i < s_trk_n; i++) {
-        if (now - s_trk[i].last_ms > TrackerMonitor::STALE_MS) continue;
-        if (w != i) s_trk[w] = s_trk[i];
-        w++;
-    }
-    s_trk_n = w;
-    for (int i = 0; i < s_trk_n; i++) {
-        bool recent = (now - s_trk[i].last_ms) < TrackerMonitor::RECENT_MS;
-        bool longlived = (s_trk[i].last_ms - s_trk[i].first_ms) > TrackerMonitor::PERSIST_MS;
+    // Read time after taking the lock: a BLE callback may have stamped a new
+    // sample after this loop began. An older `now` would wrap its age to ~49d.
+    const uint32_t observed_now = millis();
+    s_store.prune(observed_now);
+    const int n = s_store.snapshot(snapshot, MAXTRK);
+    const uint32_t evicted = s_store.evicted();
+    portEXIT_CRITICAL(&s_mux);
+    for (int i = 0; i < n; i++) {
+        bool recent = (observed_now - snapshot[i].last_ms) < TrackerMonitor::RECENT_MS;
+        bool longlived = (snapshot[i].last_ms - snapshot[i].first_ms) > TrackerMonitor::PERSIST_MS;
         if (recent) nearby++;
         if (recent && longlived) persistent++;
     }
-    portEXIT_CRITICAL(&s_mux);
-
     _stats.nearby     = nearby;
     _stats.persistent = persistent;
     _stats.alert      = (persistent > 0);
+    _stats.evicted    = evicted;
 }
