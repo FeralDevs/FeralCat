@@ -184,8 +184,24 @@ static void fwu_sd_update()
     }
     f.close();
 
-    if (Update.end(true)) { fwu_modal("Update complete", "Rebooting...", MK_PAL::OK); delay(300); esp_restart(); }
-    else                  { fwu_modal("Update failed", Update.errorString(), MK_PAL::ERR); }
+    if (Update.end(true)) {
+        /* Auto-reboot into the freshly-written slot. Must NOT use fwu_modal here:
+         * that blocks waiting for an A/B press, so the device looked stuck on
+         * "Rebooting..." and never actually rebooted (Discord bug report). */
+        MK_TUI::clearScreen(lcd);
+        MK_TUI::drawHeader(lcd, "Firmware");
+        lcd.setFont(&fonts::efontCN_16);
+        lcd.setTextColor((uint32_t)MK_PAL::OK, (uint32_t)MK_PAL::BLACK);
+        lcd.setCursor(MK_LAYOUT::PAD, 100);
+        lcd.printf("Update complete");
+        lcd.setTextColor((uint32_t)MK_PAL::ACCENT, (uint32_t)MK_PAL::BLACK);
+        lcd.setCursor(MK_LAYOUT::PAD, 122);
+        lcd.printf("Rebooting...");
+        delay(800);
+        esp_restart();
+    } else {
+        fwu_modal("Update failed", Update.errorString(), MK_PAL::ERR);
+    }
 }
 
 /* ── WiFi-GitHub OTA ─────────────────────────────────────────────────────── */
