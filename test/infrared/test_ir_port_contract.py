@@ -7,6 +7,7 @@ SOURCE = (ROOT / "src/app/app_09/infrared.cpp").read_text(encoding="utf-8")
 HEADER = (ROOT / "src/app/app_09/infrared.h").read_text(encoding="utf-8")
 HP_UI = (ROOT / "src/app/app_common/hp_ui.h").read_text(encoding="utf-8")
 MK_TUI = (ROOT / "src/app/app_common/mk_tui.h").read_text(encoding="utf-8")
+WORKFLOW = (ROOT / ".github/workflows/lua-mp3.yml").read_text(encoding="utf-8")
 
 
 class InfraredPortContractTest(unittest.TestCase):
@@ -29,6 +30,29 @@ class InfraredPortContractTest(unittest.TestCase):
             SOURCE,
         )
         self.assertIn("_listIrFiles(UNIV_DIR, _fileList);", SOURCE)
+
+    def test_new_folder_flow_rejects_the_reserved_root_universal_folder(self):
+        self.assertIn(
+            'if (strcmp(_savePickerDir, IR_DIR) == 0 && strcasecmp(_editBuf, "universal") == 0)',
+            SOURCE,
+        )
+
+    def test_saved_remote_open_uses_the_existing_signal_selector(self):
+        self.assertIn(
+            "if (_loadRemote(path, _currentRemote)) {\n"
+            "                    _switchScene(IrScene::RemoteView);",
+            SOURCE,
+        )
+        self.assertNotIn("_txSignal(_currentRemote.signals.front());", SOURCE)
+
+    def test_open_resets_save_flow_state(self):
+        on_open = SOURCE.split("void App09::onOpen()", 1)[1].split("void App09::onRunning()", 1)[0]
+        self.assertIn("_saveFolderPending = false;", on_open)
+        self.assertIn("_restoreFolderName = false;", on_open)
+        self.assertIn("_preserveSignalName = false;", on_open)
+
+    def test_contract_runs_in_pull_request_workflow(self):
+        self.assertIn("python test/infrared/test_ir_port_contract.py", WORKFLOW)
 
     def test_universal_remote_rendering_is_unchanged(self):
         self.assertIn('hp::drawHeader(Lcd, _univCatTitle, "REMOTE", hp::COL_FG);', SOURCE)

@@ -255,6 +255,9 @@ namespace MOONCAKE::APPS
         _editPos = 0;
         _editCharIdx = 0;
         _vkSel = 0;
+        _saveFolderPending = false;
+        _restoreFolderName = false;
+        _preserveSignalName = false;
         _learnIconTried = false;
         _learnIconLen = 0;
         _learnIconPng = nullptr;
@@ -959,6 +962,12 @@ namespace MOONCAKE::APPS
             _sceneDirty = true;
             return;
         }
+        if (strcmp(_savePickerDir, IR_DIR) == 0 && strcasecmp(_editBuf, "universal") == 0) {
+            _drawMsgBox("Protected folder", "Choose another name");
+            delay(1500);
+            _sceneDirty = true;
+            return;
+        }
         int written = snprintf(_saveDir, sizeof(_saveDir), "%s/%s", _savePickerDir, _editBuf);
         if (written < 0 || static_cast<size_t>(written) >= sizeof(_saveDir)) {
             _drawMsgBox("Path too long!", "Use a shorter name");
@@ -1103,13 +1112,10 @@ namespace MOONCAKE::APPS
                     return;
                 }
 
-                if (_loadRemote(path, _currentRemote) && !_currentRemote.signals.empty()) {
-                    _txSignal(_currentRemote.signals.front());
-                    hp::drawToast(_device->Lcd, "SENT", hp::COL_FG);
-                    delay(200);
-                    _sceneDirty = true;
+                if (_loadRemote(path, _currentRemote)) {
+                    _switchScene(IrScene::RemoteView);
                 } else {
-                    _drawMsgBox("No signal found", path);
+                    _drawMsgBox("Failed to load!", path);
                     delay(1500);
                     _sceneDirty = true;
                 }
