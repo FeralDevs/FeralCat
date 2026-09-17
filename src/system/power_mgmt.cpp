@@ -3,6 +3,7 @@
  * @brief AXP173 power lifecycle — production implementation.
  */
 #include "power_mgmt.h"
+#include "../bsp/config.h"   /* HAL_PIN_PMU_IRQ (AXP173 IRQ / power-button line) */
 #include <Arduino.h>
 #include <esp_sleep.h>
 #include <driver/gpio.h>
@@ -152,11 +153,14 @@ extern "C" int power_light_sleep(uint32_t battery_check_sec, int min_pct, bool w
 {
     /* A/B + 5-way joystick GPIOs (see bsp/config.h). All INPUT_PULLUP → a press
      * pulls the line LOW. Light sleep can wake on ANY GPIO (unlike deep sleep,
-     * which is limited to RTC GPIOs), so no RTC-routing constraint applies. */
+     * which is limited to RTC GPIOs), so no RTC-routing constraint applies.
+     * GPIO43 = AXP173 IRQ (active-low): a PEK short press pulls it low, so the
+     * power button wakes too (its short-press IRQ is enabled in power_init). */
     static const gpio_num_t WAKE_PINS[] = {
         (gpio_num_t)6,  (gpio_num_t)4,          /* A, B                     */
         (gpio_num_t)12, (gpio_num_t)18,         /* joy up, down             */
         (gpio_num_t)17, (gpio_num_t)8,          /* joy left, right          */
+        (gpio_num_t)HAL_PIN_PMU_IRQ,            /* 43 = power button (AXP IRQ) */
     };
     const int N = (int)(sizeof(WAKE_PINS) / sizeof(WAKE_PINS[0]));
 
@@ -174,6 +178,9 @@ extern "C" int power_light_sleep(uint32_t battery_check_sec, int min_pct, bool w
 
         esp_sleep_wakeup_cause_t cause = esp_sleep_get_wakeup_cause();
         for (int i = 0; i < N; i++) gpio_wakeup_disable(WAKE_PINS[i]);
+        /* If the power button woke us, its AXP IRQ latch holds GPIO43 low —
+         * clear it so it doesn't immediately re-wake / re-trigger sleep. */
+        if (s_pmu) s_pmu->setShortPressIRQDisabale();
 
         if (cause == ESP_SLEEP_WAKEUP_TIMER) {
             /* Periodic wake: only to check power state, then sleep again. */
