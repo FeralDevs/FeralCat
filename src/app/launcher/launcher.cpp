@@ -387,18 +387,24 @@ void Launcher::onLoop()
             }
 
             if (settings_get_sleep_mode()) {
-                /* Sleep mode ON: stay in screen-off standby indefinitely; any
-                 * button/touch press wakes it (handled below). Battery backstop:
-                 * only power off when running on battery and ≤ POWER_SLEEP_MIN_PCT,
-                 * to avoid deep-discharging the cell. */
-                if (s_screen_off
-                    && !power_is_charging()
-                    && !usb_msc_is_active()
-                    && power_battery_pct() <= POWER_SLEEP_MIN_PCT) {
-                    Serial.printf("[Launcher] Sleep mode + low battery %d%% — power-off\n",
-                                  power_battery_pct());
-                    power_shutdown();
-                    /* does not return */
+                /* Sleep mode ON: once the screen has dimmed out, don't power off.
+                 * On external power → stay in screen-off standby (keeps USB/charge
+                 * alive, background services running). On battery → drop into ESP32
+                 * light-sleep for real power saving; any button wakes it, and the
+                 * battery backstop powers off at ≤ POWER_SLEEP_MIN_PCT. */
+                if (s_screen_off && !usb_msc_is_active()
+                    && !power_is_charging() && !power_vbus_present()) {
+                    settings_flush();                 /* persist before sleeping */
+                    int r = power_light_sleep(60, POWER_SLEEP_MIN_PCT);
+                    if (r == PWR_WAKE_LOWBAT) {
+                        Serial.printf("[Launcher] Sleep + low battery %d%% — power-off\n",
+                                      power_battery_pct());
+                        power_shutdown();             /* does not return */
+                    }
+                    /* Woke on a button (or plugged in): restore screen + timer. */
+                    _device->Lcd.setBrightness((uint8_t)(sys_get_brightness() * 255 / 100));
+                    s_screen_off = false;
+                    power_reset_sleep_timer();
                 }
             } else {
                 /* Auto power-off after extended idle (2.5× display timeout, min 5 min).

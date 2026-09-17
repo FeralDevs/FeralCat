@@ -79,6 +79,19 @@ void power_enter_ship_mode(void);
  */
 void power_deep_sleep(uint32_t wake_after_sec);
 
+/* Return codes for power_light_sleep(). */
+#define PWR_WAKE_BUTTON  0   /* a button/touch press woke the device */
+#define PWR_WAKE_LOWBAT  1   /* on battery and ≤ min_pct — caller should power off */
+
+/**
+ * 进入 ESP32 轻睡眠（保留 RAM，唤醒后从调用处继续执行）。Sleep-mode 低功耗档。
+ * 唤醒源：A/B + 五向摇杆按键（GPIO 低电平），以及每 battery_check_sec 秒的定时器
+ * 用于检查电量。定时器唤醒时：若在充电则返回 PWR_WAKE_BUTTON（唤醒显示充电）；
+ * 若放电且电量 ≤ min_pct 则返回 PWR_WAKE_LOWBAT；否则继续睡眠。
+ * 按键唤醒返回 PWR_WAKE_BUTTON。阻塞直到真正唤醒。
+ */
+int power_light_sleep(uint32_t battery_check_sec, int min_pct);
+
 /* ── 空闲计时器 ──────────────────────────────────────── */
 
 /** 任何用户操作（触屏 / 按键）时调用，重置空闲计时器。 */
