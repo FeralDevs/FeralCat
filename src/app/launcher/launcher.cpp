@@ -329,6 +329,22 @@ void Launcher::onLoop()
         _device->button.tick();
         handlePhysicalNav();
 
+        /* Power-button (PEK) single press → enter sleep on demand, when sleep
+         * mode is enabled. Polled ~5 Hz (the AXP173 latches the press until we
+         * read it, so nothing is missed). Turning the screen off here lets the
+         * ~1 Hz idle block drop into standby/light-sleep on the next tick.
+         * A ~4 s long-press still hardware-powers-off via the AXP173. */
+        static uint32_t lastPek = 0;
+        if (millis() - lastPek > 200) {
+            lastPek = millis();
+            if (power_consume_pek_short() && settings_get_sleep_mode()
+                && !s_screen_off) {
+                _device->Lcd.setBrightness(0);
+                s_screen_off = true;
+                Serial.println("[Launcher] Power button → sleep");
+            }
+        }
+
         uint32_t next_ms = lv_timer_handler();
         handleAppSelection();
 

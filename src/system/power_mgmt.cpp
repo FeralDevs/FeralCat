@@ -37,6 +37,11 @@ extern "C" void power_init(AXP173_Class* pmu)
     /* Short PEK press 512 ms → power on from off state */
     s_pmu->setPowerOnTime(POWERON_512mS);
 
+    /* Enable PEK short-press detection so the UI can trigger sleep on a single
+     * power-button press. Enabling raises a spurious latch, so clear it once. */
+    s_pmu->setShortPressEnabale();
+    s_pmu->setShortPressIRQDisabale();
+
     s_init_ms          = millis();
     s_last_activity_ms = millis();
 
@@ -129,6 +134,16 @@ extern "C" void power_enter_ship_mode(void)
 }
 
 /* ── Deep sleep ───────────────────────────────────────── */
+
+extern "C" bool power_consume_pek_short(void)
+{
+    if (!s_pmu) return false;
+    if (s_pmu->getShortPressIRQState()) {
+        s_pmu->setShortPressIRQDisabale();   /* clear the latch */
+        return true;
+    }
+    return false;
+}
 
 extern "C" int power_light_sleep(uint32_t battery_check_sec, int min_pct)
 {

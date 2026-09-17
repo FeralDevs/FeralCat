@@ -97,6 +97,13 @@ int power_light_sleep(uint32_t battery_check_sec, int min_pct);
 /** 任何用户操作（触屏 / 按键）时调用，重置空闲计时器。 */
 void power_reset_sleep_timer(void);
 
+/**
+ * Poll the AXP173 PEK (power button) short-press latch. Returns true once per
+ * short press and clears the latch. Used to trigger sleep on demand. A ~4 s
+ * long-press still powers off in AXP173 hardware, independent of this.
+ */
+bool power_consume_pek_short(void);
+
 /** 返回自上次 power_reset_sleep_timer 以来的秒数。供 Launcher 控制背光和自动关机。 */
 uint32_t power_idle_seconds(void);
 
