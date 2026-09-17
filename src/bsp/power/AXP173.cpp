@@ -449,35 +449,36 @@ void AXP173_Class::setShortPressEnabale() {
 }
 
 void AXP173_Class::setShortPressIRQEnable() {
-    /* REG 0x42 bit[1] = 1 → enable PEK short-press IRQ. Without this the status
-     * bit (REG 0x44 bit[1]) never latches, so getShortPressIRQState() stays 0. */
+    /* PEK IRQs live in bank 3: enable REG 0x42, status REG 0x46 (bit1 short,
+     * bit0 long). REG 0x42 bit[1] = 1 → enable PEK short-press IRQ; without it
+     * the status bit never latches. */
     uint8_t reg = readRegister8(0x42);
     reg |= 0x02;
     writeRegister8(0x42, reg);
     /* Clear any pending short-press status so we start clean. */
-    writeRegister8(0x44, 0x02);
+    writeRegister8(0x46, 0x02);
 }
 
 bool AXP173_Class::getShortPressIRQState() {
-    /* REG 0x44 bit[1] → PEK short press IRQ status */
-    return (readRegister8(0x44) & 0x02) ? true : false;
+    /* REG 0x46 bit[1] → PEK short press IRQ status (bank 3, pairs with 0x42) */
+    return (readRegister8(0x46) & 0x02) ? true : false;
 }
 
 void AXP173_Class::setShortPressIRQDisabale() {
-    /* Write 1 to REG 0x44 bit[1] to clear the IRQ */
-    writeRegister8(0x44, 0x02);
+    /* Write 1 to REG 0x46 bit[1] to clear the IRQ */
+    writeRegister8(0x46, 0x02);
 }
 
 /* ── Long press PEK key ─────────────────────────────── */
 
 bool AXP173_Class::getLongPressIRQState() {
-    /* REG 0x44 bit[0] → PEK long press IRQ status */
-    return (readRegister8(0x44) & 0x01) ? true : false;
+    /* REG 0x46 bit[0] → PEK long press IRQ status */
+    return (readRegister8(0x46) & 0x01) ? true : false;
 }
 
 void AXP173_Class::setLongPressIRQDisabale() {
-    /* Write 1 to REG 0x44 bit[0] to clear the IRQ */
-    writeRegister8(0x44, 0x01);
+    /* Write 1 to REG 0x46 bit[0] to clear the IRQ */
+    writeRegister8(0x46, 0x01);
 }
 
 /* ═══════════════════════════════════════════════════════════════
