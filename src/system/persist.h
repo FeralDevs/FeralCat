@@ -33,6 +33,7 @@ extern "C" {
 /* Display */
 #define PKEY_BRIGHTNESS     "bright"      /* int  0-100    LCD backlight %           */
 #define PKEY_DISP_TIMEOUT   "disp_to"    /* int  0-3600   auto-dim delay s (0=never)*/
+#define PKEY_SLEEP_MODE     "sleep_md"   /* int  0|1      idle → sleep (screen off, wake on press) instead of power-off */
 
 /* Audio */
 #define PKEY_VOLUME         "vol"         /* int  0-100    speaker volume %           */

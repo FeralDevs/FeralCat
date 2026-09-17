@@ -38,6 +38,7 @@ extern "C" {
 /* ── Battery thresholds ──────────────────────────────── */
 #define POWER_WARN_BAT_PCT   15   /* 电量警告：黄色图标，调用 warn_cb      */
 #define POWER_CRIT_BAT_PCT    5   /* 强制关机：调用 pre_shutdown_cb + powerOFF */
+#define POWER_SLEEP_MIN_PCT  20   /* Sleep-mode backstop: below this (on battery) power off instead of sleeping */
 #define POWER_LOW_BAT_PCT   POWER_WARN_BAT_PCT   /* 向后兼容别名 */
 
 /* AXP173 硬件欠压关机阈值（mV）。与 devices.cpp setVoffVoltage(2900) 保持一致。 */

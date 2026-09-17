@@ -386,19 +386,35 @@ void Launcher::onLoop()
                               (unsigned long)idle_s);
             }
 
-            /* Auto power-off after extended idle (2.5× display timeout, min 5 min).
-             * Guard: never power off while charging or while MSC session is live. */
-            uint32_t off_threshold = (disp_to > 0)
-                                     ? (uint32_t)disp_to * 5 / 2
-                                     : 300u;
-            if (off_threshold < 300u) off_threshold = 300u;
-            if (idle_s >= off_threshold
-                && !power_is_charging()
-                && !usb_msc_is_active()) {
-                Serial.printf("[Launcher] Idle %lus — auto power-off\n",
-                              (unsigned long)idle_s);
-                power_shutdown();
-                /* does not return */
+            if (settings_get_sleep_mode()) {
+                /* Sleep mode ON: stay in screen-off standby indefinitely; any
+                 * button/touch press wakes it (handled below). Battery backstop:
+                 * only power off when running on battery and ≤ POWER_SLEEP_MIN_PCT,
+                 * to avoid deep-discharging the cell. */
+                if (s_screen_off
+                    && !power_is_charging()
+                    && !usb_msc_is_active()
+                    && power_battery_pct() <= POWER_SLEEP_MIN_PCT) {
+                    Serial.printf("[Launcher] Sleep mode + low battery %d%% — power-off\n",
+                                  power_battery_pct());
+                    power_shutdown();
+                    /* does not return */
+                }
+            } else {
+                /* Auto power-off after extended idle (2.5× display timeout, min 5 min).
+                 * Guard: never power off while charging or while MSC session is live. */
+                uint32_t off_threshold = (disp_to > 0)
+                                         ? (uint32_t)disp_to * 5 / 2
+                                         : 300u;
+                if (off_threshold < 300u) off_threshold = 300u;
+                if (idle_s >= off_threshold
+                    && !power_is_charging()
+                    && !usb_msc_is_active()) {
+                    Serial.printf("[Launcher] Idle %lus — auto power-off\n",
+                                  (unsigned long)idle_s);
+                    power_shutdown();
+                    /* does not return */
+                }
             }
         }
 
