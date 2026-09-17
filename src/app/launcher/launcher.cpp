@@ -386,19 +386,41 @@ void Launcher::onLoop()
                               (unsigned long)idle_s);
             }
 
-            /* Auto power-off after extended idle (2.5× display timeout, min 5 min).
-             * Guard: never power off while charging or while MSC session is live. */
-            uint32_t off_threshold = (disp_to > 0)
-                                     ? (uint32_t)disp_to * 5 / 2
-                                     : 300u;
-            if (off_threshold < 300u) off_threshold = 300u;
-            if (idle_s >= off_threshold
-                && !power_is_charging()
-                && !usb_msc_is_active()) {
-                Serial.printf("[Launcher] Idle %lus — auto power-off\n",
-                              (unsigned long)idle_s);
-                power_shutdown();
-                /* does not return */
+            if (settings_get_sleep_mode()) {
+                /* Sleep mode ON: once the screen has dimmed out, don't power off.
+                 * On external power → stay in screen-off standby (keeps USB/charge
+                 * alive, background services running). On battery → drop into ESP32
+                 * light-sleep for real power saving; any button wakes it, and the
+                 * battery backstop powers off at ≤ POWER_SLEEP_MIN_PCT. */
+                if (s_screen_off && !usb_msc_is_active()
+                    && !power_is_charging() && !power_vbus_present()) {
+                    settings_flush();                 /* persist before sleeping */
+                    int r = power_light_sleep(60, POWER_SLEEP_MIN_PCT);
+                    if (r == PWR_WAKE_LOWBAT) {
+                        Serial.printf("[Launcher] Sleep + low battery %d%% — power-off\n",
+                                      power_battery_pct());
+                        power_shutdown();             /* does not return */
+                    }
+                    /* Woke on a button (or plugged in): restore screen + timer. */
+                    _device->Lcd.setBrightness((uint8_t)(sys_get_brightness() * 255 / 100));
+                    s_screen_off = false;
+                    power_reset_sleep_timer();
+                }
+            } else {
+                /* Auto power-off after extended idle (2.5× display timeout, min 5 min).
+                 * Guard: never power off while charging or while MSC session is live. */
+                uint32_t off_threshold = (disp_to > 0)
+                                         ? (uint32_t)disp_to * 5 / 2
+                                         : 300u;
+                if (off_threshold < 300u) off_threshold = 300u;
+                if (idle_s >= off_threshold
+                    && !power_is_charging()
+                    && !usb_msc_is_active()) {
+                    Serial.printf("[Launcher] Idle %lus — auto power-off\n",
+                                  (unsigned long)idle_s);
+                    power_shutdown();
+                    /* does not return */
+                }
             }
         }
 

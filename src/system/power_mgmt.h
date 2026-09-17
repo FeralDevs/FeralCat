@@ -38,6 +38,7 @@ extern "C" {
 /* ── Battery thresholds ──────────────────────────────── */
 #define POWER_WARN_BAT_PCT   15   /* 电量警告：黄色图标，调用 warn_cb      */
 #define POWER_CRIT_BAT_PCT    5   /* 强制关机：调用 pre_shutdown_cb + powerOFF */
+#define POWER_SLEEP_MIN_PCT  20   /* Sleep-mode backstop: below this (on battery) power off instead of sleeping */
 #define POWER_LOW_BAT_PCT   POWER_WARN_BAT_PCT   /* 向后兼容别名 */
 
 /* AXP173 硬件欠压关机阈值（mV）。与 devices.cpp setVoffVoltage(2900) 保持一致。 */
@@ -77,6 +78,19 @@ void power_enter_ship_mode(void);
  *       如需 PEK 唤醒深睡眠，须在硬件上将 AXP173 IRQ 路由到 RTC GPIO (0-21)。
  */
 void power_deep_sleep(uint32_t wake_after_sec);
+
+/* Return codes for power_light_sleep(). */
+#define PWR_WAKE_BUTTON  0   /* a button/touch press woke the device */
+#define PWR_WAKE_LOWBAT  1   /* on battery and ≤ min_pct — caller should power off */
+
+/**
+ * 进入 ESP32 轻睡眠（保留 RAM，唤醒后从调用处继续执行）。Sleep-mode 低功耗档。
+ * 唤醒源：A/B + 五向摇杆按键（GPIO 低电平），以及每 battery_check_sec 秒的定时器
+ * 用于检查电量。定时器唤醒时：若在充电则返回 PWR_WAKE_BUTTON（唤醒显示充电）；
+ * 若放电且电量 ≤ min_pct 则返回 PWR_WAKE_LOWBAT；否则继续睡眠。
+ * 按键唤醒返回 PWR_WAKE_BUTTON。阻塞直到真正唤醒。
+ */
+int power_light_sleep(uint32_t battery_check_sec, int min_pct);
 
 /* ── 空闲计时器 ──────────────────────────────────────── */
 

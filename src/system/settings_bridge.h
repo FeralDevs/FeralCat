@@ -94,6 +94,11 @@ int  sys_get_brightness(void);
 void settings_set_disp_timeout(int secs);
 int  settings_get_disp_timeout(void);
 
+/** Sleep mode: when on, extended idle keeps the screen off (wake on any press)
+ *  instead of powering off. The main loop reads settings_get_sleep_mode(). */
+void settings_set_sleep_mode(int on);
+int  settings_get_sleep_mode(void);
+
 /* ── Audio ───────────────────────────────────────────────────── */
 
 /** Apply speaker volume.  pct = 0..100 → Speaker_Class. (boot-time) */

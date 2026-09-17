@@ -26,6 +26,7 @@ void sys_settings_bridge_attach(DEVICES* dev)
 
 static int      s_brightness   = 50;
 static int      s_disp_timeout = 60;
+static int      s_sleep_mode   = 0;   /* 0 = power off on idle, 1 = sleep (screen off) */
 static int      s_volume       = 50;
 static bool     s_key_sound    = true;
 static int      s_led          = 30;
@@ -48,6 +49,7 @@ enum DirtyBit : uint32_t {
     D_WIFI_EN    = 1u <<  7,
     D_BLE_NAME   = 1u <<  8,
     D_BLE_EN     = 1u <<  9,
+    D_SLEEP_MD   = 1u << 10,
 };
 
 static uint32_t s_dirty       = 0;
@@ -80,6 +82,7 @@ void settings_load_all(void)
     /* Load + apply display */
     sys_apply_brightness(persist_get_int(PKEY_BRIGHTNESS,   50));
     s_disp_timeout = persist_get_int(PKEY_DISP_TIMEOUT,     60);
+    s_sleep_mode   = persist_get_int(PKEY_SLEEP_MODE,        0);
 
     /* Load + apply audio */
     sys_apply_volume    (persist_get_int(PKEY_VOLUME,        50));
@@ -108,6 +111,7 @@ void settings_flush(void)
 
     if (s_dirty & D_BRIGHT)     persist_set_int(PKEY_BRIGHTNESS,   s_brightness);
     if (s_dirty & D_DISP_TO)    persist_set_int(PKEY_DISP_TIMEOUT, s_disp_timeout);
+    if (s_dirty & D_SLEEP_MD)   persist_set_int(PKEY_SLEEP_MODE,   s_sleep_mode);
     if (s_dirty & D_VOL)        persist_set_int(PKEY_VOLUME,       s_volume);
     if (s_dirty & D_KEY_SND)    persist_set_int(PKEY_KEY_SOUND,    s_key_sound ? 1 : 0);
     if (s_dirty & D_LED_BRIGHT) persist_set_int(PKEY_LED_BRIGHT,   s_led);
@@ -161,6 +165,14 @@ void settings_set_disp_timeout(int secs)
 }
 
 int settings_get_disp_timeout(void) { return s_disp_timeout; }
+
+void settings_set_sleep_mode(int on)
+{
+    s_sleep_mode = on ? 1 : 0;
+    MARK_DIRTY(D_SLEEP_MD);
+}
+
+int settings_get_sleep_mode(void) { return s_sleep_mode; }
 
 /* ════════════════════════════════════════════════════════════════
  * Audio

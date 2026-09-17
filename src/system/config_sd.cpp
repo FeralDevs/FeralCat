@@ -41,6 +41,7 @@ void config_sd_backup(void)
     f.printf("# MeowKit settings backup — restore from Settings > Backup\n");
     f.printf("bright=%d\n",    persist_get_int(PKEY_BRIGHTNESS, 50));
     f.printf("disp_to=%d\n",   persist_get_int(PKEY_DISP_TIMEOUT, 30));
+    f.printf("sleep_md=%d\n",  persist_get_int(PKEY_SLEEP_MODE, 0));
     f.printf("vol=%d\n",       persist_get_int(PKEY_VOLUME, 50));
     f.printf("key_snd=%d\n",   persist_get_int(PKEY_KEY_SOUND, 1));
     f.printf("led=%d\n",       persist_get_int(PKEY_LED_BRIGHT, 50));
@@ -92,6 +93,7 @@ static void do_restore(int mode)
 
         if      (!strcmp(key, "bright"))    persist_set_int(PKEY_BRIGHTNESS,   atoi(val));
         else if (!strcmp(key, "disp_to"))   persist_set_int(PKEY_DISP_TIMEOUT, atoi(val));
+        else if (!strcmp(key, "sleep_md"))  persist_set_int(PKEY_SLEEP_MODE,   atoi(val));
         else if (!strcmp(key, "vol"))       persist_set_int(PKEY_VOLUME,       atoi(val));
         else if (!strcmp(key, "key_snd"))   persist_set_int(PKEY_KEY_SOUND,    atoi(val));
         else if (!strcmp(key, "led"))       persist_set_int(PKEY_LED_BRIGHT,   atoi(val));

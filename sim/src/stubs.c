@@ -237,6 +237,10 @@ void settings_set_volume(int pct)      { g_volume     = pct; }
 void settings_set_led_bright(int pct)  { g_led        = pct; }
 void settings_set_key_sound(int on)    { g_key_sound  = on != 0; }
 
+static int g_sleep_mode = 0;
+void settings_set_sleep_mode(int on) { g_sleep_mode = on != 0; }
+int  settings_get_sleep_mode(void)   { return g_sleep_mode; }
+
 int  power_battery_pct(void) { return 76; }
 bool power_is_charging(void) { return true; }
 

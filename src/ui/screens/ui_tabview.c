@@ -1117,6 +1117,20 @@ static void tab_unsigned_sw_cb(lv_event_t * e)
     lv_obj_add_event_cb(m, _info_msgbox_close_cb, LV_EVENT_VALUE_CHANGED, NULL);
 }
 
+static void tab_sleep_sw_cb(lv_event_t * e)
+{
+    if (lv_event_get_code(e) != LV_EVENT_VALUE_CHANGED) return;
+    lv_obj_t * sw = lv_event_get_target(e);
+    int on = lv_obj_has_state(sw, LV_STATE_CHECKED) ? 1 : 0;
+    settings_set_sleep_mode(on);   /* applies immediately (read live by the launcher) */
+    static const char * btns[] = { "OK", "" };
+    lv_obj_t * m = lv_msgbox_create(lv_scr_act(), "Sleep mode",
+        on ? "Sleep mode on.\nWhen idle the screen turns off;\npress any button to wake."
+           : "Sleep mode off.\nDevice powers off when idle.", btns, false);
+    _style_msgbox(m, TV_LIME);
+    lv_obj_add_event_cb(m, _info_msgbox_close_cb, LV_EVENT_VALUE_CHANGED, NULL);
+}
+
 static void build_tab_features(lv_obj_t * page)
 {
     lv_obj_set_style_bg_opa(page,       LV_OPA_TRANSP, 0);
@@ -1152,6 +1166,14 @@ static void build_tab_features(lv_obj_t * page)
     mk_lbl(c2, "valid signature (risky)", 0, 46, TV_MUTED, &ui_font_name_14);
     lv_obj_t * sw2 = mk_card_switch(c2, CARD_INN - 42, 8, persist_get_int(PKEY_ELF_UNSIGNED, 0) != 0);
     lv_obj_add_event_cb(sw2, tab_unsigned_sw_cb, LV_EVENT_VALUE_CHANGED, NULL);
+
+    y += 82 + 8;
+    lv_obj_t * c3 = mk_card(page, y, 82);
+    mk_lbl(c3, "Sleep mode", 0, 0, TV_TEXT, &ui_font_name_14);
+    mk_lbl(c3, "idle turns screen off, not", 0, 28, TV_MUTED, &ui_font_name_14);
+    mk_lbl(c3, "power off; press to wake", 0, 46, TV_MUTED, &ui_font_name_14);
+    lv_obj_t * sw3 = mk_card_switch(c3, CARD_INN - 42, 8, settings_get_sleep_mode() != 0);
+    lv_obj_add_event_cb(sw3, tab_sleep_sw_cb, LV_EVENT_VALUE_CHANGED, NULL);
 }
 
 #if MEOWKIT_DEBUG_TAB

@@ -5,6 +5,7 @@
 #include "power_mgmt.h"
 #include <Arduino.h>
 #include <esp_sleep.h>
+#include <driver/gpio.h>
 
 static AXP173_Class* s_pmu             = nullptr;
 static void (*s_pre_shutdown_cb)(void) = nullptr;
@@ -128,6 +129,43 @@ extern "C" void power_enter_ship_mode(void)
 }
 
 /* ── Deep sleep ───────────────────────────────────────── */
+
+extern "C" int power_light_sleep(uint32_t battery_check_sec, int min_pct)
+{
+    /* A/B + 5-way joystick GPIOs (see bsp/config.h). All INPUT_PULLUP → a press
+     * pulls the line LOW. Light sleep can wake on ANY GPIO (unlike deep sleep,
+     * which is limited to RTC GPIOs), so no RTC-routing constraint applies. */
+    static const gpio_num_t WAKE_PINS[] = {
+        (gpio_num_t)6,  (gpio_num_t)4,          /* A, B                     */
+        (gpio_num_t)12, (gpio_num_t)18,         /* joy up, down             */
+        (gpio_num_t)17, (gpio_num_t)8,          /* joy left, right          */
+    };
+    const int N = (int)(sizeof(WAKE_PINS) / sizeof(WAKE_PINS[0]));
+
+    Serial.println("[Power] Light sleep");
+    Serial.flush();
+
+    for (;;) {
+        for (int i = 0; i < N; i++)
+            gpio_wakeup_enable(WAKE_PINS[i], GPIO_INTR_LOW_LEVEL);
+        esp_sleep_enable_gpio_wakeup();
+        if (battery_check_sec > 0)
+            esp_sleep_enable_timer_wakeup((uint64_t)battery_check_sec * 1000000ULL);
+
+        esp_light_sleep_start();   /* CPU pauses here; RAM retained */
+
+        esp_sleep_wakeup_cause_t cause = esp_sleep_get_wakeup_cause();
+        for (int i = 0; i < N; i++) gpio_wakeup_disable(WAKE_PINS[i]);
+
+        if (cause == ESP_SLEEP_WAKEUP_TIMER) {
+            /* Periodic wake: only to check power state, then sleep again. */
+            if (power_is_charging()) return PWR_WAKE_BUTTON;         /* plugged in → show UI */
+            if (power_battery_pct() <= min_pct) return PWR_WAKE_LOWBAT;
+            continue;                                                /* re-enter sleep */
+        }
+        return PWR_WAKE_BUTTON;    /* GPIO (button) or any other cause → real wake */
+    }
+}
 
 extern "C" void power_deep_sleep(uint32_t wake_after_sec)
 {
