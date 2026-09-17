@@ -448,6 +448,16 @@ void AXP173_Class::setShortPressEnabale() {
     writeRegister8(0x31, reg);
 }
 
+void AXP173_Class::setShortPressIRQEnable() {
+    /* REG 0x42 bit[1] = 1 → enable PEK short-press IRQ. Without this the status
+     * bit (REG 0x44 bit[1]) never latches, so getShortPressIRQState() stays 0. */
+    uint8_t reg = readRegister8(0x42);
+    reg |= 0x02;
+    writeRegister8(0x42, reg);
+    /* Clear any pending short-press status so we start clean. */
+    writeRegister8(0x44, 0x02);
+}
+
 bool AXP173_Class::getShortPressIRQState() {
     /* REG 0x44 bit[1] → PEK short press IRQ status */
     return (readRegister8(0x44) & 0x02) ? true : false;

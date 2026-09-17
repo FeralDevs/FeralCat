@@ -181,6 +181,7 @@ class AXP173_Class : public I2C_Device
         void initIRQState();                              //所有IRQ中断使能置零 REG40H 41H 42H 43H 4AH
         /* ShortPress */
         void setShortPressEnabale();                      //短按键使能REG31H[3] 调用后立刻导致短按键中断发生
+        void setShortPressIRQEnable();                    //使能短按键IRQ REG42H[1] 状态位方能锁存
         bool getShortPressIRQState();                     //读取短按键IRQ中断状态
         void setShortPressIRQDisabale();                  //对应位写1结束中断
         /* LongPress */

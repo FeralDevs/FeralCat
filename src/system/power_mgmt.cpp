@@ -38,7 +38,10 @@ extern "C" void power_init(AXP173_Class* pmu)
     s_pmu->setPowerOnTime(POWERON_512mS);
 
     /* Enable PEK short-press detection so the UI can trigger sleep on a single
-     * power-button press. Enabling raises a spurious latch, so clear it once. */
+     * power-button press. The status latch (REG 0x44[1]) only arms when the IRQ
+     * enable (REG 0x42[1]) is set — setShortPressEnabale() alone (REG 0x31[3])
+     * is not enough. Clear any pending latch afterwards. */
+    s_pmu->setShortPressIRQEnable();
     s_pmu->setShortPressEnabale();
     s_pmu->setShortPressIRQDisabale();
 
