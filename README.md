@@ -4,9 +4,12 @@
 
 💬 **Community & support:** [discord.gg/BQkmxPj9Me](https://discord.gg/BQkmxPj9Me)
 
-**FeralCat v0.10.1** is the current build: signed **native ELF apps** loaded from
+**FeralCat v0.11.0** is the current build: adds an opt‑in **sleep mode** (idle or a
+single power‑button press turns the screen off and light‑sleeps instead of powering
+off — press any button, including power, to wake) and a **proximity radar** in
+Tracker Detect. On top of signed **native ELF apps** loaded from
 the SD card through a stable app SDK, the firmware updater as a system module,
-a red UI theme, and the FeralCat rebrand — on top of v0.9.0's Lua platform and
+a red UI theme, and the FeralCat rebrand — plus v0.9.0's Lua platform and
 MP3 player. Six security tools (WiFi Analyzer, Deauth Detect, Rogue Radar, BLE
 Spam Detect, Probe Sniffer, Tracker Detect) now ship as **signed SD apps** in
 `sd files/apps`; copy them onto the card after flashing.
@@ -121,6 +124,27 @@ Docker only — see [`docs/CUSTOM-FIRMWARE.md` §3](docs/CUSTOM-FIRMWARE.md).
 ---
 
 ## Changelog — all changes vs. stock
+
+### v0.11.0 — Sleep mode + Tracker radar
+- **Sleep mode** (opt‑in, Settings ▸ Features) — when idle, or on a **single
+  power‑button press**, the screen turns off and the device light‑sleeps instead of
+  powering off; **press any button (including the power button) to wake** and resume
+  exactly where you were. Works from the home screen and inside apps. On external
+  power it stays in screen‑off standby. Powers off at ≤20% battery to protect the
+  cell; a ~4 s long‑press still fully powers off.
+- **Tracker Detect — proximity radar** — pick a tracker candidate from the list and
+  follow its signal on a radar view (concentric strength rings + stronger/weaker
+  trend + a history sparkline) to help you locate it. Relative signal strength only —
+  no distance or bearing. Feature contributed by **Caliun**.
+
+### v0.10.3 — Fix: update stuck on "Rebooting…"
+- WiFi/SD firmware update now **auto‑reboots** into the new firmware instead of
+  waiting for a button press (reported on Discord).
+
+### v0.10.2 — MeowPlayer is a native signed app
+- **MeowPlayer** now ships as a **signed native ELF app** on the SD card
+  (now‑playing, Songs list, Speaker/Jack output, auto‑advance), driven through the
+  app SDK's media API. Plays `.mp3` from the **`/music`** folder.
 
 ### v0.10.1 — FeralCat icons + fast boot
 - New red **FeralCat app icons** for the six native apps and the MeowGotchi tile;

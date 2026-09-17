@@ -6,6 +6,25 @@ See **[[Flashing and Recovery]]** for how to apply them.
 
 ---
 
+## v0.11.0 — Sleep mode + Tracker radar
+- **Sleep mode** (opt-in, Settings ▸ Features) — when idle, or on a **single
+  power-button press**, the screen turns off and the device light-sleeps instead of
+  powering off; **press any button (including power) to wake** and resume where you
+  were. Works from the home screen and inside apps; stays in screen-off standby on
+  external power. Powers off at ≤20% battery; a ~4 s long-press still powers off.
+- **[[Tracker Detector]] — proximity radar** — pick a candidate and follow its
+  signal on a radar (strength rings + trend + history sparkline) to locate it.
+  Relative signal strength only, no distance/bearing. Contributed by **Caliun**.
+
+## v0.10.3 — Fix: update stuck on "Rebooting…"
+- WiFi/SD firmware update now **auto-reboots** into the new firmware instead of
+  waiting for a button press.
+
+## v0.10.2 — MeowPlayer is a native signed app
+- **[[MeowPlayer]]** now ships as a **signed native ELF app** on the SD card
+  (now-playing, Songs list, Speaker/Jack output, auto-advance). Plays `.mp3` from
+  the `/music` folder.
+
 ## v0.10.1 — FeralCat icons + fast boot
 - **App icons** — new red FeralCat icons for the six native security apps and the
   MeowGotchi tile; each app now has its own icon.
