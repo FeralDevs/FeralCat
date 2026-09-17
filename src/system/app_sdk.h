@@ -14,4 +14,8 @@ class DEVICES;
 /* Store the device and register the mk_* symbol table with the ELF loader.
  * Idempotent; call once after the display/drivers are up. */
 void app_sdk_init(DEVICES* dev);
+
+/* Power-button → sleep check, safe to call from any loop (returns true if it
+ * slept). Called by mk_input_poll (ELF apps) and the launcher (home + apps). */
+bool app_sleep_check(void);
 #endif

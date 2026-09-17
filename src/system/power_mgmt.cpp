@@ -37,6 +37,14 @@ extern "C" void power_init(AXP173_Class* pmu)
     /* Short PEK press 512 ms → power on from off state */
     s_pmu->setPowerOnTime(POWERON_512mS);
 
+    /* Enable PEK short-press detection so the UI can trigger sleep on a single
+     * power-button press. The status latch (REG 0x44[1]) only arms when the IRQ
+     * enable (REG 0x42[1]) is set — setShortPressEnabale() alone (REG 0x31[3])
+     * is not enough. Clear any pending latch afterwards. */
+    s_pmu->setShortPressIRQEnable();
+    s_pmu->setShortPressEnabale();
+    s_pmu->setShortPressIRQDisabale();
+
     s_init_ms          = millis();
     s_last_activity_ms = millis();
 
@@ -130,40 +138,68 @@ extern "C" void power_enter_ship_mode(void)
 
 /* ── Deep sleep ───────────────────────────────────────── */
 
-extern "C" int power_light_sleep(uint32_t battery_check_sec, int min_pct)
+extern "C" bool power_consume_pek_short(void)
+{
+    if (!s_pmu) return false;
+    if (s_pmu->getShortPressIRQState()) {
+        s_pmu->setShortPressIRQDisabale();   /* clear the latch */
+        return true;
+    }
+    return false;
+}
+
+extern "C" int power_light_sleep(uint32_t battery_check_sec, int min_pct, bool wake_on_charge)
 {
     /* A/B + 5-way joystick GPIOs (see bsp/config.h). All INPUT_PULLUP → a press
      * pulls the line LOW. Light sleep can wake on ANY GPIO (unlike deep sleep,
-     * which is limited to RTC GPIOs), so no RTC-routing constraint applies. */
+     * which is limited to RTC GPIOs), so these wake instantly.
+     * The power button is NOT a usable wake GPIO (it's the AXP173 PEK, which we
+     * read over I2C, not a line we can level-wake on), so instead we wake on a
+     * short timer and poll the AXP PEK latch — the same check used while awake. */
     static const gpio_num_t WAKE_PINS[] = {
         (gpio_num_t)6,  (gpio_num_t)4,          /* A, B                     */
         (gpio_num_t)12, (gpio_num_t)18,         /* joy up, down             */
         (gpio_num_t)17, (gpio_num_t)8,          /* joy left, right          */
     };
     const int N = (int)(sizeof(WAKE_PINS) / sizeof(WAKE_PINS[0]));
+    const uint32_t POLL_MS = 300;   /* how often to wake and poll the power button */
 
     Serial.println("[Power] Light sleep");
     Serial.flush();
+
+    /* Start clean so only a *new* PEK press wakes us. */
+    if (s_pmu) s_pmu->setShortPressIRQDisabale();
+    uint32_t last_bat = millis();
 
     for (;;) {
         for (int i = 0; i < N; i++)
             gpio_wakeup_enable(WAKE_PINS[i], GPIO_INTR_LOW_LEVEL);
         esp_sleep_enable_gpio_wakeup();
-        if (battery_check_sec > 0)
-            esp_sleep_enable_timer_wakeup((uint64_t)battery_check_sec * 1000000ULL);
+        esp_sleep_enable_timer_wakeup((uint64_t)POLL_MS * 1000ULL);
 
         esp_light_sleep_start();   /* CPU pauses here; RAM retained */
 
         esp_sleep_wakeup_cause_t cause = esp_sleep_get_wakeup_cause();
         for (int i = 0; i < N; i++) gpio_wakeup_disable(WAKE_PINS[i]);
 
-        if (cause == ESP_SLEEP_WAKEUP_TIMER) {
-            /* Periodic wake: only to check power state, then sleep again. */
-            if (power_is_charging()) return PWR_WAKE_BUTTON;         /* plugged in → show UI */
-            if (power_battery_pct() <= min_pct) return PWR_WAKE_LOWBAT;
-            continue;                                                /* re-enter sleep */
+        if (cause != ESP_SLEEP_WAKEUP_TIMER)
+            return PWR_WAKE_BUTTON;             /* an app button (GPIO) woke us */
+
+        /* Timer tick: poll the power button over I2C. */
+        if (s_pmu && s_pmu->getShortPressIRQState()) {
+            s_pmu->setShortPressIRQDisabale();
+            return PWR_WAKE_BUTTON;
         }
-        return PWR_WAKE_BUTTON;    /* GPIO (button) or any other cause → real wake */
+
+        /* Periodic power check (millis() advances across light sleep). */
+        if (battery_check_sec > 0 &&
+            millis() - last_bat >= battery_check_sec * 1000UL) {
+            last_bat = millis();
+            if (wake_on_charge && power_is_charging()) return PWR_WAKE_BUTTON;
+            if (!power_is_charging() && power_battery_pct() <= min_pct)
+                return PWR_WAKE_LOWBAT;
+        }
+        /* else: re-enter sleep */
     }
 }
 
