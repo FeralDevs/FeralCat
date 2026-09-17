@@ -21,6 +21,9 @@
 #include "media/audio_service.h"     /* MeowPlayer audio engine */
 #include "../bsp/config.h"           /* HAL_IOEXP_PA_EN */
 #include "esp_elf.h"                 /* esp_elf_register_symbol / esp_elfsym */
+#include "settings_bridge.h"         /* settings_get_sleep_mode / sys_get_brightness */
+#include "power_mgmt.h"              /* PEK short press + light sleep */
+#include "usb_msc.h"                /* usb_msc_is_active */
 
 /* Active device + lazily-allocated offscreen canvas for the current app run. */
 static DEVICES*           s_dev    = nullptr;
@@ -500,6 +503,7 @@ void mk_media_set_output(int speaker)
 void mk_input_poll(void)
 {
     if (!s_dev) return;
+    app_sleep_check();          /* power-button → sleep, works inside any app too */
     s_dev->button.update();
     s_dev->button.tick();
 }
@@ -625,4 +629,29 @@ void app_sdk_init(DEVICES* dev)
     if (!registered) {
         if (esp_elf_register_symbol(MK_SDK_SYMS) == 0) registered = true;
     }
+}
+
+/* Power-button → sleep, callable from any context (launcher home, launcher
+ * app-state, or inside an ELF app via mk_input_poll). Self-rate-limited so the
+ * AXP173 PEK latch is read at most ~5 Hz regardless of caller. Returns true if
+ * it slept (screen was off and restored on wake). */
+bool app_sleep_check(void)
+{
+    if (!s_dev) return false;
+    static uint32_t last = 0;
+    uint32_t now = millis();
+    if (now - last < 200) return false;
+    last = now;
+
+    if (!settings_get_sleep_mode())  return false;
+    if (!power_consume_pek_short())  return false;
+    if (usb_msc_is_active())         return false;   /* don't sleep mid file-transfer */
+
+    uint8_t restore = (uint8_t)(sys_get_brightness() * 255 / 100);
+    s_dev->Lcd.setBrightness(0);
+    /* Explicit user request: sleep until a button, even on charger (wake_on_charge=false). */
+    int r = power_light_sleep(60, POWER_SLEEP_MIN_PCT, false);
+    if (r == PWR_WAKE_LOWBAT) power_shutdown();       /* does not return */
+    s_dev->Lcd.setBrightness(restore);
+    return true;
 }

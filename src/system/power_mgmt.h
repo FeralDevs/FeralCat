@@ -90,7 +90,7 @@ void power_deep_sleep(uint32_t wake_after_sec);
  * 若放电且电量 ≤ min_pct 则返回 PWR_WAKE_LOWBAT；否则继续睡眠。
  * 按键唤醒返回 PWR_WAKE_BUTTON。阻塞直到真正唤醒。
  */
-int power_light_sleep(uint32_t battery_check_sec, int min_pct);
+int power_light_sleep(uint32_t battery_check_sec, int min_pct, bool wake_on_charge);
 
 /* ── 空闲计时器 ──────────────────────────────────────── */
 

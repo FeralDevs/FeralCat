@@ -329,21 +329,11 @@ void Launcher::onLoop()
         _device->button.tick();
         handlePhysicalNav();
 
-        /* Power-button (PEK) single press → enter sleep on demand, when sleep
-         * mode is enabled. Polled ~5 Hz (the AXP173 latches the press until we
-         * read it, so nothing is missed). Turning the screen off here lets the
-         * ~1 Hz idle block drop into standby/light-sleep on the next tick.
-         * A ~4 s long-press still hardware-powers-off via the AXP173. */
-        static uint32_t lastPek = 0;
-        if (millis() - lastPek > 200) {
-            lastPek = millis();
-            if (power_consume_pek_short() && settings_get_sleep_mode()
-                && !s_screen_off) {
-                _device->Lcd.setBrightness(0);
-                s_screen_off = true;
-                Serial.println("[Launcher] Power button → sleep");
-            }
-        }
+        /* Power-button (PEK) single press → sleep on demand (when sleep mode is
+         * on). Shared helper so it also works inside apps; it sleeps + restores
+         * the screen itself, so clear our screen-off flag on return. A ~4 s
+         * long-press still hardware-powers-off via the AXP173. */
+        if (app_sleep_check()) { s_screen_off = false; power_reset_sleep_timer(); }
 
         uint32_t next_ms = lv_timer_handler();
         handleAppSelection();
@@ -411,7 +401,7 @@ void Launcher::onLoop()
                 if (s_screen_off && !usb_msc_is_active()
                     && !power_is_charging() && !power_vbus_present()) {
                     settings_flush();                 /* persist before sleeping */
-                    int r = power_light_sleep(60, POWER_SLEEP_MIN_PCT);
+                    int r = power_light_sleep(60, POWER_SLEEP_MIN_PCT, true);
                     if (r == PWR_WAKE_LOWBAT) {
                         Serial.printf("[Launcher] Sleep + low battery %d%% — power-off\n",
                                       power_battery_pct());
@@ -449,6 +439,8 @@ void Launcher::onLoop()
         /* ── APP state: LVGL disabled, only mooncake + buttons ── */
         /* Drive LED animation while an app is running. */
         _device->led.update();
+        /* Power-button → sleep also works inside built-in apps. */
+        app_sleep_check();
         /* Keep sleep timer alive while an app is open — user is actively using device. */
         power_reset_sleep_timer();
         _device->button.update(); /* read GPIO (apps use LVGL indev instead) */

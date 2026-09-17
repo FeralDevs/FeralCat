@@ -145,7 +145,7 @@ extern "C" bool power_consume_pek_short(void)
     return false;
 }
 
-extern "C" int power_light_sleep(uint32_t battery_check_sec, int min_pct)
+extern "C" int power_light_sleep(uint32_t battery_check_sec, int min_pct, bool wake_on_charge)
 {
     /* A/B + 5-way joystick GPIOs (see bsp/config.h). All INPUT_PULLUP → a press
      * pulls the line LOW. Light sleep can wake on ANY GPIO (unlike deep sleep,
@@ -174,8 +174,10 @@ extern "C" int power_light_sleep(uint32_t battery_check_sec, int min_pct)
 
         if (cause == ESP_SLEEP_WAKEUP_TIMER) {
             /* Periodic wake: only to check power state, then sleep again. */
-            if (power_is_charging()) return PWR_WAKE_BUTTON;         /* plugged in → show UI */
-            if (power_battery_pct() <= min_pct) return PWR_WAKE_LOWBAT;
+            if (wake_on_charge && power_is_charging())
+                return PWR_WAKE_BUTTON;                              /* plugged in → show UI */
+            if (!power_is_charging() && power_battery_pct() <= min_pct)
+                return PWR_WAKE_LOWBAT;
             continue;                                                /* re-enter sleep */
         }
         return PWR_WAKE_BUTTON;    /* GPIO (button) or any other cause → real wake */
