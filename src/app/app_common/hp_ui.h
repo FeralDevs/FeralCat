@@ -41,17 +41,17 @@
 namespace hp {
 
 /* ─────────────── Palette ───────────────
- *  Dark-olive / phosphor-lime CRT aesthetic ("old-terminal" look).
- *  COL_BG  : dark olive/army green background
- *  COL_FG  : bright lime phosphor (text, borders, list-selection fill)
- *  COL_DIM : medium olive (dotted separators, inactive hints)
- *  COL_HL  : same as FG (selected list row is fully filled with lime)
+ *  Dark-red / crimson CRT aesthetic.
+ *  COL_BG  : near-black red background
+ *  COL_FG  : FeralCat crimson (text, borders, list-selection fill)
+ *  COL_DIM : muted red (dotted separators, inactive hints)
+ *  COL_HL  : same as FG (selected list row is fully filled with crimson)
  */
-static constexpr uint16_t COL_BG       = 0x1A22;   // dark olive green   (RGB ~26,68,18)
-static constexpr uint16_t COL_FG       = 0xC7E6;   // phosphor lime      (RGB ~198,252,50)
-static constexpr uint16_t COL_DIM      = 0x4A86;   // medium olive       (RGB ~74,144,50)
+static constexpr uint16_t COL_BG       = 0x1802;   // near-black red
+static constexpr uint16_t COL_FG       = 0xC800;   // FeralCat crimson
+static constexpr uint16_t COL_DIM      = 0x7000;   // muted red
 static constexpr uint16_t COL_ACCENT   = 0xFFFF;   // white   (rare strong highlight)
-static constexpr uint16_t COL_HL       = 0xC7E6;   // = COL_FG (full-row selection bar)
+static constexpr uint16_t COL_HL       = 0xC800;   // = COL_FG (selected row)
 static constexpr uint16_t COL_WARN     = 0xFFE0;   // yellow
 static constexpr uint16_t COL_ERR      = 0xF800;   // red
 static constexpr uint16_t COL_INFO     = 0x07FF;   // cyan
@@ -1001,4 +1001,3 @@ inline void drawFooter4(LCD& lcd,
 }
 
 }  /* namespace hp */
-
