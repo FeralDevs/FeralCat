@@ -6,6 +6,14 @@ namespace meow::media {
 namespace {
 unsigned char lower(unsigned char c) { return c >= 'A' && c <= 'Z' ? c + 32 : c; }
 bool separator(char c) { return c == '/' || c == '\\'; }
+
+/* Media library root — single source of truth. A previous /mp3→/music rename
+ * missed the hardcoded root length (4) and root name ("mp3") here, which made
+ * normalizeMediaPath reject every path and broke all scanning. Derive both from
+ * one constant so a future rename can't silently regress it again. */
+static constexpr char   MEDIA_ROOT[]   = "/music";
+static constexpr size_t MEDIA_ROOT_LEN = sizeof(MEDIA_ROOT) - 1;   /* "/music" = 6 */
+
 bool components(const char* text, size_t length, size_t position, char* out, size_t& used)
 {
     while (position < length) {
@@ -15,9 +23,9 @@ bool components(const char* text, size_t length, size_t position, char* out, siz
         const size_t count = position - start;
         if (!count || (count == 1 && text[start] == '.')) continue;
         if (count == 2 && text[start] == '.' && text[start + 1] == '.') {
-            if (used == 4) return false;
-            while (used > 4 && out[used - 1] != '/') --used;
-            if (used > 4) --used;
+            if (used == MEDIA_ROOT_LEN) return false;
+            while (used > MEDIA_ROOT_LEN && out[used - 1] != '/') --used;
+            if (used > MEDIA_ROOT_LEN) --used;
             out[used] = 0;
             continue;
         }
@@ -36,8 +44,11 @@ bool rootPrefix(const char* text, size_t length, size_t& after)
     while (pos < length && separator(text[pos])) ++pos;
     const size_t start = pos;
     while (pos < length && !separator(text[pos])) ++pos;
-    if (pos - start != 3 || lower(text[start]) != 'm' ||
-        lower(text[start + 1]) != 'p' || text[start + 2] != '3') return false;
+    const size_t rootName = MEDIA_ROOT_LEN - 1;   /* "music" (root without the leading '/') */
+    if (pos - start != rootName) return false;
+    for (size_t i = 0; i < rootName; ++i)
+        if (lower(static_cast<unsigned char>(text[start + i])) !=
+            lower(static_cast<unsigned char>(MEDIA_ROOT[1 + i]))) return false;
     after = pos;
     return true;
 }
@@ -76,8 +87,9 @@ bool normalizeMediaPath(const char* base, const char* text, size_t length,
     if (!base || !length || !validMediaText(text, length)) return false;
     // Neither URI schemes nor Windows drive prefixes are local media paths.
     for (size_t i = 0; i < length; ++i) if (text[i] == ':') return false;
-    char normalized[192] = "/music";
-    size_t used = 4, position = 0;
+    char normalized[192];
+    std::memcpy(normalized, MEDIA_ROOT, MEDIA_ROOT_LEN + 1);
+    size_t used = MEDIA_ROOT_LEN, position = 0;
     if (separator(text[0])) {
         if (!rootPrefix(text, length, position)) return false;
     } else {

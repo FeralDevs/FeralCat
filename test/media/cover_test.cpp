@@ -25,7 +25,7 @@ struct Probe {
     CoverInfo info;
     Probe() { CHECK(mock::heap.live == 0); mock::heap = {}; buffer.fill(0xdead); }
     ~Probe() { CHECK(!disk.live); CHECK(!mock::heap.live); CHECK(!mock::heap.bytes); CHECK(!mock::heap.wrongCapabilities); CHECK(!disk.writes); CHECK(buffer.front() == 0xdead); CHECK(buffer.back() == 0xdead); }
-    CoverResult load(const char* path = "/mp3/album/song.mp3", CoverHooks hooks = {}) { return loadTrackCover(fs, path, buffer.data() + 1, CoverPixels, info, hooks); }
+    CoverResult load(const char* path = "/music/album/song.mp3", CoverHooks hooks = {}) { return loadTrackCover(fs, path, buffer.data() + 1, CoverPixels, info, hooks); }
     uint16_t pixel(size_t x, size_t y) { return buffer[1 + y * CoverWidth + x]; }
 };
 static void synchsafe(std::string& out, uint32_t n) { for (int s = 21; s >= 0; s -= 7) out += char((n >> s) & 127); }
@@ -86,99 +86,99 @@ int main(int argc, char** argv) {
     const auto odd = fixture(argv[1], "cover-odd.jpg");
     const auto maximum = fixture(argv[1], "cover-maximum.jpg");
     {
-        Probe p; p.disk.file("/mp3/album/cover.jpg", jpeg); p.disk.file("/mp3/album/folder.jpg", grey);
+        Probe p; p.disk.file("/music/album/cover.jpg", jpeg); p.disk.file("/music/album/folder.jpg", grey);
         CHECK(p.load() == CoverResult::Ready); CHECK(p.info.source == CoverSource::CoverJpeg); CHECK(p.info.width == 96 && p.info.height == 96); CHECK(p.disk.opens == 1);
         CHECK((p.pixel(20, 20) & 0xf800) >= 0xf000); CHECK((p.pixel(75, 20) & 0x7e0) >= 0x700);
         CHECK((p.pixel(20, 75) & 31) >= 28); CHECK(p.pixel(75, 75) >= 0xf7de);
         CHECK(mock::heap.peakBytes <= MaxCoverBytes + 8192); CHECK(p.disk.peakLive == 1);
     }
     {
-        Probe p; p.disk.file("/mp3/album/cover.jpg", "broken"); p.disk.file("/mp3/album/folder.jpg", wide);
+        Probe p; p.disk.file("/music/album/cover.jpg", "broken"); p.disk.file("/music/album/folder.jpg", wide);
         CHECK(p.load() == CoverResult::Ready); CHECK(p.info.source == CoverSource::FolderJpeg); CHECK(p.info.width == 400 && p.info.height == 200);
         CHECK(p.pixel(30, 0) == 0); CHECK(p.pixel(30, 95) == 0); CHECK(p.pixel(30, 30) != 0);
     }
-    for (const auto* image : {&grey, &tiny, &odd, &maximum}) { Probe p; p.disk.file("/mp3/album/cover.jpg", *image); CHECK(p.load() == CoverResult::Ready); }
+    for (const auto* image : {&grey, &tiny, &odd, &maximum}) { Probe p; p.disk.file("/music/album/cover.jpg", *image); CHECK(p.load() == CoverResult::Ready); }
     for (bool v4 : {false, true}) for (unsigned enc = 0; enc < 4; ++enc) for (bool ext : {false, true}) {
-        Probe p; p.disk.file("/mp3/album/song.mp3", tag(jpeg, v4, enc, "image/jpeg", 3, ext));
+        Probe p; p.disk.file("/music/album/song.mp3", tag(jpeg, v4, enc, "image/jpeg", 3, ext));
         CHECK(p.load() == CoverResult::Ready); CHECK(p.info.source == CoverSource::EmbeddedJpeg); CHECK(p.disk.peakLive == 1);
     }
     {
-        Probe p; p.disk.file("/mp3/album/song.mp3", tag(jpeg, true, 3, "image/jpg", 0)); CHECK(p.load() == CoverResult::Ready);
+        Probe p; p.disk.file("/music/album/song.mp3", tag(jpeg, true, 3, "image/jpg", 0)); CHECK(p.load() == CoverResult::Ready);
     }
     for (const auto& image : {progressive, std::string("", 0), std::string(MaxCoverBytes + 1, 'X'), jpeg.substr(0, jpeg.size() - 2)}) {
-        Probe p; p.disk.file("/mp3/album/cover.jpg", image); CHECK(p.load() != CoverResult::Ready); CHECK(p.info.source == CoverSource::None);
+        Probe p; p.disk.file("/music/album/cover.jpg", image); CHECK(p.load() != CoverResult::Ready); CHECK(p.info.source == CoverSource::None);
     }
     for (const auto& image : {tag(jpeg, false, 0, "image/png"), tag(jpeg, false, 0, "-->"), tag(jpeg, false, 0, "image/jpeg", 4)}) {
-        Probe p; p.disk.file("/mp3/album/song.mp3", image); CHECK(p.load() != CoverResult::Ready);
+        Probe p; p.disk.file("/music/album/song.mp3", image); CHECK(p.load() != CoverResult::Ready);
     }
     {
-        Probe p; auto data = tag(jpeg); data[5] = char(0x80); p.disk.file("/mp3/album/song.mp3", data); CHECK(p.load() == CoverResult::Unsupported);
+        Probe p; auto data = tag(jpeg); data[5] = char(0x80); p.disk.file("/music/album/song.mp3", data); CHECK(p.load() == CoverResult::Unsupported);
     }
     {
-        Probe p; auto data = tag(jpeg); data[6] = char(0x80); p.disk.file("/mp3/album/song.mp3", data); CHECK(p.load() == CoverResult::Invalid);
+        Probe p; auto data = tag(jpeg); data[6] = char(0x80); p.disk.file("/music/album/song.mp3", data); CHECK(p.load() == CoverResult::Invalid);
     }
     {
-        Probe p; auto data = tag(jpeg); data[14] = char(0x7f); p.disk.file("/mp3/album/song.mp3", data); CHECK(p.load() == CoverResult::Invalid);
+        Probe p; auto data = tag(jpeg); data[14] = char(0x7f); p.disk.file("/music/album/song.mp3", data); CHECK(p.load() == CoverResult::Invalid);
     }
     {
         Probe p; auto data = tag(jpeg); std::string size; synchsafe(size, MaxCoverTagBytes + 1); data.replace(6, 4, size);
-        p.disk.file("/mp3/album/song.mp3", data); CHECK(p.load() == CoverResult::Unsupported); CHECK(mock::heap.calls == 0); CHECK(p.disk.bytes == 10);
+        p.disk.file("/music/album/song.mp3", data); CHECK(p.load() == CoverResult::Unsupported); CHECK(mock::heap.calls == 0); CHECK(p.disk.bytes == 10);
     }
     for (bool within : {false, true}) {
         Probe p; auto data = tag(jpeg); const unsigned frames = within ? 127 : 128;
         const std::string empty("TXXX\0\0\0\0\0\0", 10); std::string padding;
         for (unsigned i = 0; i < frames; ++i) padding += empty;
         data.insert(10, padding); std::string size; synchsafe(size, uint32_t(data.size() - 19)); data.replace(6, 4, size);
-        p.disk.file("/mp3/album/song.mp3", data);
+        p.disk.file("/music/album/song.mp3", data);
         CHECK((p.load() == CoverResult::Ready) == within);
         if (!within) { CHECK(p.disk.reads == 129); CHECK(mock::heap.calls == 0); }
     }
     {
         Probe p; auto data = tag(jpeg, false, 0, "image/jpeg", 3, true); data[10] = char(0x7f);
-        p.disk.file("/mp3/album/song.mp3", data); CHECK(p.load() == CoverResult::Invalid);
+        p.disk.file("/music/album/song.mp3", data); CHECK(p.load() == CoverResult::Invalid);
     }
     {
         Probe p; auto data = jpeg; const size_t sof = data.find(std::string("\xff\xc0", 2)); CHECK(sof != std::string::npos);
-        data[sof + 7] = char(0xff); data[sof + 8] = char(0xff); p.disk.file("/mp3/album/cover.jpg", data); CHECK(p.load() != CoverResult::Ready);
+        data[sof + 7] = char(0xff); data[sof + 8] = char(0xff); p.disk.file("/music/album/cover.jpg", data); CHECK(p.load() != CoverResult::Ready);
     }
-    for (const char* path : {"/else/song.mp3", "/mp3/../../secret", "/mp3/album/../song.mp3", "/mp3/album/song\n.mp3", "/mp3", "C:/mp3/song.mp3"}) {
+    for (const char* path : {"/else/song.mp3", "/music/../../secret", "/music/album/../song.mp3", "/music/album/song\n.mp3", "/music", "C:/music/song.mp3"}) {
         Probe p; CHECK(p.load(path) == CoverResult::Invalid); CHECK(p.disk.io() == 0);
     }
     {
-        Probe p; p.disk.file("/mp3/Grüße/cover.jpg", jpeg); CHECK(p.load("/mp3/Grüße/楽曲.mp3") == CoverResult::Ready);
+        Probe p; p.disk.file("/music/Grüße/cover.jpg", jpeg); CHECK(p.load("/music/Grüße/楽曲.mp3") == CoverResult::Ready);
     }
     for (size_t fail = 1; fail <= 2; ++fail) {
-        Probe p; mock::heap.failCall = fail; p.disk.file("/mp3/album/cover.jpg", jpeg); CHECK(p.load() == CoverResult::NoMemory);
+        Probe p; mock::heap.failCall = fail; p.disk.file("/music/album/cover.jpg", jpeg); CHECK(p.load() == CoverResult::NoMemory);
     }
     for (size_t fail = 1; fail <= 2; ++fail) {
-        Probe p; mock::heap.failCall = fail; p.disk.file("/mp3/album/song.mp3", tag(jpeg)); CHECK(p.load() == CoverResult::NoMemory);
+        Probe p; mock::heap.failCall = fail; p.disk.file("/music/album/song.mp3", tag(jpeg)); CHECK(p.load() == CoverResult::NoMemory);
     }
     {
-        Probe p; p.disk.readLimit = 7; p.disk.file("/mp3/album/cover.jpg", jpeg); CHECK(p.load() == CoverResult::Ready); CHECK(p.disk.reads > 20);
+        Probe p; p.disk.readLimit = 7; p.disk.file("/music/album/cover.jpg", jpeg); CHECK(p.load() == CoverResult::Ready); CHECK(p.disk.reads > 20);
     }
     {
-        Probe p; p.disk.failReadAt = 2; p.disk.file("/mp3/album/cover.jpg", jpeg); CHECK(p.load() != CoverResult::Ready);
+        Probe p; p.disk.failReadAt = 2; p.disk.file("/music/album/cover.jpg", jpeg); CHECK(p.load() != CoverResult::Ready);
     }
     for (unsigned poll : {1u, 3u, 8u, 20u, 35u, 55u}) {
-        Probe p; p.disk.file("/mp3/album/cover.jpg", wide); Control c{&p.disk}; c.cancelAt = poll;
-        CHECK(p.load("/mp3/album/song.mp3", {cancel, timeNow, &c}) == CoverResult::Cancelled);
+        Probe p; p.disk.file("/music/album/cover.jpg", wide); Control c{&p.disk}; c.cancelAt = poll;
+        CHECK(p.load("/music/album/song.mp3", {cancel, timeNow, &c}) == CoverResult::Cancelled);
     }
     {
-        Probe p; p.disk.file("/mp3/album/song.mp3", tag(jpeg)); Control c{&p.disk}; c.readsAt = 3;
-        CHECK(p.load("/mp3/album/song.mp3", {cancel, timeNow, &c}) == CoverResult::Cancelled);
+        Probe p; p.disk.file("/music/album/song.mp3", tag(jpeg)); Control c{&p.disk}; c.readsAt = 3;
+        CHECK(p.load("/music/album/song.mp3", {cancel, timeNow, &c}) == CoverResult::Cancelled);
     }
     {
-        Probe p; p.disk.file("/mp3/album/cover.jpg", wide); Control c{&p.disk}; c.tickStep = 100;
-        CHECK(p.load("/mp3/album/song.mp3", {cancel, timeNow, &c}) == CoverResult::TimedOut);
+        Probe p; p.disk.file("/music/album/cover.jpg", wide); Control c{&p.disk}; c.tickStep = 100;
+        CHECK(p.load("/music/album/song.mp3", {cancel, timeNow, &c}) == CoverResult::TimedOut);
     }
     {
-        Probe p; p.disk.file("/mp3/album/cover.jpg", wide); Control c{&p.disk}; c.tick = UINT32_MAX - 200; c.tickStep = 100;
-        CHECK(p.load("/mp3/album/song.mp3", {cancel, timeNow, &c}) == CoverResult::TimedOut);
+        Probe p; p.disk.file("/music/album/cover.jpg", wide); Control c{&p.disk}; c.tick = UINT32_MAX - 200; c.tickStep = 100;
+        CHECK(p.load("/music/album/song.mp3", {cancel, timeNow, &c}) == CoverResult::TimedOut);
     }
     {
         Probe p; CHECK(p.load() == CoverResult::Missing); CHECK(p.disk.opens == 3); CHECK(p.disk.reads == 0); CHECK(mock::heap.calls == 0);
-        CHECK(loadTrackCover(p.fs, "/mp3/a.mp3", nullptr, CoverPixels, p.info) == CoverResult::Invalid);
-        CHECK(loadTrackCover(p.fs, "/mp3/a.mp3", p.buffer.data(), CoverPixels - 1, p.info) == CoverResult::Invalid);
+        CHECK(loadTrackCover(p.fs, "/music/a.mp3", nullptr, CoverPixels, p.info) == CoverResult::Invalid);
+        CHECK(loadTrackCover(p.fs, "/music/a.mp3", p.buffer.data(), CoverPixels - 1, p.info) == CoverResult::Invalid);
     }
     // Exercise the real vendored entropy decoder, bypassing cover preflight.
     CHECK(rawDecode(crafted(0, 0, "00")) == JDR_OK);
@@ -194,21 +194,21 @@ int main(int argc, char** argv) {
         size_t padding = 512 - entropy % 512; if (padding < 4) padding += 512;
         std::string app; marker(app, 0xe1, std::string(padding - 4, '\0')); aligned.insert(2, app);
         CHECK(rawDecode(aligned) == JDR_OK);
-        Probe p; p.disk.file("/mp3/album/cover.jpg", aligned); CHECK(p.load() == CoverResult::Ready);
+        Probe p; p.disk.file("/music/album/cover.jpg", aligned); CHECK(p.load() == CoverResult::Ready);
     }
     {
         Probe p; auto data = jpeg; std::string app; marker(app, 0xe1, "");
         for (unsigned i = 0; i < 128; ++i) data.insert(2, app);
-        p.disk.file("/mp3/album/cover.jpg", data); CHECK(p.load() != CoverResult::Ready);
+        p.disk.file("/music/album/cover.jpg", data); CHECK(p.load() != CoverResult::Ready);
     }
     // Header truncations and deterministic corruptions exercise the production
     // preflight and decoder under the same allocator/file-lifetime assertions.
-    for (size_t cut = 0; cut < jpeg.size(); cut += 7) { Probe p; p.disk.file("/mp3/album/cover.jpg", jpeg.substr(0, cut)); CHECK(p.load() != CoverResult::Ready); }
+    for (size_t cut = 0; cut < jpeg.size(); cut += 7) { Probe p; p.disk.file("/music/album/cover.jpg", jpeg.substr(0, cut)); CHECK(p.load() != CoverResult::Ready); }
     uint32_t seed = 0x12345678;
     for (unsigned i = 0; i < 500; ++i) {
         auto mutated = jpeg;
         for (unsigned j = 0; j < 4; ++j) { seed = seed * 1664525 + 1013904223; const size_t offset = seed % mutated.size(); seed = seed * 1664525 + 1013904223; mutated[offset] = char(seed >> 24); }
-        Probe p; p.disk.file("/mp3/album/cover.jpg", mutated); (void)p.load();
+        Probe p; p.disk.file("/music/album/cover.jpg", mutated); (void)p.load();
     }
     std::cout << "Cover: " << checks << " checks passed\n";
 }

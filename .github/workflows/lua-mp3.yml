@@ -25,7 +25,7 @@ jobs:
         run: cmake -S test/lua_apps -B build/native -DCMAKE_BUILD_TYPE=Debug
       - name: Build host tests
         run: cmake --build build/native --config Debug --parallel 2
-      - name: Run all 13 suites
+      - name: Run all 12 suites
         run: ctest --test-dir build/native -C Debug --output-on-failure
       - name: Retain test logs and actual LVGL renders
         if: always()
