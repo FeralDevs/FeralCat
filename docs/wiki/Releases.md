@@ -6,6 +6,15 @@ See **[[Flashing and Recovery]]** for how to apply them.
 
 ---
 
+## v0.11.1 — Fix: MeowPlayer finds no music
+- **Fixed "no music in /music"** — an incomplete `/mp3`→`/music` rename made the
+  path validator reject every file in `/music`, so MeowPlayer found no tracks even
+  when files were present. Music is detected again. (Firmware-only — no SD app
+  changes; just flash the firmware.)
+- **Infrared — save & replay remotes** — capture a remote and save it into folders
+  on the SD card (folder picker, overwrite/delete confirmations), red theme.
+  Contributed by **Waren Gonzaga**.
+
 ## v0.11.0 — Sleep mode + Tracker radar
 - **Sleep mode** (opt-in, Settings ▸ Features) — when idle, or on a **single
   power-button press**, the screen turns off and the device light-sleeps instead of

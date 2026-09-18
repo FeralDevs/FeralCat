@@ -4,7 +4,7 @@
 
 💬 **Community & support:** [discord.gg/BQkmxPj9Me](https://discord.gg/BQkmxPj9Me)
 
-**FeralCat v0.11.0** is the current build: adds an opt‑in **sleep mode** (idle or a
+**FeralCat v0.11.1** is the current build: adds an opt‑in **sleep mode** (idle or a
 single power‑button press turns the screen off and light‑sleeps instead of powering
 off — press any button, including power, to wake) and a **proximity radar** in
 Tracker Detect. On top of signed **native ELF apps** loaded from
@@ -124,6 +124,14 @@ Docker only — see [`docs/CUSTOM-FIRMWARE.md` §3](docs/CUSTOM-FIRMWARE.md).
 ---
 
 ## Changelog — all changes vs. stock
+
+### v0.11.1 — Fix: MeowPlayer finds no music
+- **Fixed: "no music in /music"** — an incomplete `/mp3`→`/music` rename left the
+  path validator rejecting every file in `/music`, so MeowPlayer found **no tracks**
+  even when files were present. Music is detected again.
+- **Infrared — save & replay remotes** — capture a remote and **save it into folders**
+  on the SD card, with a folder picker, overwrite/delete confirmations, and a
+  consistent red theme. Contributed by **Waren Gonzaga**.
 
 ### v0.11.0 — Sleep mode + Tracker radar
 - **Sleep mode** (opt‑in, Settings ▸ Features) — when idle, or on a **single

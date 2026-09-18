@@ -35,14 +35,5 @@ add_executable(app_check "${ROOT}/tools/lua-app-check.cpp"
   "${ROOT}/src/system/lua_apps/app_manifest.cpp")
 target_include_directories(app_check PRIVATE "${ROOT}/src/system/lua_apps")
 target_link_libraries(app_check PRIVATE lua_test_engine)
-add_executable(player_app_test "${ROOT}/test/media/player_app_test.cpp"
-  "${ROOT}/src/system/lua_apps/lua_runtime.cpp"
-  "${ROOT}/src/system/lua_apps/app_manifest.cpp")
-target_include_directories(player_app_test PRIVATE "${ROOT}/src/system/lua_apps"
-  "${ROOT}/src/system/media")
-target_compile_definitions(player_app_test PRIVATE MEOW_TEST_ROOT="${ROOT}")
-target_link_libraries(player_app_test PRIVATE lua_test_engine)
-add_test(NAME player_app COMMAND player_app_test)
-set_tests_properties(player_app PROPERTIES TIMEOUT 15)
 add_subdirectory("${ROOT}/test/media" media)
 add_subdirectory("${ROOT}/test/player_ui" player_ui)

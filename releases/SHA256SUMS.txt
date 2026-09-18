@@ -1,3 +1,3 @@
-3bcb83d041cb2eceb1d052909a9ba83149e0d62160ad3725bb2b677556eeb0db  firmware.bin
-ce20aa1944aab080e6dd30b13d50fe46b4b97da1775c756ef98278cf55c5dbba  feralcat-OTA-merged-0x0.bin
-134fece03b539882be470815850ad3c965ee91b05d267d54d85663b38b420b22  feralcat-apps-v0.11.0.zip
+b8e8f555eb47a6306f405386da1879daf75d84e427d5d62651ef0f2b070f8df0  firmware.bin
+96209ef720ae91fcabe46ffc7d8a0eaa6037e93d1bba630e0569df2edc2bb501  feralcat-OTA-merged-0x0.bin
+44838bc124a5d9ecb9cf3903d6fa1add2d747809aef96accdc4cdff5a677a2c1  feralcat-apps-v0.11.1.zip
