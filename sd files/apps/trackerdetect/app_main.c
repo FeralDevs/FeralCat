@@ -24,6 +24,7 @@ static int          g_n     = 0;
 static int          g_sel   = 0;      /* row index in g_trk           */
 static uint32_t     g_selid = 0;      /* selected id (stable focus)   */
 static int          g_first = 0;      /* first visible list row       */
+static uint32_t     g_last_beep = 0;
 
 static const char* type_name(unsigned t)
 {
@@ -136,6 +137,14 @@ static void draw_radar(void)
     int paused = !running || f.state == MK_TRK_PAUSED;
     int live   = !has_err && !starting && running && f.has_target &&
                  f.scan_fresh && f.state == MK_TRK_LIVE;
+
+    /* Firmware owns the shared speaker and rejects cues while media plays.
+     * The short call is rate-limited here so a radar redraw cannot chatter. */
+    uint32_t now = mk_millis();
+    if (live && now - g_last_beep >= (uint32_t)(1800 - f.strength * 15)) {
+        uint16_t duration = f.strength >= 70 ? 80 : f.strength >= 35 ? 50 : 25;
+        if (mk_tracker_beep(duration)) g_last_beep = now;
+    }
 
     mk_gfx_clear();
     mk_gfx_header("Proximity Radar");
