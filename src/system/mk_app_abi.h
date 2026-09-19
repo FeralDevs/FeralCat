@@ -284,6 +284,7 @@ void mk_media_cmd(int action, int value);  /* MK_MEDIA_*; value = track id / vol
 void mk_media_status(mk_media_status_t* out);
 int  mk_media_tracks(int offset, mk_track_t* out, int max);  /* fills up to min(max,8); returns count */
 void mk_media_set_output(int speaker);     /* 1 = speaker, 0 = headphone jack */
+int  mk_tracker_beep(uint16_t duration_ms); /* short proximity cue; 0 when audio busy */
 
 /* ── Input ─────────────────────────────────────────────────────────────── */
 void mk_input_poll(void);       /* call once per loop before reading buttons */

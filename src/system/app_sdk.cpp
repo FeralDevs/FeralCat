@@ -40,6 +40,7 @@ static TrackerMonitor s_tracker;
 static TrackerFinder  s_trkfinder;
 static uint32_t       s_trk_sel = 0;   /* selected candidate id (0 = none) */
 static meow::media::AudioService s_media;
+static bool s_tracker_audio_ready = false;
 
 /* Draw target: the canvas if it allocated, else straight to the LCD. */
 static inline void ensure_canvas()
@@ -354,7 +355,15 @@ void mk_tracker_begin(void)
 void mk_tracker_loop(void)   { s_tracker.loop(); }
 void mk_tracker_pause(void)  { s_tracker.pause(); }
 void mk_tracker_resume(void) { s_tracker.resume(); }
-void mk_tracker_stop(void)   { s_tracker.stop(); s_trk_sel = 0; s_trkfinder.reset(); }
+void mk_tracker_stop(void)
+{
+    s_tracker.stop(); s_trk_sel = 0; s_trkfinder.reset();
+    if (s_tracker_audio_ready && s_dev) {
+        s_dev->io_exp.digitalWrite(HAL_IOEXP_PA_EN, LOW);
+        s_dev->speaker.end();
+        s_tracker_audio_ready = false;
+    }
+}
 int  mk_tracker_running(void)  { return s_tracker.running()  ? 1 : 0; }
 int  mk_tracker_starting(void) { return s_tracker.starting() ? 1 : 0; }
 
@@ -500,6 +509,24 @@ void mk_media_set_output(int speaker)
     if (s_dev) s_dev->io_exp.digitalWrite(HAL_IOEXP_PA_EN, speaker ? HIGH : LOW);
 }
 
+int mk_tracker_beep(uint16_t duration_ms)
+{
+    if (!s_dev || !duration_ms || duration_ms > 120 || s_media.ready()) return 0;
+    if (!s_tracker_audio_ready) {
+        s_dev->speaker.config().sample_rate = 44100;
+        s_dev->speaker.config().bits_per_sample = 16;
+        if (!s_dev->speaker.beginCodecOnly(&In_I2C) ||
+            !s_dev->speaker.setMute(false)) {
+            s_dev->speaker.end();
+            return 0;
+        }
+        s_dev->io_exp.digitalWrite(HAL_IOEXP_PA_EN, HIGH);
+        s_tracker_audio_ready = true;
+    }
+    s_dev->speaker.tone(900, duration_ms, 18);
+    return 1;
+}
+
 void mk_input_poll(void)
 {
     if (!s_dev) return;
@@ -610,6 +637,7 @@ static const struct esp_elfsym MK_SDK_SYMS[] = {
     { "mk_media_status",     (const void*)&mk_media_status },
     { "mk_media_tracks",     (const void*)&mk_media_tracks },
     { "mk_media_set_output", (const void*)&mk_media_set_output },
+    { "mk_tracker_beep", (const void*)&mk_tracker_beep },
     { "mk_input_poll",    (const void*)&mk_input_poll },
     { "mk_btn",           (const void*)&mk_btn },
     { "mk_btn_long",      (const void*)&mk_btn_long },
