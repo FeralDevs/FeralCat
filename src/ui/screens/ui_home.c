@@ -4,6 +4,7 @@
 // Project name: main_interface
 
 #include "../ui.h"
+#include "../../system/mk_events.h"
 
 lv_obj_t * ui_home;
 lv_obj_t * ui_home_bg;
@@ -27,7 +28,8 @@ lv_obj_t * ui_xp_lvl;
  *              [SD Files]  ← 上滑 MOVE_TOP / 摇杆 DOWN
  *                  |
  *  [Apps] ←— [HOME] —→ [Settings]
- *  右滑MOVE_RIGHT/摇杆LEFT   左滑MOVE_LEFT/摇杆RIGHT
+ *  左滑 → Apps (same event as joystick LEFT; MOVE_RIGHT transition)
+ *  右滑 → Settings (MOVE_RIGHT gesture / Settings transition)
  *                  ↓
  *             [Clock]  ← 下滑 MOVE_BOTTOM / 摇杆 UP
  *
@@ -43,11 +45,11 @@ void ui_event_home(lv_event_t * e)
     lv_indev_wait_release(lv_indev_get_act());
 
     switch (dir) {
-        case LV_DIR_RIGHT:  /* 右滑 → Apps Menu */
-            _ui_screen_change(&ui_apps_menu,     LV_SCR_LOAD_ANIM_MOVE_RIGHT,  300, 0, &ui_apps_menu_screen_init);
+        case LV_DIR_LEFT:   /* 左滑 → same Apps path as joystick LEFT */
+            mk_event_push(MK_EVT_JOY_LEFT);
             break;
-        case LV_DIR_LEFT:   /* 左滑 → Settings */
-            _ui_screen_change(&ui_settings,      LV_SCR_LOAD_ANIM_MOVE_LEFT,   300, 0, &ui_settings_screen_init);
+        case LV_DIR_RIGHT:  /* 右滑 → Settings */
+            _ui_screen_change(&ui_settings,      LV_SCR_LOAD_ANIM_MOVE_RIGHT,  300, 0, &ui_settings_screen_init);
             break;
         case LV_DIR_TOP:    /* 上滑 → SD Card Files */
             _ui_screen_change(&ui_sd_card_files, LV_SCR_LOAD_ANIM_MOVE_TOP,    300, 0, &ui_sd_card_files_screen_init);
