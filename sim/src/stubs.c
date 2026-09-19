@@ -14,6 +14,15 @@
 #include "ui_rtc_bridge.h"
 #include "ui_sd_bridge.h"
 #include "ui_wifi_bridge.h"
+#include "system/mk_events.h"
+
+/* The LVGL simulator does not run the firmware Launcher event consumer, but
+ * ui_home shares its joystick event path with the device build. Keep the
+ * producer link-compatible; launcher behavior is exercised on-device. */
+void mk_events_init(void) {}
+void mk_event_push(mk_event_t evt) { (void)evt; }
+bool mk_event_pop(mk_event_t *out) { (void)out; return false; }
+void mk_events_flush(void) {}
 
 /* ── Arduino ────────────────────────────────────────────────────────── */
 uint32_t millis(void)

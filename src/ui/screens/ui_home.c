@@ -28,7 +28,8 @@ lv_obj_t * ui_xp_lvl;
  *              [SD Files]  ← 上滑 MOVE_TOP / 摇杆 DOWN
  *                  |
  *  [Apps] ←— [HOME] —→ [Settings]
- *  左滑MOVE_LEFT/摇杆LEFT   右滑MOVE_RIGHT/摇杆RIGHT
+ *  左滑 → Apps (same event as joystick LEFT; MOVE_RIGHT transition)
+ *  右滑 → Settings (MOVE_RIGHT gesture / Settings transition)
  *                  ↓
  *             [Clock]  ← 下滑 MOVE_BOTTOM / 摇杆 UP
  *
