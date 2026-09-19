@@ -459,8 +459,12 @@ void mk_tracker_finder(mk_tracker_finder_t* out)
 int mk_media_begin(void)
 {
     if (!s_dev) return 0;
+    s_tracker_audio_ready = false;
     bool ok = s_media.begin(s_dev);
-    if (ok) s_dev->io_exp.digitalWrite(HAL_IOEXP_PA_EN, HIGH);   /* speaker on */
+    if (ok && !s_dev->io_exp.digitalWrite(HAL_IOEXP_PA_EN, HIGH)) {
+        s_media.end();
+        ok = false;
+    }
     return ok ? 1 : 0;
 }
 
@@ -515,12 +519,16 @@ int mk_tracker_beep(uint16_t duration_ms)
     if (!s_tracker_audio_ready) {
         s_dev->speaker.config().sample_rate = 44100;
         s_dev->speaker.config().bits_per_sample = 16;
-        if (!s_dev->speaker.beginCodecOnly(&In_I2C) ||
+        if (!s_dev->speaker.begin(&In_I2C) ||
             !s_dev->speaker.setMute(false)) {
             s_dev->speaker.end();
             return 0;
         }
-        s_dev->io_exp.digitalWrite(HAL_IOEXP_PA_EN, HIGH);
+        if (!s_dev->io_exp.digitalWrite(HAL_IOEXP_PA_EN, HIGH)) {
+            s_dev->speaker.end();
+            return 0;
+        }
+        delay(1);
         s_tracker_audio_ready = true;
     }
     s_dev->speaker.tone(900, duration_ms, 18);
