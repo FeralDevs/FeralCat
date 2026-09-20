@@ -6,6 +6,15 @@ See **[[Flashing and Recovery]]** for how to apply them.
 
 ---
 
+## v0.11.2 — Tracker beep + touch nav + IR polish
+- **[[Tracker Detector]] — proximity beep** — the radar beeps faster/shorter as the
+  selected tracker's signal strengthens, so you can locate it without watching the
+  screen. Signal strength only, no distance. *(Updates the Tracker Detect SD app —
+  re-copy `/apps`.)*
+- **Touchscreen app navigation** — the apps menu is navigable by touch.
+- **Infrared** — refreshed icon + "remove saved remote".
+- Contributions by **Waren Gonzaga**.
+
 ## v0.11.1 — Fix: MeowPlayer finds no music
 - **Fixed "no music in /music"** — an incomplete `/mp3`→`/music` rename made the
   path validator reject every file in `/music`, so MeowPlayer found no tracks even
