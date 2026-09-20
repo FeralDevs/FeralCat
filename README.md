@@ -4,7 +4,7 @@
 
 💬 **Community & support:** [discord.gg/BQkmxPj9Me](https://discord.gg/BQkmxPj9Me)
 
-**FeralCat v0.11.1** is the current build: adds an opt‑in **sleep mode** (idle or a
+**FeralCat v0.11.2** is the current build: adds an opt‑in **sleep mode** (idle or a
 single power‑button press turns the screen off and light‑sleeps instead of powering
 off — press any button, including power, to wake) and a **proximity radar** in
 Tracker Detect. On top of signed **native ELF apps** loaded from
@@ -124,6 +124,16 @@ Docker only — see [`docs/CUSTOM-FIRMWARE.md` §3](docs/CUSTOM-FIRMWARE.md).
 ---
 
 ## Changelog — all changes vs. stock
+
+### v0.11.2 — Tracker beep + touch nav + IR polish
+- **Tracker Detect — proximity beep** — the radar now beeps faster/shorter as the
+  selected tracker's signal gets stronger, so you can home in without watching the
+  screen. Signal strength only, no distance. *(Updates the Tracker Detect SD app —
+  re-copy `/apps`.)*
+- **Touchscreen app navigation** — the apps menu is now navigable by touch, reusing
+  the joystick navigation path.
+- **Infrared** — refreshed app icon and added a "remove saved remote" action.
+- Contributions by **Waren Gonzaga**.
 
 ### v0.11.1 — Fix: MeowPlayer finds no music
 - **Fixed: "no music in /music"** — an incomplete `/mp3`→`/music` rename left the
