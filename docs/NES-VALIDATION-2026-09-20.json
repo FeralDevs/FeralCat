@@ -1,0 +1,70 @@
+{
+  "date": "2026-09-20",
+  "version": "v0.11.2-nes.1",
+  "firmware": {
+    "bytes": 6703904,
+    "sha256": "399648bebd9136f71abf6c1ce7d30657ce0041ab101ea40ddd7fd060c5f3f57b",
+    "flash_linked_bytes": 6703465,
+    "static_ram_bytes": 142492,
+    "ota_slot_bytes": 8323072
+  },
+  "roms": [
+    {
+      "name": "Castlevania III - Dracula's Curse (USA).nes",
+      "bytes": 393232,
+      "sha256": "1c7b2ed2c1fb5839a6764006aa476f5c9d48f99465b6141980f3a5af1dfec0d6",
+      "header": "4e45531a101050000000000000000000",
+      "mapper": 5,
+      "payload_crc32": "ed2465be"
+    },
+    {
+      "name": "Super Mario Bros. + Duck Hunt (USA).nes",
+      "bytes": 81936,
+      "sha256": "23ec3f6bb68f8774070ce936869e7f62ac3490449f58e62d6ed33a0fb385d456",
+      "header": "4e45531a040221400000000000000000",
+      "mapper": 66,
+      "payload_crc32": "d26efd78"
+    }
+  ],
+  "host_runs": {
+    "nofrendo-cv3-final": {
+      "mapper": 5,
+      "frames": 3600,
+      "fps_target": 60,
+      "host_seconds_with_io": 2.37,
+      "changing_frames": 2245,
+      "last_video_crc": "1ee1ac78",
+      "pcm_samples": 2646000,
+      "pcm_nonzero": 2640059,
+      "pcm_peak": 18148,
+      "sessions": 2,
+      "repeat_matches": true,
+      "rom_unchanged": true
+    },
+    "nofrendo-smbdh-final": {
+      "mapper": 66,
+      "frames": 1800,
+      "fps_target": 60,
+      "host_seconds_with_io": 1.146,
+      "changing_frames": 170,
+      "last_video_crc": "91990881",
+      "pcm_samples": 1323000,
+      "pcm_nonzero": 1190690,
+      "pcm_peak": 11468,
+      "sessions": 2,
+      "repeat_matches": true,
+      "rom_unchanged": true
+    }
+  },
+  "tests": {
+    "nes_storage_checks": 128,
+    "nes_input": "pass",
+    "nes_av": "pass, including volume/mute",
+    "nes_core": "pass Release and MSVC AddressSanitizer",
+    "lua_media_player_suites": 12,
+    "tracker_finder": "pass",
+    "infrared_contract_tests": 10
+  },
+  "hardware_tested": false,
+  "flashed": false
+}

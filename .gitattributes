@@ -3,3 +3,9 @@ lib/lua-5.5.1/** linguist-vendored
 lib/lua-5.5.1/library.json -linguist-vendored
 # Generated glyph bitmaps; generator commands and font license are retained.
 src/app/app_lua/player_font_*.c linguist-generated
+# Preserve byte hashes recorded in the NES upstream manifest on all platforms.
+lib/nes_core/vendor/** -text -whitespace linguist-vendored
+# Executables and detached signatures must keep their exact bytes on Windows.
+*.elf -text
+*.bin -text
+*.sig -text

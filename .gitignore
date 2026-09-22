@@ -35,3 +35,12 @@ build-native/
 tools/app_signing/meowsign
 tools/app_signing/*.seed
 *.seed.bin
+
+# User-provided cartridge data stays local, never in source or releases.
+*.nes
+*.sav
+*.pcm
+*.ppm
+.work/
+__pycache__/
+*.pyc
