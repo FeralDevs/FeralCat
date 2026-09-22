@@ -1,0 +1,127 @@
+{
+  "date": "2026-09-22",
+  "version": "v0.11.2-nes.2",
+  "baseline_commit": "5f8cb5f3e1f4b00b7639ed92dfce3b2c21968101",
+  "architecture": {
+    "sd": "native C ELF ROM browser and pause UI",
+    "firmware": "Nofrendo core, versioned NES service and hardware ownership",
+    "abi": "0x00010000",
+    "lua": false
+  },
+  "firmware": {
+    "bytes": 6704272,
+    "sha256": "d8ade4eb5d6c0fa5b570be3df9724a297a74c93353935c29e4ece24cb48e2d7a",
+    "flash_linked_bytes": 6703841,
+    "static_ram_bytes": 142940,
+    "ota_slot_bytes": 8323072
+  },
+  "app": {
+    "bytes": 8876,
+    "sha256": "d5496381cf8314f095bd04502b65600ec0b2c6c63d0fe4d5363c95bb40b4cbc1",
+    "signature_sha256": "572ed832e7c2a73e89dddc9cf9dada863b68d43c4bd7b327a4de173b68546ea0",
+    "signature_verified_by": "meowsign CLI and actual firmware meow_app_verify host build",
+    "imports_present_in_final_firmware_and_sdk": [
+      "mk_btn",
+      "mk_delay",
+      "mk_gfx_clear",
+      "mk_gfx_fill_round_rect",
+      "mk_gfx_footer",
+      "mk_gfx_header",
+      "mk_gfx_present",
+      "mk_gfx_text",
+      "mk_input_poll",
+      "mk_nes_begin",
+      "mk_nes_catalog_entry",
+      "mk_nes_catalog_info",
+      "mk_nes_catalog_open",
+      "mk_nes_command",
+      "mk_nes_end",
+      "mk_nes_error",
+      "mk_nes_open",
+      "mk_nes_poll",
+      "mk_nes_run",
+      "mk_nes_state",
+      "mk_nes_version",
+      "mk_nes_wait_release",
+      "mk_snprintf"
+    ]
+  },
+  "audio": {
+    "normal_supply": "I2S consumer backpressure, PCM before LCD, complete prefix retry",
+    "prefill_samples": 1470,
+    "dma_restart_removed": true,
+    "sd_save": "background snapshot with joined cleanup",
+    "lcd_outlier_recovery_ms": 250,
+    "timing_model": "44100 Hz fake DMA FIFO; intentionally slow producer comparison, not an exact reproduction of device timing",
+    "continuous_model_gap_samples": 0
+  },
+  "tests": {
+    "native_frontend": {
+      "passed": 1,
+      "log": "C:\\Projekte\\Meowkit\\FeralCat-NES\\.build\\nes-app-host\\Testing\\Temporary\\LastTest.log",
+      "log_sha256": "642cff59a044dbd562c6191ffee06eb82ef79b60745e895737727f84b1b4cd82"
+    },
+    "service_save": {
+      "passed": 1,
+      "log": "C:\\Projekte\\Meowkit\\FeralCat-NES\\.build\\nes-service-host\\Testing\\Temporary\\LastTest.log",
+      "log_sha256": "3c922731f00bbd8297f656f520d47e5ab9699be6cebfd5bea860cba7406519d2"
+    },
+    "elf_loader": {
+      "passed": 1,
+      "log": "C:\\Projekte\\Meowkit\\FeralCat-NES\\.build\\elf-loader-host\\Testing\\Temporary\\LastTest.log",
+      "log_sha256": "38b487d8ab9e7a4acdfdd8beb28ba7f22b73b787574bae2fc05e23e294a74eba"
+    },
+    "signing": {
+      "passed": 2,
+      "log": "C:\\Projekte\\Meowkit\\FeralCat-NES\\.build\\app-sign-tests\\Testing\\Temporary\\LastTest.log",
+      "log_sha256": "760c5a627bd18b2d4981c6eabb75df5a8fbca5d16a1f78a9f0be8801ea8227d1"
+    },
+    "input": {
+      "passed": 1,
+      "log": "C:\\Projekte\\Meowkit\\FeralCat-NES\\.build\\nes-input-host\\Testing\\Temporary\\LastTest.log",
+      "log_sha256": "9bf565ed16a1cf39fed2c8ddb208f275911bf6653207de9b1576396b4f8883fe"
+    },
+    "lua_media_player_regression": {
+      "passed": 12,
+      "log": "C:\\Projekte\\Meowkit\\FeralCat-NES\\.build\\regression\\Testing\\Temporary\\LastTest.log",
+      "log_sha256": "fa5668936caa14447aa3d59109bef7306b1e556d60488fa7db02eff766bff685"
+    },
+    "audio": {
+      "passed": 1,
+      "log": "C:\\Projekte\\Meowkit\\.work\\nes-audio-20260922\\av-host\\Testing\\Temporary\\LastTest.log",
+      "log_sha256": "29e901c720468a2a72f4a21f2f1791a2befd51b81dd391052d4e202890db812f"
+    },
+    "audio_asan": {
+      "passed": 1,
+      "log": "C:\\Projekte\\Meowkit\\.work\\nes-audio-20260922\\av-host-asan\\Testing\\Temporary\\LastTest.log",
+      "log_sha256": "4d2f7fbb894acfc72fd20d37562ae9ed07514e61c37f9946720bcaa937c1f5c0"
+    },
+    "path": {
+      "passed": 1,
+      "log": "C:\\Projekte\\Meowkit\\.work\\nes-audio-20260922\\path-host\\Testing\\Temporary\\LastTest.log",
+      "log_sha256": "a9953be563fc5ca488b5ceb07f364db94f8f71891bba89614adb667965f2f71b"
+    }
+  },
+  "package_tests_passed": 14,
+  "firmware_signature_checks_passed": 26,
+  "signer_cli_checks_passed": 20,
+  "vendor_hashes_verified": 37,
+  "user_roms_rehashed_unchanged": 2,
+  "core_unchanged_from_previous_build": true,
+  "previous_rom_runtime_evidence": "NES-VALIDATION-2026-09-20.json",
+  "user_device_report": {
+    "version": "v0.11.2-nes.1",
+    "graphics": "smooth",
+    "audio": "intermittent with both provided games",
+    "source": "user messages on 2026-09-22"
+  },
+  "hardware_tested": false,
+  "flashed": false,
+  "remaining_device_validation": [
+    "signed ELF load and repeated exit",
+    "ten minute audio continuity and graphics for both ROMs",
+    "sound toggle and pause/resume",
+    "sleep/wake",
+    "SRAM save with battery-backed cartridge"
+  ]
+}

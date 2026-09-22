@@ -1,0 +1,229 @@
+{
+  "repository": "https://github.com/ducalex/retro-go",
+  "commit": "4ced120669750ca7228fd0414211430c1d923166",
+  "upstreamRoot": "retro-core/components/nofrendo",
+  "files": [
+    {
+      "path": "config.h",
+      "upstreamSha256": "d93f6e984da63b2b262ab577f3833fdca7864be9de5dd02303f1e0c67c5743c3",
+      "vendoredSha256": "7b2dc8935f43e416e6229d62d306a449af8391a0be2247a42d8e51aed601c71b",
+      "modified": true
+    },
+    {
+      "path": "COPYING",
+      "upstreamSha256": "61b65d8be67f0acb3a370ce0826c073b7c54a5c08b502ed6f7ffec94a300477f",
+      "vendoredSha256": "61b65d8be67f0acb3a370ce0826c073b7c54a5c08b502ed6f7ffec94a300477f",
+      "modified": false
+    },
+    {
+      "path": "CREDITS",
+      "upstreamSha256": "5d794ee85d7f1b167bbe113bd3db45d4f3a21743e4ea195f542a6d38da53062e",
+      "vendoredSha256": "5d794ee85d7f1b167bbe113bd3db45d4f3a21743e4ea195f542a6d38da53062e",
+      "modified": false
+    },
+    {
+      "path": "database.h",
+      "upstreamSha256": "e6f4f8021afb77818366540df44a8946e97b377b6311a3220298a844b1826e8b",
+      "vendoredSha256": "e6f4f8021afb77818366540df44a8946e97b377b6311a3220298a844b1826e8b",
+      "modified": false
+    },
+    {
+      "path": "mappers/map000.c",
+      "upstreamSha256": "32c1a82072758b1239b04a87f9c691ad797cc2422124df76218e606e6023f200",
+      "vendoredSha256": "32c1a82072758b1239b04a87f9c691ad797cc2422124df76218e606e6023f200",
+      "modified": false
+    },
+    {
+      "path": "mappers/map001.c",
+      "upstreamSha256": "94d98e55e25ff0588c58291ce8744dc6bf9ec1adcb93b62b8aba9c9e007db926",
+      "vendoredSha256": "94d98e55e25ff0588c58291ce8744dc6bf9ec1adcb93b62b8aba9c9e007db926",
+      "modified": false
+    },
+    {
+      "path": "mappers/map002.c",
+      "upstreamSha256": "2879741f9c5900e538a1f1a7789bfd4b4c7a453d102e8e4bec72f5a357cd37ad",
+      "vendoredSha256": "2879741f9c5900e538a1f1a7789bfd4b4c7a453d102e8e4bec72f5a357cd37ad",
+      "modified": false
+    },
+    {
+      "path": "mappers/map003.c",
+      "upstreamSha256": "40bf917a57f9c867f87673a96eeccd2ea5cc0100920d87ea0ad0de0f330f013a",
+      "vendoredSha256": "40bf917a57f9c867f87673a96eeccd2ea5cc0100920d87ea0ad0de0f330f013a",
+      "modified": false
+    },
+    {
+      "path": "mappers/map004.c",
+      "upstreamSha256": "42516640861ab22b6da3284864d932acbedb8ecb4ac40b6ba5e924e90b698ce0",
+      "vendoredSha256": "42516640861ab22b6da3284864d932acbedb8ecb4ac40b6ba5e924e90b698ce0",
+      "modified": false
+    },
+    {
+      "path": "mappers/map005.c",
+      "upstreamSha256": "421180bcd63d1f91e37a4fe1cf549e31a8d4685bc53dc2b0883233ae8549964b",
+      "vendoredSha256": "830b457c1ff6ae4c7df08f33277417772ca7148bd580dde0ac6a3b38498d5cda",
+      "modified": true
+    },
+    {
+      "path": "mappers/map007.c",
+      "upstreamSha256": "43ce835d00c7d49a6090ade99e94779e8d4de6a3e99af51b6367ee8c4b624cfa",
+      "vendoredSha256": "43ce835d00c7d49a6090ade99e94779e8d4de6a3e99af51b6367ee8c4b624cfa",
+      "modified": false
+    },
+    {
+      "path": "mappers/map009.c",
+      "upstreamSha256": "b3e998c5d751551d8ca4e0ab41b08307d26ce13546413024e2c4a83803b006bc",
+      "vendoredSha256": "b3e998c5d751551d8ca4e0ab41b08307d26ce13546413024e2c4a83803b006bc",
+      "modified": false
+    },
+    {
+      "path": "mappers/map010.c",
+      "upstreamSha256": "88e0c27622211bd17629c8e9863582adf9977a4337ce533e7510997d01d579d4",
+      "vendoredSha256": "88e0c27622211bd17629c8e9863582adf9977a4337ce533e7510997d01d579d4",
+      "modified": false
+    },
+    {
+      "path": "mappers/map011.c",
+      "upstreamSha256": "3a38249751aef0e942d3ae46968173b8191738b914b0e2764f810e5a76a380b7",
+      "vendoredSha256": "3a38249751aef0e942d3ae46968173b8191738b914b0e2764f810e5a76a380b7",
+      "modified": false
+    },
+    {
+      "path": "mappers/map023.c",
+      "upstreamSha256": "7f84ae859cc862242238cc53e801d08f8403b4d666761f6c912f6a81ed08f42f",
+      "vendoredSha256": "a7542303f3e3947bb310db48476e31aa0a554b97077d8b1f8bacfeb223fe6371",
+      "modified": true
+    },
+    {
+      "path": "mappers/map024.c",
+      "upstreamSha256": "d379f4884bd4702fffe494abb4871386b34d7709fe76380425698a78e3d34139",
+      "vendoredSha256": "d379f4884bd4702fffe494abb4871386b34d7709fe76380425698a78e3d34139",
+      "modified": false
+    },
+    {
+      "path": "mappers/map066.c",
+      "upstreamSha256": "420f01b659470e879ddf32e9eccba68339e4edd4a4095546bc68d42afe288a4c",
+      "vendoredSha256": "420f01b659470e879ddf32e9eccba68339e4edd4a4095546bc68d42afe288a4c",
+      "modified": false
+    },
+    {
+      "path": "mappers/mappers.h",
+      "upstreamSha256": "df6723df15af9cff3b03b7e4159a1d7b25e41e846b0c3da95985a9dd34053aaf",
+      "vendoredSha256": "ef58c4626473b29f02ddba9c6eaa8560a062fc27a0212af0fabe5ebaf2d93d48",
+      "modified": true
+    },
+    {
+      "path": "nes/apu.c",
+      "upstreamSha256": "14219e82fd8f75659c78a31e2107e36634ab1ce6021b4a9ebcda36020bb9af9c",
+      "vendoredSha256": "8aabb8b42bf93aec3fd902e0650c054309fbf8ad8e81539317a070a8d4061b8d",
+      "modified": true
+    },
+    {
+      "path": "nes/apu.h",
+      "upstreamSha256": "1e9209987bfa1b57bc8bfebcb6392d8e9fc5f77d988fb28a6c71bc91783031ef",
+      "vendoredSha256": "1e9209987bfa1b57bc8bfebcb6392d8e9fc5f77d988fb28a6c71bc91783031ef",
+      "modified": false
+    },
+    {
+      "path": "nes/cpu.c",
+      "upstreamSha256": "b08f4fb21a6a88c5a64f2a29f87ff542b777647cb9e9a31acc695bb0464a9bab",
+      "vendoredSha256": "59310951b5d4431d669a6e1623f6be646d72c52ec224e110e48ee6d2b68f2573",
+      "modified": true
+    },
+    {
+      "path": "nes/cpu.h",
+      "upstreamSha256": "67964b2972f2f3b2ecfdfe68a62ec532238c12da97f2d7224efa0b4eb658b22c",
+      "vendoredSha256": "67964b2972f2f3b2ecfdfe68a62ec532238c12da97f2d7224efa0b4eb658b22c",
+      "modified": false
+    },
+    {
+      "path": "nes/input.c",
+      "upstreamSha256": "63e9ab839cf4004bb547f850dcbc43b33299b168878b198c3b8113ac2b9275dd",
+      "vendoredSha256": "89e7eab174fb3ec8bcfd5d5206a6d48046c64bb8e3e1a0f1b3c712377e2f8ac4",
+      "modified": true
+    },
+    {
+      "path": "nes/input.h",
+      "upstreamSha256": "cb82a1aac2c973f4604243d83b63d3d4b3d7f021235f6b0de8c5df4e150c9298",
+      "vendoredSha256": "cb82a1aac2c973f4604243d83b63d3d4b3d7f021235f6b0de8c5df4e150c9298",
+      "modified": false
+    },
+    {
+      "path": "nes/mem.c",
+      "upstreamSha256": "1b219b1e825ebb1055e3f5e4728aa0a94e0468c7a6589db2ba27b070545acd54",
+      "vendoredSha256": "c0d4a762419e2c1d8528257c55139c7cf2bb5220f0d8ae3603b2bad2edbe8155",
+      "modified": true
+    },
+    {
+      "path": "nes/mem.h",
+      "upstreamSha256": "b7dd8cbc6644291334598617514e2aee77dedc1dfaa531faf3748dae4ac3ec7f",
+      "vendoredSha256": "b7dd8cbc6644291334598617514e2aee77dedc1dfaa531faf3748dae4ac3ec7f",
+      "modified": false
+    },
+    {
+      "path": "nes/mmc.c",
+      "upstreamSha256": "0e700a34c62372bee326adb65b72b8ddeadd0b68c7d0433705dcd71c7dfbd368",
+      "vendoredSha256": "0e700a34c62372bee326adb65b72b8ddeadd0b68c7d0433705dcd71c7dfbd368",
+      "modified": false
+    },
+    {
+      "path": "nes/mmc.h",
+      "upstreamSha256": "fe5ac232de591d0a7aaa93ca7c5981906c5e72475653bb57653396d8e22d3e2a",
+      "vendoredSha256": "fe5ac232de591d0a7aaa93ca7c5981906c5e72475653bb57653396d8e22d3e2a",
+      "modified": false
+    },
+    {
+      "path": "nes/nes.c",
+      "upstreamSha256": "5523f85f1929325ea0ac6f6d78d3c4eb1cc4cb2aaaaa7212cf0d1f72a29f10c6",
+      "vendoredSha256": "39b856714a35d113ab371375584045966537d7bf6aaed49a52ffb02df5a8e4ad",
+      "modified": true
+    },
+    {
+      "path": "nes/nes.h",
+      "upstreamSha256": "5a28cc8b806bf4bef9b02dfd9f20324c12f04a57cbe3857f382b03a0e5197d5b",
+      "vendoredSha256": "5a28cc8b806bf4bef9b02dfd9f20324c12f04a57cbe3857f382b03a0e5197d5b",
+      "modified": false
+    },
+    {
+      "path": "nes/ppu.c",
+      "upstreamSha256": "6eeeebb0db3869f4b24288e33362049c570d01880dbc4bf1a7c45ae8b419739c",
+      "vendoredSha256": "6eeeebb0db3869f4b24288e33362049c570d01880dbc4bf1a7c45ae8b419739c",
+      "modified": false
+    },
+    {
+      "path": "nes/ppu.h",
+      "upstreamSha256": "a1b88f083764200c0ae0f169349bfdc8ac91597d19d470a13d7850af13d5f83c",
+      "vendoredSha256": "a1b88f083764200c0ae0f169349bfdc8ac91597d19d470a13d7850af13d5f83c",
+      "modified": false
+    },
+    {
+      "path": "nes/rom.c",
+      "upstreamSha256": "5cc872a3dc49a9576df0971bc6c69c89c911ab31d388bca621e040a1d76db092",
+      "vendoredSha256": "6d0879b6124e3f0fcb49e487fd4d9b8e97582ab8416c0556d6c7a3cf2496eb9e",
+      "modified": true
+    },
+    {
+      "path": "nes/rom.h",
+      "upstreamSha256": "c0c1b20fbea21691109ac4c6fa7ed3e283ddd332bf0d3aab6d5a62ca1380ee1d",
+      "vendoredSha256": "c0c1b20fbea21691109ac4c6fa7ed3e283ddd332bf0d3aab6d5a62ca1380ee1d",
+      "modified": false
+    },
+    {
+      "path": "nes/state.h",
+      "upstreamSha256": "d0c788908b4d5e59e16af9a3f25fca1f02106657390559e7ec1616769ad26adf",
+      "vendoredSha256": "d0c788908b4d5e59e16af9a3f25fca1f02106657390559e7ec1616769ad26adf",
+      "modified": false
+    },
+    {
+      "path": "nes/utils.h",
+      "upstreamSha256": "f847db1aaa6609d990043b4e1e308f892bfbdd4e18f7395fb974123d2024df2e",
+      "vendoredSha256": "1db7217ed4bcacd095c5e5de3872fcb9cbf43fa57e94e810232a9b734d1114e6",
+      "modified": true
+    },
+    {
+      "path": "palettes.h",
+      "upstreamSha256": "43a5065699cc424a416987fc8a64460e8499e1fcad1e0928471b03c8f3a4de6f",
+      "vendoredSha256": "43a5065699cc424a416987fc8a64460e8499e1fcad1e0928471b03c8f3a4de6f",
+      "modified": false
+    }
+  ]
+}

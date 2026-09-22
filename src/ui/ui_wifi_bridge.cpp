@@ -21,6 +21,7 @@
 #include <freertos/task.h>
 #include <freertos/semphr.h>
 #include <string.h>
+#include <atomic>
 
 /* ── NVS keys ────────────────────────────────────────────────── */
 static constexpr char kKeySsid[] = PKEY_WIFI_SSID;
@@ -46,6 +47,9 @@ static volatile int s_scan_gen   = 0;
 /* True while the scan task is active — suppresses WIFI_STA_DISCONNECTED
  * being treated as a connection failure during the pre-scan disconnect. */
 static volatile bool s_scan_running = false;
+// UI results can be ready before post-scan reconnect. Track actual worker
+// ownership separately, also across stop_scan() and superseded generations.
+static std::atomic<unsigned> s_scan_workers{0};
 
 /* Reconnect after scan: saved here before we disconnect for the scan. */
 static char  s_post_scan_ssid[33] = "";
@@ -154,6 +158,7 @@ static void _scan_task(void *arg)
         s_need_reconnect = false;
     }
 
+    s_scan_workers.fetch_sub(1, std::memory_order_release);
     vTaskDelete(NULL);
 }
 
@@ -197,10 +202,12 @@ void ui_wifi_bridge_start_scan(void)
     s_scan_running = true;    /* suppress disconnect→FAILED during pre-scan disconnect */
 
     int gen = (int)s_scan_gen;
+    s_scan_workers.fetch_add(1, std::memory_order_relaxed);
     BaseType_t rc = xTaskCreate(_scan_task, "wifi_scan",
                                  4096, (void *)(intptr_t)gen,
                                  3, NULL);
     if (rc != pdPASS) {
+        s_scan_workers.fetch_sub(1, std::memory_order_release);
         s_scan_count  = 0;
         s_scan_running = false;
         Serial.println("[wifi] ERROR: scan task creation failed");
@@ -229,6 +236,7 @@ int  ui_wifi_bridge_get_scan_count(void)
 }
 
 bool ui_wifi_bridge_is_scanning(void)   { return (s_scan_count == -1); }
+bool ui_wifi_bridge_scan_busy(void)     { return s_scan_workers.load(std::memory_order_acquire) != 0; }
 bool ui_wifi_bridge_scan_complete(void) { return (s_scan_count >= 0);  }
 
 void ui_wifi_bridge_get_ssid(int idx, char *buf, int len)
