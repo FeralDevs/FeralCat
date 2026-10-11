@@ -23,7 +23,7 @@ if(Python3_FOUND)
   add_subdirectory("${ROOT}/tools/app_signing" "signer")
   add_test(NAME app_sign_cli COMMAND "${Python3_EXECUTABLE}"
     "${CMAKE_CURRENT_SOURCE_DIR}/signer_test.py" "$<TARGET_FILE:meowsign>"
-    "${ROOT}/tools/app_signing/nes-development.pub"
+    "${ROOT}/tools/app_signing/app_signing.pub"
     "${CMAKE_CURRENT_SOURCE_DIR}/fixtures/development-message.bin"
     "${CMAKE_CURRENT_SOURCE_DIR}/fixtures/development-message.bin.sig")
 endif()
