@@ -24,6 +24,7 @@
 #include "settings_bridge.h"         /* settings_get_sleep_mode / sys_get_brightness */
 #include "power_mgmt.h"              /* PEK short press + light sleep */
 #include "usb_msc.h"                /* usb_msc_is_active */
+#include "system_sound.h"           /* release the shared codec to MeowPlayer */
 
 /* Active device + lazily-allocated offscreen canvas for the current app run. */
 static DEVICES*           s_dev    = nullptr;
@@ -460,6 +461,7 @@ int mk_media_begin(void)
 {
     if (!s_dev) return 0;
     s_tracker_audio_ready = false;
+    system_sound_suspend();          /* hand the shared ES8311/I2S to the player */
     bool ok = s_media.begin(s_dev);
     if (ok && !s_dev->io_exp.digitalWrite(HAL_IOEXP_PA_EN, HIGH)) {
         s_media.end();
@@ -472,6 +474,7 @@ void mk_media_end(void)
 {
     s_media.end();
     if (s_dev) s_dev->io_exp.digitalWrite(HAL_IOEXP_PA_EN, LOW);
+    system_sound_resume();           /* reclaim the codec for system tones */
 }
 
 void mk_media_cmd(int action, int value)

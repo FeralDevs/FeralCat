@@ -11,6 +11,7 @@
 #include "settings_bridge.h"
 #include "persist.h"
 #include "config_sd.h"
+#include "system_sound.h"
 #include <Arduino.h>
 
 /* ── Hardware handle ─────────────────────────────────────────── */
@@ -186,6 +187,7 @@ void sys_apply_volume(int pct)
     if (!s_dev) return;
     /* UI 0-100% → hardware 0-SPK_VOLUME_MAX，滑块全程可用且永不超出扬声器额定功率 */
     s_dev->speaker.setVolume(pct * SPK_VOLUME_MAX / 100);
+    system_sound_set_volume(pct);   /* keep the system-sound (tones) volume in sync */
 }
 
 void settings_set_volume(int pct)
@@ -199,7 +201,7 @@ int sys_get_volume(void) { return s_volume; }
 void sys_apply_key_sound(int on)
 {
     s_key_sound = (on != 0);
-    /* No hardware toggle — callers check sys_get_key_sound() before playing */
+    system_sound_set_key_enabled(s_key_sound);   /* gate the key tone at the source */
 }
 
 void settings_set_key_sound(int on)

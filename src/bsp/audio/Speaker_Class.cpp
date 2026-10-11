@@ -320,6 +320,32 @@ bool Speaker_Class::play(const uint8_t* data, size_t size)
     return true;
 }
 
+bool Speaker_Class::playPcm(const int16_t* data, size_t sample_count,
+                            uint8_t channels, uint32_t sample_rate)
+{
+    if (!_initialized || !data || !sample_count ||
+        (channels != 1 && channels != 2)) return false;
+    if (sample_rate != _cfg.sample_rate && !setSampleRate(sample_rate)) return false;
+    _is_playing = true;
+    bool ok = true;
+    if (channels == 2) {
+        ok = _i2s_write(data, sample_count * sizeof(int16_t));
+    } else {
+        const size_t chunk = _cfg.dma_buf_len;
+        int16_t stereo[chunk * 2];
+        for (size_t off = 0; off < sample_count && _is_playing;) {
+            size_t count = sample_count - off;
+            if (count > chunk) count = chunk;
+            for (size_t i = 0; i < count; ++i)
+                stereo[i * 2] = stereo[i * 2 + 1] = data[off + i];
+            if (!_i2s_write(stereo, count * 2 * sizeof(int16_t))) { ok = false; break; }
+            off += count;
+        }
+    }
+    _is_playing = false;
+    return ok;
+}
+
 void Speaker_Class::tone(uint32_t freq_hz, uint32_t duration_ms, int volume)
 {
     if (!_initialized) return;

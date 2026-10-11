@@ -53,6 +53,10 @@ namespace MOONCAKE::APPS
         LGFX_Sprite* _bgPatch      = nullptr;
         LGFX_Sprite* _workSpr      = nullptr;
         LGFX_Sprite* _needleSprite = nullptr;
+        LGFX_Sprite* _maskSprite   = nullptr;
+
+        bool _codecReady = false;
+        bool _i2sReady   = false;
 
         /* ── Tuning ─────────────────────────────────────────────────── */
         static constexpr int32_t kNeedleLen = 150;   // tip-to-pivot (px)
@@ -62,6 +66,11 @@ namespace MOONCAKE::APPS
         static constexpr int32_t kPatchW = 220;
         static constexpr int32_t kPatchH = 180;
         static constexpr int32_t kWorkH  = 180;
+
+        static constexpr int32_t kMaskX = 94;
+        static constexpr int32_t kMaskY = 178;
+        static constexpr int32_t kMaskW = 132;
+        static constexpr int32_t kMaskH = 62;
 
         /* Chroma key for needle sprite (magenta) */
         static constexpr uint32_t kChroma24 = 0xFF00FFu;
@@ -79,6 +88,6 @@ namespace MOONCAKE::APPS
 
         /* ── Helpers ── */
         static float    _calcAmplitude(const int16_t* buf, size_t mono);
-        static uint8_t* _readSD(const char* path, size_t& outLen);
+        void _releaseResources();
     };
 }

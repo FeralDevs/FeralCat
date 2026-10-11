@@ -8,10 +8,11 @@
  *   3. workSpr → LCD              (single push, no ghost trails)
  */
 #include "vu_meter.h"
-#include <SD_MMC.h>
+#include "vu_meter_assets.h"
 #include <cstring>
 #include <cmath>
 #include <algorithm>
+#include "../../system/system_sound.h"
 
 namespace MOONCAKE::APPS
 {
@@ -19,8 +20,6 @@ namespace MOONCAKE::APPS
 /* ══════════════════════════════════════════════════════════════════
  *  Constants
  * ══════════════════════════════════════════════════════════════════ */
-
-static constexpr char  BG_PATH[] = "/vu_meter/vu_meter_bg.png";
 
 /* ── Angle calibration ─────────────────────────────────────────────
  * ANGLE_MIN → far-left mark  ("−30 VU")
@@ -63,21 +62,6 @@ App03::App03(DEVICES* device) : _device(device)
  *  Static helpers
  * ══════════════════════════════════════════════════════════════════ */
 
-uint8_t* App03::_readSD(const char* path, size_t& outLen)
-{
-    outLen = 0;
-    File f = SD_MMC.open(path, "r");
-    if (!f) return nullptr;
-    size_t sz = (size_t)f.size();
-    if (!sz) { f.close(); return nullptr; }
-    uint8_t* buf = (uint8_t*)ps_malloc(sz);
-    if (!buf) { f.close(); return nullptr; }
-    if (f.read(buf, sz) != sz) { free(buf); f.close(); return nullptr; }
-    f.close();
-    outLen = sz;
-    return buf;
-}
-
 float App03::_calcAmplitude(const int16_t* buf, size_t mono)
 {
     if (!mono) return kDbFloor;
@@ -97,6 +81,10 @@ float App03::_calcAmplitude(const int16_t* buf, size_t mono)
  * ══════════════════════════════════════════════════════════════════ */
 void App03::onOpen()
 {
+    /* ES7210 RX and ES8311 TX share MCLK/BCLK/WS pins. Give app03 exclusive
+     * ownership before I2S1 changes the GPIO matrix. */
+    system_sound_suspend();
+
     // If a previous crash left the I2S driver installed, uninstall it now.
     // esp_err_t is ignored — the call is a no-op when the driver is absent.
     i2s_driver_uninstall(I2S_NUM_1);
@@ -117,6 +105,7 @@ void App03::onOpen()
 void App03::_doHeavyInit()
 {
     auto fail = [&](const char* msg) {
+        _releaseResources();
         _device->Lcd.fillScreen(TFT_BLACK);
         _device->Lcd.setTextColor(TFT_RED, TFT_BLACK);
         _device->Lcd.setTextFont(2);
@@ -124,14 +113,15 @@ void App03::_doHeavyInit()
         _initState = InitState::Failed;
     };
 
-    auto delSp = [](LGFX_Sprite*& sp) {
-        if (sp) { sp->deleteSprite(); delete sp; sp = nullptr; }
-    };
+    if (!vu_meter_bg_png_len || !vu_meter_mask_png_len) {
+        fail("VU assets missing"); return;
+    }
 
     /* 1. ES7210 codec */
     if (!_codec.begin(kSampleRate, ES7210_BIT_16, ES7210_FMT_I2S)) {
         fail("ES7210 init failed"); return;
     }
+    _codecReady = true;
     _codec.selectMic(ES7210_MIC1 | ES7210_MIC2);
     _codec.setGain(ES7210_GAIN_30DB);
     _codec.start();
@@ -151,9 +141,9 @@ void App03::_doHeavyInit()
         cfg.tx_desc_auto_clear   = false;
         cfg.fixed_mclk           = 0;
         if (i2s_driver_install(I2S_NUM_1, &cfg, 0, nullptr) != ESP_OK) {
-            _codec.stop(); _codec.end();
             fail("I2S install failed"); return;
         }
+        _i2sReady = true;
         i2s_pin_config_t pins = {};
         pins.mck_io_num   = HAL_PIN_I2S_MCLK;
         pins.bck_io_num   = HAL_PIN_I2S_BCLK;
@@ -161,7 +151,6 @@ void App03::_doHeavyInit()
         pins.data_out_num = I2S_PIN_NO_CHANGE;
         pins.data_in_num  = HAL_PIN_I2S_DIN;
         if (i2s_set_pin(I2S_NUM_1, &pins) != ESP_OK) {
-            _codec.stop(); _codec.end(); i2s_driver_uninstall(I2S_NUM_1);
             fail("I2S pin cfg failed"); return;
         }
         i2s_start(I2S_NUM_1);
@@ -173,7 +162,6 @@ void App03::_doHeavyInit()
     _bgPatch->setPsram(true);
     _bgPatch->setColorDepth(16);
     if (!_bgPatch->createSprite(kPatchW, kPatchH)) {
-        _codec.stop(); _codec.end(); i2s_driver_uninstall(I2S_NUM_1);
         fail("PSRAM alloc failed (bgPatch)"); return;
     }
     _bgPatch->fillSprite(TFT_BLACK);
@@ -183,25 +171,26 @@ void App03::_doHeavyInit()
     _workSpr->setPsram(true);
     _workSpr->setColorDepth(16);
     if (!_workSpr->createSprite(kPatchW, kWorkH)) {
-        delSp(_bgPatch);
-        _codec.stop(); _codec.end(); i2s_driver_uninstall(I2S_NUM_1);
         fail("PSRAM alloc failed (workSpr)"); return;
     }
 
-    /* 5. Background PNG: push to LCD immediately (user sees BG, no black screen),
-     *    then decode crop into bgPatch for per-frame erasure */
-    {
-        size_t bgLen = 0;
-        uint8_t* bgBuf = _readSD(BG_PATH, bgLen);
-        if (!bgBuf) {
-            delSp(_bgPatch); delSp(_workSpr);
-            _codec.stop(); _codec.end(); i2s_driver_uninstall(I2S_NUM_1);
-            fail("BG PNG not found"); return;
-        }
-        _device->Lcd.drawPng(bgBuf, bgLen, 0, 0);           // visible immediately
-        _bgPatch->drawPng(bgBuf, bgLen, -kPatchX, -kPatchY); // decode into reference
-        free(bgBuf);
+    /* 5. Decode embedded artwork once. The mask sprite contains a precomposed
+     *    background + foreground crop, so each frame only needs one small,
+     *    opaque push after the needle. */
+    _maskSprite = new LGFX_Sprite(&_device->Lcd);
+    _maskSprite->setPsram(true);
+    _maskSprite->setColorDepth(16);
+    if (!_maskSprite->createSprite(kMaskW, kMaskH)) {
+        fail("PSRAM alloc failed (mask)"); return;
     }
+
+    _device->Lcd.drawPng(vu_meter_bg_png, vu_meter_bg_png_len, 0, 0);
+    _bgPatch->drawPng(vu_meter_bg_png, vu_meter_bg_png_len,
+                      -kPatchX, -kPatchY);
+    _maskSprite->drawPng(vu_meter_bg_png, vu_meter_bg_png_len,
+                         -kMaskX, -kMaskY);
+    _maskSprite->drawPng(vu_meter_mask_png, vu_meter_mask_png_len,
+                         -kMaskX, -kMaskY);
 
     /* 6. Needle sprite — pivot row = NEEDLE_TIP_Y + kNeedleLen */
     {
@@ -223,13 +212,17 @@ void App03::_doHeavyInit()
             _needleSprite = ns;
         } else {
             delete ns;
+            fail("PSRAM alloc failed (needle)"); return;
         }
     }
 
     /* 7. Start DSP capture task on core 0 */
     _taskRun = true;
-    xTaskCreatePinnedToCore(_captureTaskEntry, "vu_cap",
-                            4096, this, 2, &_captureTask, 0);
+    if (xTaskCreatePinnedToCore(_captureTaskEntry, "vu_cap",
+                                4096, this, 2, &_captureTask, 0) != pdPASS) {
+        _taskRun = false;
+        fail("Capture task failed"); return;
+    }
 
     _initState = InitState::Ready;
 }
@@ -237,22 +230,27 @@ void App03::_doHeavyInit()
 /* ══════════════════════════════════════════════════════════════════
  *  onClose
  * ══════════════════════════════════════════════════════════════════ */
-void App03::onClose()
+void App03::_releaseResources()
 {
     _taskRun = false;
     if (_captureTask) {
-        for (int i = 0; i < 25 && eTaskGetState(_captureTask) != eDeleted; ++i)
+        for (int i = 0; i < 25 && _captureTask; ++i)
             vTaskDelay(pdMS_TO_TICKS(10));
-        if (eTaskGetState(_captureTask) != eDeleted)
+        if (_captureTask) {
             vTaskDelete(_captureTask);
-        _captureTask = nullptr;
+            _captureTask = nullptr;
+        }
     }
 
-    if (_initState == InitState::Ready) {
+    if (_codecReady) {
         _codec.stop();
         _codec.end();
+        _codecReady = false;
+    }
+    if (_i2sReady) {
         i2s_stop(I2S_NUM_1);
         i2s_driver_uninstall(I2S_NUM_1);
+        _i2sReady = false;
     }
 
     auto del = [](LGFX_Sprite*& sp) {
@@ -261,9 +259,19 @@ void App03::onClose()
     del(_bgPatch);
     del(_workSpr);
     del(_needleSprite);
+    del(_maskSprite);
+}
+
+void App03::onClose()
+{
+    _releaseResources();
 
     _initState = InitState::Idle;
     _device->Lcd.fillScreen(TFT_BLACK);
+
+    /* I2S1 is fully released; restore ES8311/I2S0 and reclaim shared pins. */
+    if (!system_sound_resume())
+        Serial.println("[VU] Failed to restore system audio");
 }
 
 /* ══════════════════════════════════════════════════════════════════
@@ -305,7 +313,19 @@ void App03::onRunning()
                                       _pivotY - (float)kPatchY,
                                       ang, 1.0f, 1.0f, kChroma24);
 
-    /* 3. Push composited frame to LCD */
+    /* 3. Composite the foreground mask into the same off-screen frame.
+     *
+     * Pushing workSpr and maskSprite to the LCD separately exposed the
+     * unmasked needle for a fraction of a frame. That bus-level tear was
+     * visible as the needle and mask flashing while the needle moved.
+     * The mask lies completely inside workSpr, so merge it here and perform
+     * one atomic-looking LCD transfer below. */
+    if (_maskSprite)
+        _maskSprite->pushSprite(_workSpr,
+                                kMaskX - kPatchX,
+                                kMaskY - kPatchY);
+
+    /* 4. Present the fully composed frame in one LCD transaction. */
     _workSpr->pushSprite(&_device->Lcd, kPatchX, kPatchY);
 }
 
@@ -314,7 +334,9 @@ void App03::onRunning()
  * ══════════════════════════════════════════════════════════════════ */
 void App03::_captureTaskEntry(void* arg)
 {
-    static_cast<App03*>(arg)->_captureLoop();
+    auto* self = static_cast<App03*>(arg);
+    self->_captureLoop();
+    self->_captureTask = nullptr;
     vTaskDelete(nullptr);
 }
 
