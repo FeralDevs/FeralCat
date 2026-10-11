@@ -276,3 +276,8 @@ void firmware_update_request(void)
 {
     printf("[stub] firmware_update_request() — updater takeover (device only).\n");
 }
+
+void app_store_request(void)
+{
+    printf("[stub] app_store_request() — App Store takeover (device only).\n");
+}

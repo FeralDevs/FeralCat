@@ -20,6 +20,7 @@
 #include "../../system/recovery.h"
 #include "../../system/power_mgmt.h"
 #include "../../system/firmware_update.h"
+#include "../../system/app_store.h"
 #include "../../ui/screens/ui_set_date.h"
 #include "../../ui/screens/ui_set_time.h"
 #include <nvs.h>
@@ -152,6 +153,14 @@ static void tab_fw_update_cb(lv_event_t * e)
 {
     if(lv_event_get_code(e) != LV_EVENT_CLICKED) return;
     firmware_update_request();
+}
+
+/* Open the App Store (install signed ELF apps over WiFi). Same system-module
+ * pattern as the firmware updater: request here, launcher runs the takeover. */
+static void tab_app_store_cb(lv_event_t * e)
+{
+    if(lv_event_get_code(e) != LV_EVENT_CLICKED) return;
+    app_store_request();
 }
 
 /* ── Backup / Restore (Backup tab) ───────────────────────────────────────── */
@@ -923,6 +932,12 @@ static void build_tab_system(lv_obj_t * page)
     mk_lbl(c_fw, "Update", 0, 0, TV_TEXT, &ui_font_name_14);
     mk_lbl(c_fw, "SD card / GitHub / USB", 0, 30, TV_MUTED, &ui_font_name_14);
     mk_outline_btn(c_fw, CARD_INN - 90, 7, 90, 36, "Open", 0xFF2A3D, tab_fw_update_cb);
+    y += 66 + 8;
+
+    lv_obj_t * c_as = mk_card(sc, y, 66);
+    mk_lbl(c_as, "App Store", 0, 0, TV_TEXT, &ui_font_name_14);
+    mk_lbl(c_as, "install apps over WiFi", 0, 30, TV_MUTED, &ui_font_name_14);
+    mk_outline_btn(c_as, CARD_INN - 90, 7, 90, 36, "Open", 0xFF2A3D, tab_app_store_cb);
     y += 66 + 8;
 
     lv_obj_t * c_rb = mk_card(sc, y, 66);

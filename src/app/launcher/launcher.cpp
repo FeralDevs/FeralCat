@@ -53,6 +53,7 @@
 #include "../../ui/screens/ui_sd_card_files.h"
 #include "../../system/usb_msc.h"
 #include "../../system/firmware_update.h"    /* Firmware updater — system module */
+#include "../../system/app_store.h"          /* App Store — system module */
 #include "../../system/app_sdk.h"            /* Native-app ABI exported to ELF apps */
 #include "../../system/native_apps.h"        /* /apps ELF-app catalog (grid tiles) */
 #include "../../system/elf_runner.h"         /* meow_elf_run_file */
@@ -344,6 +345,13 @@ void Launcher::onLoop()
         if (firmware_update_take_pending()) {
             firmware_update_run(_device);
             power_reset_sleep_timer();   /* the takeover bypassed the idle timer */
+            returnToUI();
+            return;
+        }
+        /* App Store: same blocking-takeover model as the firmware updater. */
+        if (app_store_take_pending()) {
+            app_store_run(_device);
+            power_reset_sleep_timer();
             returnToUI();
             return;
         }
