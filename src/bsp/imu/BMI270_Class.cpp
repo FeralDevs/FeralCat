@@ -184,6 +184,11 @@
 
   void BMI270_Class::getConvertParam(imu_convert_param_t* param) const
   {
+    uint8_t accel = 0, gyro = 0;
+    if (readRegister(0x41, &accel, 1))
+      param->accel_res = static_cast<float>(2u << (accel & 3u)) / 32768.f;
+    if (readRegister(0x43, &gyro, 1) && (gyro & 7u) <= 4)
+      param->gyro_res = (2000.f / (1u << (gyro & 7u))) / 32768.f;
     param->mag_res = 10.0f * 4912.0f / 32760.0f;
     param->temp_offset = 23.0f;
     param->temp_res = 1.0f / 512.0f;
@@ -195,6 +200,23 @@
     bool res = readRegister(TEMPERATURE_0_ADDR, (std::uint8_t*)&buf, 2);
     if (res) { *t = buf; }
     return res;
+  }
+
+  uint8_t BMI270_Class::getGyroRange() const
+  {
+    uint8_t value = 0;
+    if (!readRegister(0x43, &value, 1) || (value & 7u) > 4) return 255;
+    return 4 - (value & 7u);
+  }
+
+  bool BMI270_Class::setGyroRange(uint8_t range)
+  {
+    uint8_t value = 0;
+    if (range > 4 || !readRegister(0x43, &value, 1)) return false;
+    value = (value & ~7u) | (4 - range);
+    if (!writeRegister8(0x43, value)) return false;
+    delayMicroseconds(450);
+    return getGyroRange() == range;
   }
 
 #endif
