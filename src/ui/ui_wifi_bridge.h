@@ -70,6 +70,10 @@ wifi_bridge_status_t ui_wifi_bridge_get_status(void);
 /** true while an async scan is still running (WiFi.scanComplete() == -1). */
 bool ui_wifi_bridge_is_scanning(void);
 
+/** True until all scan workers finish, including their deferred reconnect.
+ * Use this before exclusive radio/sleep ownership, not the UI result flag. */
+bool ui_wifi_bridge_scan_busy(void);
+
 /** true when the last scan has finished and real results are available
  *  (WiFi.scanComplete() >= 0). Returns false while running (-1) or
  *  before a scan is triggered (-2). */

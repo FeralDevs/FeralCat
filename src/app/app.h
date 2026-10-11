@@ -115,6 +115,7 @@ inline const void* native_icon_by_name(const char* name)
         if (!strcmp(name, "wifikill")) return &ui_img_wifi_killer_png;
         if (!strcmp(name, "ble"))      return &ui_img_ble_spam_png;
         if (!strcmp(name, "music"))    return &ui_img_music_png;
+        if (!strcmp(name, "retro_tv")) return &ui_img_retro_tv_png;
         if (!strcmp(name, "ir"))       return &ui_img_infrared_png;
         if (!strcmp(name, "usb"))      return &ui_img_badusb_png;
     }

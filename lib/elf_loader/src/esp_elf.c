@@ -269,6 +269,7 @@ static int esp_elf_load_section(esp_elf_t *elf, const uint8_t *pbuf)
         if (!elf->pdata) {
             ESP_LOGE(TAG, "Failed to malloc %"PRIu32" bytes for data section", size);
             esp_elf_free(elf->ptext);
+            elf->ptext = NULL; /* Caller deinitializes even after relocate fails. */
             return -ENOMEM;
         }
     }
@@ -282,7 +283,9 @@ static int esp_elf_load_section(esp_elf_t *elf, const uint8_t *pbuf)
 #ifdef CONFIG_ELF_LOADER_SET_MMU
     if (esp_elf_arch_init_mmu(elf)) {
         esp_elf_free(elf->ptext);
+        elf->ptext = NULL;
         esp_elf_free(elf->pdata);
+        elf->pdata = NULL;
         return -EIO;
     }
 #endif

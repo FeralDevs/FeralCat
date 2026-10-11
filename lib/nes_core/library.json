@@ -1,0 +1,6 @@
+{
+  "name": "MeowNESCore",
+  "version": "0.1.0",
+  "description": "MeowKit NES core prototype, pinned Nofrendo with a bounded C adapter",
+  "build": {"includeDir": ".", "srcDir": ".", "flags": ["-Ivendor", "-O2"]}
+}

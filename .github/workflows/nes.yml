@@ -1,0 +1,57 @@
+name: NES host contracts
+
+on:
+  pull_request:
+  push:
+    branches: [feature/nes-emulator]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  host:
+    runs-on: windows-2022
+    timeout-minutes: 20
+    defaults:
+      run:
+        shell: pwsh
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: '3.11'
+      - name: Build and run NES host contracts
+        run: |
+          $suites = @('nes_storage', 'nes_core', 'nes_input', 'nes_av', 'nes_path', 'nes_app', 'nes_service', 'elf_loader', 'app_sign')
+          foreach ($suite in $suites) {
+            # The vendored core explicitly uses /O2, incompatible with /RTC1.
+            # Keep Debug symbols/assertions without runtime instrumentation there.
+            $configure = @()
+            if ($suite -eq 'nes_core') { $configure += '-DCMAKE_C_FLAGS_DEBUG=/Zi' }
+            cmake -S "test/$suite" -B "build/nes-ci/$suite" -A x64 @configure
+            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+            cmake --build "build/nes-ci/$suite" --config Debug --parallel 2
+            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+            ctest --test-dir "build/nes-ci/$suite" -C Debug --output-on-failure
+            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          }
+      - name: Check signed SD app with the firmware verifier
+        run: |
+          & 'build/nes-ci/app_sign/Debug/app_sign_test.exe' `
+            'sd files/apps/meowplayer/app.elf' 'sd files/apps/meowplayer/app.elf.sig' `
+            'sd files/apps/nes/app.elf' 'sd files/apps/nes/app.elf.sig'
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Run package tests with temporary test keys
+        run: |
+          python test/nes_package/nes_package_test.py --signer build/nes-ci/app_sign/signer/Debug/meowsign.exe -v
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Retain host test logs
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: nes-host-windows-2022
+          path: build/nes-ci/**/Testing/Temporary/LastTest.log
+          if-no-files-found: warn
