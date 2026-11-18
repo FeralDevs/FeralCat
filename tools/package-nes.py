@@ -45,7 +45,7 @@ def verify_signature(signer, app, signature, public):
         except (OSError, subprocess.TimeoutExpired) as error:
             raise ValueError('Native app signature verifier unavailable or timed out') from error
         if result.returncode:
-            raise ValueError('Native app signature is not valid for the NES development key')
+            raise ValueError('Native app signature is not valid for the supplied public key')
 
 
 def verify_package(archive):

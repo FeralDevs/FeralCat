@@ -5,13 +5,12 @@ Native apps carry a detached **64-byte RFC 8032 Ed25519 signature** in
 other files are not included in that signature. Firmware verifies before
 relocation using the same vendored Monocypher implementation as this tool.
 
-This NES fork accepts two public keys in `src/system/app_sign.cpp`:
-
-- The unchanged upstream key, reference `app_signing.pub`, preserves all
-  existing official app signatures.
-- The local NES development key, reference `nes-development.pub`, permits
-  signed local apps. Its trust is not restricted by directory or app name;
-  protect the private seed as a firmware trust credential.
+The firmware trusts exactly one public key, `APP_SIGN_PUBKEY` in
+`src/system/app_sign.cpp` (the FeralCat release key, reference
+`app_signing.pub`). Every SD app, including the NES frontend, is signed with
+the matching release seed. A key generated locally (as described below) only
+signs apps for a firmware build that carries that key; it is never trusted by
+release firmware.
 
 The existing unsigned-app setting remains unchanged and **is not needed** for
 the signed NES package. The private seed is never included in firmware, source,

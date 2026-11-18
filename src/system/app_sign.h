@@ -4,7 +4,7 @@
  *
  * Apps are signed offline with tools/app_signing/meowsign (same Monocypher
  * source, so signatures are byte-compatible). The signing seed is kept off the
- * device; only trusted public keys are baked into the firmware.
+ * device; only the 32-byte release public key is baked into the firmware.
  *
  * A signed app carries a detached 64-byte signature file "<app>.sig" next to
  * it. The loader (elf_runner) verifies it before running; unsigned or
@@ -22,8 +22,8 @@
 extern "C" {
 #endif
 
-/* Verify a detached Ed25519 signature over the complete nonempty ELF image.
- * Trusts the unchanged upstream key and this fork's NES development key.
+/* Verify a detached Ed25519 signature over the complete nonempty ELF image
+ * against the single built-in FeralCat release key (APP_SIGN_PUBKEY).
  * Rejects any signature length other than 64 before reading signature bytes. */
 bool meow_app_verify(const uint8_t* data, size_t len,
                      const uint8_t* signature, size_t signature_len);

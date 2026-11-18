@@ -2,8 +2,40 @@ name: NES host contracts
 
 on:
   pull_request:
+    paths:
+      - '.github/workflows/nes.yml'
+      - 'src/system/emulation/**'
+      - 'src/system/mk_nes_abi.h'
+      - 'src/system/app_sign.*'
+      - 'src/system/elf_runner.cpp'
+      - 'lib/nes_core/**'
+      - 'lib/elf_loader/**'
+      - 'test/nes_*/**'
+      - 'test/app_sign/**'
+      - 'test/elf_loader/**'
+      - 'tools/app_signing/**'
+      - 'tools/package-nes.py'
+      - 'tools/build-native-app.py'
+      - 'sd files/apps/nes/**'
+      - 'sd files/apps/meowplayer/**'
   push:
-    branches: [feature/nes-emulator]
+    branches: [main]
+    paths:
+      - '.github/workflows/nes.yml'
+      - 'src/system/emulation/**'
+      - 'src/system/mk_nes_abi.h'
+      - 'src/system/app_sign.*'
+      - 'src/system/elf_runner.cpp'
+      - 'lib/nes_core/**'
+      - 'lib/elf_loader/**'
+      - 'test/nes_*/**'
+      - 'test/app_sign/**'
+      - 'test/elf_loader/**'
+      - 'tools/app_signing/**'
+      - 'tools/package-nes.py'
+      - 'tools/build-native-app.py'
+      - 'sd files/apps/nes/**'
+      - 'sd files/apps/meowplayer/**'
   workflow_dispatch:
 
 permissions:
