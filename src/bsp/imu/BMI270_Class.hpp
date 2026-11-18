@@ -86,6 +86,8 @@
     bool getTempAdc(int16_t* adc) const override;
 
     std::uint8_t WhoAmI(void);
+    bool setGyroRange(uint8_t range);
+    uint8_t getGyroRange() const;
 
   protected:
     bool _upload_file(const std::uint8_t *config_data, std::size_t index, std::size_t write_len);

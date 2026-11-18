@@ -18,6 +18,7 @@ extern "C" {
 typedef struct {
     char dir[32];    /* directory under /apps (also the launch id)     */
     char name[48];   /* display name from manifest.ini                 */
+    unsigned nes_api; /* optional required NES ABI major, 0 = no requirement */
     char icon[24];   /* icon name from manifest.ini (icon=); "" = none */
 } native_app_t;
 

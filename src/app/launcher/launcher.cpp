@@ -54,7 +54,9 @@
 #include "../../system/usb_msc.h"
 #include "../../system/firmware_update.h"    /* Firmware updater — system module */
 #include "../../system/app_sdk.h"            /* Native-app ABI exported to ELF apps */
+#include "../../system/system_sound.h"       /* boot chime + key-tone feedback */
 #include "../../system/native_apps.h"        /* /apps ELF-app catalog (grid tiles) */
+#include "../../system/mk_nes_abi.h"
 #include "../../system/elf_runner.h"         /* meow_elf_run_file */
 #include "../../system/usb_manager.h"
 #include "../../system/settings_bridge.h"  /* includes persist internally */
@@ -65,6 +67,7 @@
 #include "../../splash/splash_screen.h"      /* boot splash (progress bar) */
 #include "../../system/power_mgmt.h"
 #include "../../system/mk_events.h"
+#include "../../system/emulation/nes_service.h"
 #include <Arduino.h>
 #include <SD_MMC.h>
 #include <lvgl.h>
@@ -130,6 +133,7 @@ static void _updateLed(DEVICES* dev, int pct, bool charging)
 /* Shutdown / auto-off animation: 4 × red blink, then LED off before powerOFF. */
 static void _shutdown_led_anim(void)
 {
+    nes_service_prepare_shutdown();
     settings_flush();
     meow_xp_flush();     /* push the latest XP to SD before power-off */
     if (!s_shutdown_dev) return;
@@ -561,7 +565,12 @@ void Launcher::buildUI()
      * hardware so the device boots into the same state the user last left.
      * Bridge must be attached before settings_load_all() is called. */
     sys_settings_bridge_attach(_device);
+    /* Audio-feedback subsystem owns the shared ES8311/I2S for boot + key tones;
+     * MeowPlayer/VU-Meter suspend it while they need the codec. Bring it up
+     * before settings_load_all so the saved volume + key-enable apply to it. */
+    system_sound_init(_device);
     settings_load_all();
+    system_sound_play_boot(3150);   /* short boot chime (async, time-capped) */
 
     /* Native-app SDK: export the mk_* ABI to the ELF loader so signed SD apps
      * can call into the firmware (drivers + MK_TUI). */
@@ -714,12 +723,22 @@ void Launcher::handleAppSelection()
     if (strncmp(selId, "elf:", 4) == 0) {
         char path[80];
         snprintf(path, sizeof(path), "/apps/%s/app.elf", selId + 4);
+        bool compatible=true;
+        for (int i=0;i<native_apps_count();++i) {
+            const native_app_t* app=native_apps_get(i);
+            if (strcmp(app->dir,selId+4)==0 && app->nes_api &&
+                app->nes_api!=(mk_nes_version()>>16)) compatible=false;
+        }
         ui_apps_menu_clear_selected();
+        if (!compatible) {
+            _show_toast("NES app needs matching firmware",0xB03030); return;
+        }
         char msg[64] = {0};
-        meow_elf_run_file(path, 0, nullptr, msg, sizeof(msg));
+        const int result=meow_elf_run_file(path, 0, nullptr, msg, sizeof(msg));
         Serial.printf("[Launcher] ELF app %s: %s\n", path, msg);
         power_reset_sleep_timer();   /* the takeover bypassed the idle timer */
         returnToUI();
+        if (result!=0) _show_toast(msg,0xB03030);
         return;
     }
 
@@ -817,6 +836,9 @@ void Launcher::handlePhysicalNav()
         _device->Lcd.setBrightness((uint8_t)(sys_get_brightness() * 255 / 100));
         s_screen_off = false;
     }
+
+    /* Key-tone feedback — self-gated on the Key Tone setting inside system_sound. */
+    system_sound_play_button();
 
     /* Push typed events into the queue */
     if (a)     mk_event_push(MK_EVT_BTN_A);

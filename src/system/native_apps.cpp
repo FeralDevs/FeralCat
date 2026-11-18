@@ -27,6 +27,7 @@ static void read_manifest(const char* dir, native_app_t* a)
     strncpy(a->name, dir, sizeof(a->name) - 1);
     a->name[sizeof(a->name) - 1] = '\0';
     a->icon[0] = '\0';
+    a->nes_api = 0;
 
     char path[80];
     snprintf(path, sizeof(path), "/apps/%s/manifest.ini", dir);
@@ -38,6 +39,11 @@ static void read_manifest(const char* dir, native_app_t* a)
         int len = f.readBytesUntil('\n', (uint8_t*)line, sizeof(line) - 1);
         line[len] = '\0';
         if      (strncmp(line, "name=", 5) == 0 && line[5]) set_field(a->name, sizeof(a->name), line + 5);
+        else if (strncmp(line, "nes_api=", 8) == 0) {
+            char value[16]; set_field(value,sizeof(value),line+8);
+            // Unknown/malformed requirements fail closed, existing apps omit it.
+            a->nes_api = strcmp(value,"1")==0 ? 1u : ~0u;
+        }
         else if (strncmp(line, "icon=", 5) == 0 && line[5]) set_field(a->icon, sizeof(a->icon), line + 5);
     }
     f.close();

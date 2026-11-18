@@ -245,12 +245,17 @@ IMU_Class IMU;
     (void)range;
   }
 
-  void IMU_Class::setGyroRange(uint8_t range)
+  bool IMU_Class::setGyroRange(uint8_t range)
   {
-    // BMI270 gyro range configuration
-    // This would require adding specific BMI270 register writes
-    // For now, just a placeholder
-    (void)range;
+    if (!_bmi270 || !isEnabled()) return false;
+    const bool ok = _bmi270->setGyroRange(range);
+    _update_convert_param();
+    return ok;
+  }
+
+  uint8_t IMU_Class::getGyroRange() const
+  {
+    return _bmi270 && isEnabled() ? _bmi270->getGyroRange() : 255;
   }
 
 #endif // ESP_PLATFORM

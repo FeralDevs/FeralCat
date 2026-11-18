@@ -1,0 +1,2 @@
+#pragma once
+#define SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE 0

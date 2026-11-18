@@ -190,6 +190,14 @@ public:
     /// Get current sample rate
     uint32_t getSampleRate() const { return _cfg.sample_rate; }
 
+    /**
+     * @brief Play raw PCM (mono or stereo, int16) through the I2S path.
+     *        Used by the system_sound subsystem for boot/key tones.
+     * @return true if all samples were written
+     */
+    bool playPcm(const int16_t* data, size_t sample_count,
+                 uint8_t channels, uint32_t sample_rate);
+
 private:
     speaker_config_t _cfg;
 
