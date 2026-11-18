@@ -45,11 +45,11 @@ void ui_event_home(lv_event_t * e)
     lv_indev_wait_release(lv_indev_get_act());
 
     switch (dir) {
-        case LV_DIR_LEFT:   /* 左滑 → same Apps path as joystick LEFT */
+        case LV_DIR_RIGHT:   /* 左滑 → same Apps path as joystick LEFT */
             mk_event_push(MK_EVT_JOY_LEFT);
             break;
-        case LV_DIR_RIGHT:  /* 右滑 → Settings */
-            _ui_screen_change(&ui_settings,      LV_SCR_LOAD_ANIM_MOVE_RIGHT,  300, 0, &ui_settings_screen_init);
+        case LV_DIR_LEFT:  /* 右滑 → Settings */
+            _ui_screen_change(&ui_settings,      LV_SCR_LOAD_ANIM_MOVE_LEFT,  300, 0, &ui_settings_screen_init);
             break;
         case LV_DIR_TOP:    /* 上滑 → SD Card Files */
             _ui_screen_change(&ui_sd_card_files, LV_SCR_LOAD_ANIM_MOVE_TOP,    300, 0, &ui_sd_card_files_screen_init);
