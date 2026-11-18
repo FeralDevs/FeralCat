@@ -50,7 +50,7 @@ int meow_elf_run_file(const char* path, int argc, char* argv[],
         if (sf) {
             uint8_t sig[64];
             if (sf.size() == 64 && sf.read(sig, 64) == 64)
-                sig_ok = meow_app_verify(buf, sz, sig);
+                sig_ok = meow_app_verify(buf, sz, sig, sizeof(sig));
             sf.close();
         }
     }

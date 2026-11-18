@@ -298,7 +298,7 @@ static bool as_install(const StoreApp& a)
         uint8_t* ebuf = (uint8_t*)heap_caps_malloc(elen, MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT);
         uint8_t  sig[64];
         if (ebuf && ef.read(ebuf, elen) == (int)elen && sf.read(sig, 64) == 64)
-            verified = meow_app_verify(ebuf, elen, sig);
+            verified = meow_app_verify(ebuf, elen, sig, sizeof(sig));
         if (ebuf) heap_caps_free(ebuf);
     }
     if (ef) ef.close();
