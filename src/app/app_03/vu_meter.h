@@ -38,6 +38,7 @@ namespace MOONCAKE::APPS
         /* ── Deferred-init state machine ── */
         enum class InitState : uint8_t { Idle, Loading, Ready, Failed };
         InitState _initState = InitState::Idle;
+        bool _soundHeld = false;   /* system_sound suspended by onOpen */
         void _doHeavyInit();
 
         /* ── Audio capture (FreeRTOS task, core 0, priority 2) ── */

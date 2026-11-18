@@ -83,7 +83,9 @@ void App03::onOpen()
 {
     /* ES7210 RX and ES8311 TX share MCLK/BCLK/WS pins. Give app03 exclusive
      * ownership before I2S1 changes the GPIO matrix. */
-    system_sound_suspend();
+    _soundHeld = system_sound_suspend();
+    if (!_soundHeld)
+        Serial.println("[VU] System audio did not release the codec");
 
     // If a previous crash left the I2S driver installed, uninstall it now.
     // esp_err_t is ignored — the call is a no-op when the driver is absent.
@@ -270,8 +272,9 @@ void App03::onClose()
     _device->Lcd.fillScreen(TFT_BLACK);
 
     /* I2S1 is fully released; restore ES8311/I2S0 and reclaim shared pins. */
-    if (!system_sound_resume())
+    if (_soundHeld && !system_sound_resume())
         Serial.println("[VU] Failed to restore system audio");
+    _soundHeld = false;
 }
 
 /* ══════════════════════════════════════════════════════════════════
