@@ -1,434 +1,244 @@
-/**
- * @file app_06.cpp
- * @author Mingo
- * @brief App06 — AirMouse via BLE HID (bluego-esp32 algorithm port)
- * @version 2.0
- * @date 2026-05-12
- */
+/** Air Mouse: bounded HID session, non-blocking calibration and motion input. */
 #include "air_mouse.h"
+#include <Preferences.h>
 #include <cmath>
+#include <algorithm>
 
-/* ── UI palette (RGB565) ── */
-static constexpr uint16_t BG       = 0x1A22;
-static constexpr uint16_t COL_TI   = 0xC7E6;
-static constexpr uint16_t COL_OK   = 0xC7E6;
-static constexpr uint16_t COL_BAD  = 0xF800;
-static constexpr uint16_t COL_TXT  = 0xFFFF;
-static constexpr uint16_t COL_DIM  = 0x4A86;
-static constexpr uint16_t COL_FILL = 0x32C4;
-static constexpr uint16_t COL_FILL_DARK = 0x2A83;
-
-static constexpr int HDR_Y = 24;
-static constexpr int FTR_Y = 214;
-static constexpr int SCROLL_X = 174;
-static constexpr int SCROLL_Y = 44;
-static constexpr int SCROLL_W = 142;
-static constexpr int SCROLL_H = 146;
-static constexpr int GLOBE_CX = 88;
-static constexpr int GLOBE_CY = 109;
-static constexpr int GLOBE_R = 54;
-static constexpr int BUB_R = 6;
-static constexpr float BUB_SENS = 42.0f;
-
-static void _drawBtBadge(LGFX_Class& lcd, bool connected)
-{
-    int bx = 196, by = 3, bw = 118, bh = 18;
-    uint16_t fill = connected ? COL_TI : COL_DIM;
-    lcd.fillRoundRect(bx, by, bw, bh, 3, fill);
-    lcd.setFont(&fonts::efontCN_16);
-    lcd.setTextColor(BG, fill);
-    lcd.fillRect(bx + 1, by + 1, bw - 2, bh - 2, fill);
-    int tw = (int)strlen(connected ? "CONNECTED" : "WAITING") * 8;
-    lcd.setCursor(bx + (bw - tw) / 2, by + 2);
-    lcd.print(connected ? "CONNECTED" : "WAITING");
+namespace {
+constexpr uint16_t BG=0x1A22, GREEN=0xC7E6, DIM=0x4A86, WHITE=0xFFFF;
+constexpr int SX=174, SY=44, SW=142, SH=146;
+constexpr float GAINS[]={30.f,50.f,75.f};
+const char* SPEEDS[]={"Low","Normal","High"};
+void text(lgfx::LGFXBase& lcd,int x,int y,const char* str,uint16_t color=GREEN) {
+    lcd.setFont(&fonts::efontCN_16); lcd.setTextDatum(textdatum_t::top_left);
+    lcd.setTextColor(color,BG); lcd.setCursor(x,y); lcd.print(str);
 }
-
-static void _drawGlobeStatic(LGFX_Class& lcd)
-{
-    lcd.drawCircle(GLOBE_CX, GLOBE_CY, GLOBE_R, COL_TI);
-    lcd.drawCircle(GLOBE_CX, GLOBE_CY, GLOBE_R - 1, COL_TI);
-
-    lcd.drawEllipse(GLOBE_CX, GLOBE_CY, GLOBE_R, 19, COL_TI);
-    lcd.drawEllipse(GLOBE_CX, GLOBE_CY, GLOBE_R, 42, COL_TI);
-    lcd.drawEllipse(GLOBE_CX, GLOBE_CY, 18, GLOBE_R, COL_TI);
-    lcd.drawEllipse(GLOBE_CX, GLOBE_CY, 38, GLOBE_R, COL_TI);
-    lcd.drawEllipse(GLOBE_CX, GLOBE_CY, 50, 10, COL_TI);
-
-    lcd.drawFastHLine(GLOBE_CX - GLOBE_R - 8, GLOBE_CY, 16, COL_TI);
-    lcd.drawFastHLine(GLOBE_CX + GLOBE_R - 8, GLOBE_CY, 16, COL_TI);
-    lcd.drawFastVLine(GLOBE_CX, GLOBE_CY - GLOBE_R - 8, 16, COL_TI);
-    lcd.drawFastVLine(GLOBE_CX, GLOBE_CY + GLOBE_R - 8, 16, COL_TI);
-
-    lcd.drawFastHLine(GLOBE_CX - 18, GLOBE_CY, 36, COL_TI);
-    lcd.drawFastVLine(GLOBE_CX, GLOBE_CY - 18, 36, COL_TI);
-    lcd.fillCircle(GLOBE_CX, GLOBE_CY, 3, COL_TXT);
+void globe(lgfx::LGFXBase& lcd,int cy) {
+    lcd.drawCircle(88,cy,54,GREEN); lcd.drawCircle(88,cy,53,GREEN);
+    lcd.drawEllipse(88,cy,54,19,GREEN); lcd.drawEllipse(88,cy,54,42,GREEN);
+    lcd.drawEllipse(88,cy,18,54,GREEN); lcd.drawEllipse(88,cy,38,54,GREEN);
+    lcd.drawFastHLine(70,cy,36,GREEN); lcd.drawFastVLine(88,cy-18,36,GREEN);
 }
-
-static void _drawScrollPanel(LGFX_Class& lcd, bool active)
-{
-    uint16_t fill = active ? COL_FILL : COL_FILL_DARK;
-    lcd.drawRoundRect(SCROLL_X, SCROLL_Y, SCROLL_W, SCROLL_H, 4, COL_TI);
-    lcd.fillRect(SCROLL_X + 5, SCROLL_Y + 22, SCROLL_W - 10, SCROLL_H - 28, fill);
-
-    lcd.fillRect(SCROLL_X + 4, SCROLL_Y + 4, 16, 16, COL_TI);
-    lcd.setFont(&fonts::efontCN_16);
-    lcd.setTextColor(BG, COL_TI);
-    lcd.setCursor(SCROLL_X + 8, SCROLL_Y + 4);
-    lcd.print("W");
-
-    lcd.setTextColor(COL_TI, BG);
-    lcd.setCursor(SCROLL_X + 26, SCROLL_Y + 4);
-    lcd.print("Touch Scroll");
-
-    for (int y = SCROLL_Y + 22; y < SCROLL_Y + SCROLL_H - 6; y += 4) {
-        lcd.drawFastHLine(SCROLL_X + 8, y, SCROLL_W - 16, active ? COL_FILL_DARK : COL_DIM);
-    }
+void scrollPanel(lgfx::LGFXBase& lcd,bool active) {
+    lcd.drawRoundRect(SX,SY,SW,SH,4,GREEN);
+    text(lcd,SX+10,SY+4,"Touch Scroll");
+    lcd.fillRect(SX+5,SY+22,SW-10,SH-28,active?0x32C4:0x2A83);
+    for(int y=SY+24;y<SY+SH-6;y+=4)
+        lcd.drawFastHLine(SX+8,y,SW-16,active?0x2A83:DIM);
 }
-
-namespace MOONCAKE::APPS
-{
-
-App06::App06(DEVICES* device)
-    : _device(device)
-{
-    setAppInfo().name = "Air Mouse";
 }
-
-/* ───────────────────────────── onOpen ───────────────────────────── */
-void App06::onOpen()
-{
-    auto& lcd = _device->Lcd;
-    lcd.fillScreen(BG);
-
-    if (!_device->imu.isEnabled()) {
-        lcd.setFont(&fonts::FreeSansBold12pt7b);
-        lcd.setTextColor(COL_BAD, BG);
-        lcd.setTextDatum(textdatum_t::middle_center);
-        lcd.drawString("IMU not found", 160, 120);
-        return;
-    }
-
-    /* bluego 在 MPU6500 用 1000 dps + 42 Hz 硬件低通 + 100 Hz 采样率。
-       我们 BMI270 没有等价的 DLPF API，setGyroRange(2)=500 dps 已足够覆盖
-       人手摆动（< 500 °/s），分辨率最高。 */
-    _device->imu.setGyroRange(2);
-
-    _bias_x = _bias_y = _bias_z = 0;
-    _residual_dx = _residual_dy = 0;
-    _calibrated = false;
-    _ui_was_connected = false;
-    _ignore_pointer_until_ms = 0;
-    _touch_was_down = false;
-    _click_left = _click_right = 0;
-    _cursor_x = 0;
-    _cursor_y = 0;
-    _ui_prev_bx = GLOBE_CX;
-    _ui_prev_by = GLOBE_CY;
-    _b_longpress_latched = false;
-    _touch_scroll_active = false;
-    _touch_last_y = -1;
-    _last_us = micros();
-
-    _drawStaticUI();
-
-    _mouse.begin();
-    Serial.println("[App06] AirMouse: BLE advertising as 'MeowKit AirMouse'");
-
-    _calibrate();
-    _drawStaticUI();
-    _updateUI(0.0f, 0.0f, 0.0f, 0.0f, 0, 0, false);
+namespace MOONCAKE::APPS {
+App06::App06(DEVICES* device):_device(device),_globe(&device->Lcd) {
+    setAppInfo().name="Air Mouse";
 }
-
-/* ───────────────────────────── onRunning ───────────────────────────── */
-/* 完全照搬 bluego/imu_gyro_task 的核心：dt 积分 → 0.02° 死区 → 1°=50px 映射。 */
-void App06::onRunning()
-{
-    if (!_device->imu.isEnabled()) return;
-
-    _device->button.update();
-    _device->button.tick();
-
-    if (_device->button.B.pressed()) {
-        _b_longpress_latched = false;
-    }
-    if (_device->button.B.isLongPress()) {
-        _b_longpress_latched = true;
-        close();
-        return;
-    }
-
-    auto mask = _device->imu.update();
-    if (!(mask & IMU_Class::sensor_mask_gyro)) return;
-    auto& d = _device->imu.getImuData();
-
-    uint32_t now_us = micros();
-    float dt = (now_us - _last_us) * 1e-6f;
-    _last_us = now_us;
-    if (dt <= 0) dt = 0.005f;
-    if (dt > DT_CLAMP_SEC) dt = DT_CLAMP_SEC;   // bluego: cap 100ms
-
-    uint32_t now_ms = millis();
-
-    /* 原始角速度 (°/s) */
-    float raw_wx = d.gyro.x;
-    float raw_wy = d.gyro.y;
-    float raw_wz = d.gyro.z;
-
-    /* 漂移修正：静止时缓慢收敛零偏。bluego 没做这个，但 BMI270 漂移更明显，
-       保留软件零偏跟随既不破坏 bluego 的线性手感，又能消除长时间漂移。 */
-    float acc_norm  = sqrtf(d.accel.x*d.accel.x + d.accel.y*d.accel.y + d.accel.z*d.accel.z);
-    float gyro_norm = sqrtf(raw_wx*raw_wx + raw_wy*raw_wy + raw_wz*raw_wz);
-    bool stationary = (fabsf(acc_norm - 1.0f) < STATIONARY_ACC_TOL)
-                   && (gyro_norm < STATIONARY_GYRO_DPS);
-    if (stationary) {
-        _bias_x += BIAS_ALPHA * (raw_wx - _bias_x);
-        _bias_y += BIAS_ALPHA * (raw_wy - _bias_y);
-        _bias_z += BIAS_ALPHA * (raw_wz - _bias_z);
-    }
-
-    float wy = raw_wy - _bias_y;   // pitch (绕水平 Y 轴)  → ΔY
-    float wz = raw_wz - _bias_z;   // yaw   (绕垂直 Z 轴)  → ΔX
-
-    /* 本周期角度增量 (°) — bluego 的 angle_diff */
-    float ang_y = wy * dt;
-    float ang_z = wz * dt;
-
-    /* bluego 触发条件： |angle_diff| * 100 >= 2  →  |angle_diff| >= 0.02° */
-    bool trig = (fabsf(ang_y) >= DEAD_DEG) || (fabsf(ang_z) >= DEAD_DEG);
-
-    int dx = 0, dy = 0;
-    if (trig) {
-        /* 1° = 1 / 0.02 = 50 像素，与 bluego 一致 */
-        float fx = ang_z / DEG_PER_PIXEL;   // gyro.z → ΔX
-        float fy = ang_y / DEG_PER_PIXEL;   // gyro.y → ΔY
-        if (INV_X) fx = -fx;
-        if (INV_Y) fy = -fy;
-
-        /* 残差累加，避免亚像素丢失 */
-        _residual_dx += fx;
-        _residual_dy += fy;
-
-        dx = (int)_residual_dx;  _residual_dx -= dx;
-        dy = (int)_residual_dy;  _residual_dy -= dy;
-
-        if (dx >  127) dx =  127; else if (dx < -127) dx = -127;
-        if (dy >  127) dy =  127; else if (dy < -127) dy = -127;
-    } else {
-        /* 衰减残差，防止抖动期间累积造成 idle 后突跳 */
-        _residual_dx *= 0.5f;
-        _residual_dy *= 0.5f;
-    }
-
-    /* bluego 风格的"点击稳定"门控：
-       若刚触发了左/右键，IGNORE_POINTER_MS 内不再上报指针位移。
-       目前 App06 还没有点击源（之前的扭动点击已按 bluego 风格移除），
-       此处保留接口，等接入物理按钮后调用 _ignore_pointer_until_ms = now+200。 */
-    bool ignore_pointer = (int32_t)(now_ms - _ignore_pointer_until_ms) < 0;
-
-    if (_mouse.isConnected() && (dx || dy) && !ignore_pointer) {
-        _mouse.move((signed char)dx, (signed char)dy, 0, 0);
-        _cursor_x += dx;
-        _cursor_y += dy;
-    }
-
-    if (_device->button.A.pressed() && _mouse.isConnected()) {
-        _mouse.click(MOUSE_LEFT);
-        _ignore_pointer_until_ms = now_ms + IGNORE_POINTER_MS;
-        ++_click_left;
-    }
-    if (_device->button.B.released() && !_b_longpress_latched && _mouse.isConnected()) {
-        _mouse.click(MOUSE_RIGHT);
-        _ignore_pointer_until_ms = now_ms + IGNORE_POINTER_MS;
-        ++_click_right;
-    }
-    if (_device->button.B.released()) {
-        _b_longpress_latched = false;
-    }
-
-    _handleTouch(now_ms);
-
-    if (now_ms - _last_ui_ms > UI_PERIOD_MS) {
-        _last_ui_ms = now_ms;
-        _updateUI(d.accel.x, d.accel.y, wy, wz, dx, dy, dx || dy);
-    }
-}
-
-/* ───────────────────────────── onClose ───────────────────────────── */
-void App06::onClose()
-{
-    _mouse.end();
-    _device->Lcd.fillScreen(TFT_BLACK);
-    Serial.println("[App06] AirMouse closed");
-}
-
-/* ───────────────────────────── Touch → Mouse wheel ─────────────────────────────
- * 右侧触摸区垂直滑动映射为滚轮。
- */
-void App06::_handleTouch(uint32_t now_ms)
-{
-    bool down = _device->ctp.isTouched();
-    bool conn = _mouse.isConnected();
-
-    if (down && !_touch_was_down) {
-        int tx = -1, ty = -1;
-        _device->ctp.getPos(tx, ty);
-        bool inScroll = (tx >= SCROLL_X && tx < SCROLL_X + SCROLL_W &&
-                         ty >= SCROLL_Y && ty < SCROLL_Y + SCROLL_H);
-        if (inScroll) {
-            _touch_scroll_active = true;
-            _touch_last_y = ty;
-            _ignore_pointer_until_ms = now_ms + IGNORE_POINTER_MS;
-        }
-    } else if (down && _touch_scroll_active) {
-        int tx = -1, ty = -1;
-        _device->ctp.getPos(tx, ty);
-        if (_touch_last_y >= 0) {
-            int delta = ty - _touch_last_y;
-            if (abs(delta) >= 10 && conn) {
-                int wheel = -delta / 10;
-                if (wheel > 4) wheel = 4;
-                if (wheel < -4) wheel = -4;
-                _mouse.move(0, 0, (signed char)wheel, 0);
-                _touch_last_y = ty;
+void App06::onOpen() {
+    _motion.clear(); _cal.reset(); _calibrated=_calibrating=false;
+    _touch_down=_scroll_active=_link_ready=false;
+    _a_armed=_b_armed=false; _a_down=_b_down=false;
+    _wheel=0; _last_direction=0; _touch_y=-1; _ax=_ay=0;
+    _last_status=nullptr; _ui_dirty=true; _ui_scroll=false;
+    _sample_us=_poll_us=micros(); _last_gyro=millis(); _last_ui=0; _ignore_until=millis();
+    _still_since=0; _bubble_x=_bubble_y=-1000;
+    _speed=1; _bias[0]=_bias[1]=_bias[2]=0;
+    Preferences prefs;
+    if(prefs.begin("airmouse",true)) {
+        _speed=std::min<uint8_t>(prefs.getUChar("speed",1),2);
+        if(prefs.getUInt("calver",0)==1) {
+            float saved[3]={};
+            if(prefs.getBytes("bias",saved,sizeof(saved))==sizeof(saved)) {
+                bool valid=true;
+                for(float v:saved) valid &= std::isfinite(v) && std::fabs(v)<10.f;
+                if(valid) std::copy(saved,saved+3,_bias);
             }
         }
-    } else if (!down) {
-        _touch_scroll_active = false;
-        _touch_last_y = -1;
+        prefs.end();
     }
-    _touch_was_down = down;
+    auto& b=_device->button;
+    b.update(); b.A.hasChanged(); b.B.hasChanged();
+    b.Left.hasChanged(); b.Right.hasChanged();
+    _previous_range=_device->imu.getGyroRange();
+    _imu_ready=_device->imu.isEnabled() && _previous_range!=255 && _device->imu.setGyroRange(2);
+    _globe.setColorDepth(16); _globe.setPsram(true); _globe.createSprite(170,142);
+    _drawStaticUI();
+    air_mouse_hid::begin();
+    if(_imu_ready) _calibrate();
+    _updateUI();
 }
-
-/* ───────────────────────────── Calibration ───────────────────────────── */
-void App06::_calibrate()
-{
-    auto& lcd = _device->Lcd;
-    lcd.setFont(&fonts::efontCN_16);
-    lcd.setTextDatum(textdatum_t::middle_center);
-    lcd.fillRect(68, 194, 184, 16, BG);
-    lcd.setTextColor(COL_TI, BG);
-    lcd.drawString("Calibrating gyro...", 160, 202);
-
-    double sx = 0, sy = 0, sz = 0;
-    uint32_t got = 0;
-    uint32_t t0 = millis();
-    while (got < CAL_SAMPLES && (millis() - t0) < CAL_TIMEOUT_MS) {
-        auto m = _device->imu.update();
-        if (m & IMU_Class::sensor_mask_gyro) {
-            auto& d = _device->imu.getImuData();
-            sx += d.gyro.x;  sy += d.gyro.y;  sz += d.gyro.z;
-            ++got;
+void App06::_calibrate() {
+    if(!_imu_ready) return;
+    air_mouse_hid::buttons(0);
+    _a_armed=_b_armed=false; _a_down=_b_down=false;
+    _cal.reset(); _calibrating=true; _calibrated=false;
+    _cal_start=millis(); _still_since=0; _motion.clear(); _wheel=0; _ui_dirty=true;
+}
+void App06::_setSpeed(uint8_t speed) {
+    if(_speed==speed) return;
+    _speed=speed; _motion.clear(); _ui_dirty=true;
+    Preferences prefs;
+    if(prefs.begin("airmouse",false)) { prefs.putUChar("speed",_speed); prefs.end(); }
+}
+void App06::_inputs(uint32_t now) {
+    auto& b=_device->button;
+    b.update(); b.tick();
+    const bool a=b.A.state()==Button_Class::PRESSED;
+    const bool right=b.B.state()==Button_Class::PRESSED;
+    const bool ready=air_mouse_hid::ready();
+    if(ready!=_link_ready) {
+        _link_ready=ready; _motion.clear(); _wheel=0;
+        _a_armed=_b_armed=false; _a_down=_b_down=false;
+        air_mouse_hid::buttons(0); _ui_dirty=true;
+    }
+    if(!a) _a_armed=true;
+    if(a && !_a_down && _a_armed && ready) {
+        air_mouse_hid::buttons(1); _ignore_until=now+60; _motion.clear();
+    }
+    if(!a && _a_down) air_mouse_hid::buttons(0);
+    if(right && !_b_down) { _b_since=now; _motion.clear(); }
+    if(!right && _b_down && _b_armed && now-_b_since<1000 && ready) {
+        air_mouse_hid::clickRight(); _ignore_until=now+60; _motion.clear();
+    }
+    if(!right) _b_armed=true;
+    _a_down=a; _b_down=right;
+    if(b.Left.pressed()) _setSpeed(_speed>0?_speed-1:0);
+    if(b.Right.pressed()) _setSpeed(_speed<2?_speed+1:2);
+    int direction=(b.Up.state()==Button_Class::PRESSED?1:0)-(b.Down.state()==Button_Class::PRESSED?1:0);
+    if(direction && ready && (direction!=_last_direction || now-_wheel_at>=160)) {
+        _wheel=std::max(-12,std::min(12,_wheel+direction)); _wheel_at=now;
+    }
+    _last_direction=direction;
+    if(direction) _motion.clear();
+    _handleTouch(now);
+}
+void App06::_handleTouch(uint32_t now) {
+    const bool down=_device->ctp.isTouched();
+    if(down) {
+        int x=-1,y=-1; _device->ctp.getPos(x,y);
+        if(x<0 || x>=320 || y<0 || y>=240) return;
+        if(!_touch_down) {
+            if(y>=194 && y<214) {
+                if(x>=160) _calibrate(); else _setSpeed((_speed+1)%3);
+                _ignore_until=now+100; _motion.clear();
+            } else if(x>=SX && x<SX+SW && y>=SY && y<SY+SH) {
+                _scroll_active=true; _touch_y=y; _motion.clear();
+            }
+        } else if(_scroll_active && _touch_y>=0) {
+            const int steps=(y-_touch_y)/10;
+            if(steps) {
+                if(air_mouse_hid::ready())
+                    _wheel=std::max(-12,std::min(12,_wheel-steps));
+                _touch_y+=steps*10;
+            }
         }
-        delay(2);
-    }
-    if (got > 10) {
-        _bias_x = (float)(sx / got);
-        _bias_y = (float)(sy / got);
-        _bias_z = (float)(sz / got);
-        _calibrated = true;
-        Serial.printf("[App06] Gyro bias: x=%.3f y=%.3f z=%.3f (n=%lu)\n",
-                      _bias_x, _bias_y, _bias_z, (unsigned long)got);
-    } else {
-        Serial.println("[App06] Calibration failed (no samples)");
-    }
-
-    lcd.fillRect(68, 194, 184, 16, BG);
-    _last_us = micros();
+    } else { _scroll_active=false; _touch_y=-1; }
+    _touch_down=down;
 }
-
-/* ───────────────────────────── UI ───────────────────────────── */
-void App06::_drawStaticUI()
-{
-    auto& lcd = _device->Lcd;
-    lcd.fillScreen(BG);
-
-    lcd.setFont(&fonts::efontCN_16);
-    lcd.setTextDatum(textdatum_t::top_left);
-    lcd.setTextColor(COL_TXT, BG);
-    lcd.setCursor(8, 4);
-    lcd.print("[ AIR MOUSE ]");
-    lcd.drawFastHLine(0, HDR_Y, 320, COL_TI);
-    lcd.drawFastHLine(0, FTR_Y, 320, COL_TI);
-    lcd.drawFastHLine(0, 239, 320, COL_TI);
-
-    _drawBtBadge(lcd, _mouse.isConnected());
-    _drawGlobeStatic(lcd);
-    _drawScrollPanel(lcd, false);
-
-    lcd.setTextColor(COL_TI, BG);
-    lcd.setCursor(GLOBE_CX - 20, 176);
-    lcd.print("LEVEL");
-
-    _ui_was_connected = !_mouse.isConnected();
-    _ui_prev_bx = GLOBE_CX;
-    _ui_prev_by = GLOBE_CY;
+void App06::_sample(uint32_t now) {
+    const uint32_t us=micros();
+    if(us-_poll_us<10000 || !_imu_ready) return;
+    _poll_us=us;
+    auto mask=_device->imu.update();
+    const auto& d=_device->imu.getImuData();
+    if(mask & IMU_Class::sensor_mask_accel) { _ax=d.accel.x; _ay=d.accel.y; }
+    if(!(mask & IMU_Class::sensor_mask_gyro)) return;
+    const float dt=(us-_sample_us)*1e-6f; _sample_us=us;
+    const float acc=std::sqrt(d.accel.x*d.accel.x+d.accel.y*d.accel.y+d.accel.z*d.accel.z);
+    const float raw[3]={d.gyro.x,d.gyro.y,d.gyro.z};
+    if(!std::isfinite(acc) || !std::isfinite(raw[0]) || !std::isfinite(raw[1]) || !std::isfinite(raw[2])) {
+        _motion.clear(); return;
+    }
+    // A sample gap invalidates calibration continuity and motion integration.
+    const uint32_t gap=now-_last_gyro; _last_gyro=now;
+    if(gap>250) { _cal.reset(); _motion.clear(); _still_since=0; return; }
+    if(gap>50) { _motion.clear(); _still_since=0; }
+    float w[3]={raw[0]-_bias[0],raw[1]-_bias[1],raw[2]-_bias[2]};
+    if(_calibrating) {
+        if(_cal.add(w[0],w[1],w[2],acc)) {
+            for(int i=0;i<3;++i) _bias[i]+=_cal.mean[i];
+            _calibrating=false; _calibrated=true; _ui_dirty=true;
+            Serial.printf("[App06] Calibration OK: %.3f %.3f %.3f dps\n",_bias[0],_bias[1],_bias[2]);
+            Preferences prefs;
+            if(prefs.begin("airmouse",false)) {
+                prefs.putBytes("bias",_bias,sizeof(_bias)); prefs.putUInt("calver",1); prefs.end();
+            }
+            _motion.clear(); _ignore_until=now+100;
+        }
+        return;
+    }
+    if(!_calibrated) return;
+    const bool still=std::fabs(acc-1)<.03f && w[0]*w[0]+w[1]*w[1]+w[2]*w[2]<.0064f;
+    if(still && !_a_down && !_b_down && !_touch_down) {
+        if(!_still_since) _still_since=now;
+        if(now-_still_since>2000) for(int i=0;i<3;++i) _bias[i]+=w[i]*std::min(dt/30.f,.001f);
+    } else _still_since=0;
+    if(!air_mouse_hid::ready() || _scroll_active || _last_direction || _b_down ||
+       static_cast<int32_t>(now-_ignore_until)<0) { _motion.clear(); return; }
+    _motion.add(w[2],w[1],dt,GAINS[_speed]);
 }
-
-void App06::_updateUI(float ax_g, float ay_g, float wy_dps, float wz_dps,
-                      int dx, int dy, bool moving)
-{
-    auto& lcd = _device->Lcd;
-    lcd.setFont(&fonts::efontCN_16);
-    lcd.setTextDatum(textdatum_t::top_left);
-    char buf[48];
-
-    bool conn = _mouse.isConnected();
-    if (conn != _ui_was_connected) {
-        _drawBtBadge(lcd, conn);
-        _ui_was_connected = conn;
+void App06::onRunning() {
+    const uint32_t now=millis();
+    air_mouse_hid::tick();
+    _inputs(now);
+    if(_device->button.B.isLongPress()) { close(); return; }
+    _sample(now);
+    if(_calibrating && now-_cal_start>=8000) {
+        Serial.printf("[App06] Calibration timeout: samples=%u, mean=%.3f %.3f %.3f dps\n",
+            _cal.count,_cal.mean[0],_cal.mean[1],_cal.mean[2]);
+        _calibrating=false; _calibrated=false; _ui_dirty=true;
     }
-
-    _drawScrollPanel(lcd, _touch_scroll_active);
-
-    int bx = GLOBE_CX + (int)(ay_g * BUB_SENS);
-    int by = GLOBE_CY + (int)(-ax_g * BUB_SENS);
-    float offx = (float)(bx - GLOBE_CX);
-    float offy = (float)(by - GLOBE_CY);
-    float dist = sqrtf(offx * offx + offy * offy);
-    float maxD = (float)(GLOBE_R - BUB_R - 2);
-    if (dist > maxD && dist > 0.1f) {
-        float s = maxD / dist;
-        bx = GLOBE_CX + (int)(offx * s);
-        by = GLOBE_CY + (int)(offy * s);
+    if(now-_last_gyro>250) _motion.clear();
+    // Buttons and scrolling do not depend on the motion sensor or calibration.
+    if(air_mouse_hid::ready()) {
+        if(_wheel) {
+            const int amount=std::max(-4,std::min(4,_wheel));
+            if(air_mouse_hid::move(0,0,amount)) _wheel-=amount;
+        } else if(_calibrated) {
+            auto r=_motion.pending();
+            if((r.x || r.y) && air_mouse_hid::move(r.x,r.y)) _motion.sent(r);
+        }
     }
-
-    if (abs(bx - _ui_prev_bx) >= 1 || abs(by - _ui_prev_by) >= 1) {
-        lcd.startWrite();
-        lcd.fillCircle(_ui_prev_bx, _ui_prev_by, BUB_R + 2, BG);
-        _drawGlobeStatic(lcd);
-        lcd.fillCircle(bx, by, BUB_R, COL_TI);
-        lcd.fillCircle(bx, by, BUB_R - 3, COL_TXT);
-        lcd.endWrite();
-        _ui_prev_bx = bx;
-        _ui_prev_by = by;
-    }
-
-    lcd.fillRect(8, 194, 150, 16, BG);
-    lcd.setTextColor(COL_TI, BG);
-    lcd.setCursor(8, 194);
-    snprintf(buf, sizeof(buf), "X:%4d Y:%4d", _cursor_x, _cursor_y);
-    lcd.print(buf);
-
-    lcd.fillRect(8, 176, 80, 16, BG);
-    lcd.setTextColor(moving ? COL_TI : COL_DIM, BG);
-    lcd.setCursor(8, 176);
-    snprintf(buf, sizeof(buf), "%s", moving ? "MOVING" : "LEVEL");
-    lcd.print(buf);
-
-    lcd.fillRect(0, 216, 320, 22, BG);
-    lcd.setTextColor(COL_TI, BG);
-    lcd.setCursor(8, 220);
-    lcd.print("Touch Scroll");
-    lcd.setCursor(118, 220);
-    lcd.print("[A] Left");
-    lcd.setCursor(226, 220);
-    lcd.print("[B] Right");
-
-    (void)wy_dps;
-    (void)wz_dps;
-    (void)dx;
-    (void)dy;
+    if(now-_last_ui>=100) { _last_ui=now; _updateUI(); }
+    delay(1); // Keep the idle/watchdog task serviced while app mode is active.
 }
-
-}  // namespace MOONCAKE::APPS
-
+void App06::onClose() {
+    air_mouse_hid::end();
+    if(_previous_range!=255 && !_device->imu.setGyroRange(_previous_range))
+        Serial.println("[App06] Could not restore gyro range");
+    _globe.deleteSprite(); _motion.clear(); _wheel=0;
+    _device->Lcd.fillScreen(TFT_BLACK);
+}
+void App06::_drawStaticUI() {
+    auto& lcd=_device->Lcd; lcd.fillScreen(BG);
+    text(lcd,8,4,"[ AIR MOUSE ]",WHITE);
+    lcd.drawFastHLine(0,24,320,GREEN); lcd.drawFastHLine(0,214,320,GREEN);
+    scrollPanel(lcd,false);
+    if(!_globe.getBuffer()) globe(lcd,109);
+    text(lcd,8,218,"A: Drag   B: Right / Hold: Exit");
+    text(lcd,12,174,"Stick: scroll",DIM);
+    _ui_dirty=true;
+}
+void App06::_updateUI() {
+    auto& lcd=_device->Lcd;
+    const char* status=air_mouse_hid::failed()?"BLE ERROR":air_mouse_hid::ready()?"CONNECTED":
+        air_mouse_hid::connected()?"PAIRING":"WAITING";
+    if(status!=_last_status) {
+        lcd.fillRect(184,2,136,21,BG); text(lcd,188,4,status); _last_status=status;
+    }
+    if(_ui_dirty) {
+        lcd.fillRect(0,194,320,19,BG);
+        char label[24]; snprintf(label,sizeof(label),"Speed: %s",SPEEDS[_speed]);
+        text(lcd,8,194,label);
+        text(lcd,188,194,!_imu_ready?"IMU ERROR":_calibrating?"KEEP STILL":
+            !_calibrated?"TRY AGAIN":"Calibrate"); _ui_dirty=false;
+    }
+    if(_ui_scroll!=_scroll_active) { scrollPanel(lcd,_scroll_active); _ui_scroll=_scroll_active; }
+    float x=_ay*42,y=-_ax*42;
+    const float length=std::sqrt(x*x+y*y);
+    if(length>46) { x*=46/length; y*=46/length; }
+    int bx=88+static_cast<int>(x), by=77+static_cast<int>(y);
+    if(_globe.getBuffer() && (bx!=_bubble_x || by!=_bubble_y)) {
+        _globe.fillSprite(BG); globe(_globe,77);
+        _globe.fillCircle(bx,by,6,GREEN); _globe.fillCircle(bx,by,3,WHITE);
+        _globe.pushSprite(0,32); _bubble_x=bx; _bubble_y=by;
+    }
+}
+}

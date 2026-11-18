@@ -26,6 +26,7 @@
 #include "settings_bridge.h"         /* settings_get_sleep_mode / sys_get_brightness */
 #include "power_mgmt.h"              /* PEK short press + light sleep */
 #include "usb_msc.h"                /* usb_msc_is_active */
+#include "system_sound.h"           /* share the codec with MeowPlayer / tracker beep */
 
 /* Active device + lazily-allocated offscreen canvas for the current app run. */
 static DEVICES*           s_dev    = nullptr;
@@ -42,7 +43,8 @@ static TrackerMonitor s_tracker;
 static TrackerFinder  s_trkfinder;
 static uint32_t       s_trk_sel = 0;   /* selected candidate id (0 = none) */
 static meow::media::AudioService s_media;
-static bool s_tracker_audio_ready = false;
+static bool s_tracker_audio_ready = false;   /* also: holds a system_sound suspend */
+static bool s_media_sound_held = false;     /* mk_media_begin suspended system_sound */
 
 /* Draw target: the canvas if it allocated, else straight to the LCD. */
 static inline void ensure_canvas()
@@ -364,6 +366,7 @@ void mk_tracker_stop(void)
         s_dev->io_exp.digitalWrite(HAL_IOEXP_PA_EN, LOW);
         s_dev->speaker.end();
         s_tracker_audio_ready = false;
+        system_sound_resume();       /* give the codec back to system tones */
     }
 }
 int  mk_tracker_running(void)  { return s_tracker.running()  ? 1 : 0; }
@@ -461,11 +464,25 @@ void mk_tracker_finder(mk_tracker_finder_t* out)
 int mk_media_begin(void)
 {
     if (!s_dev) return 0;
-    s_tracker_audio_ready = false;
+    if (s_tracker_audio_ready) {
+        /* Tracker beep already holds the codec: move its suspend to the player. */
+        s_dev->io_exp.digitalWrite(HAL_IOEXP_PA_EN, LOW);
+        s_dev->speaker.end();
+        s_tracker_audio_ready = false;
+        s_media_sound_held = true;
+    }
+    if (!s_media_sound_held) {
+        if (!system_sound_suspend()) return 0;   /* hand the shared ES8311/I2S to the player */
+        s_media_sound_held = true;
+    }
     bool ok = s_media.begin(s_dev);
     if (ok && !s_dev->io_exp.digitalWrite(HAL_IOEXP_PA_EN, HIGH)) {
         s_media.end();
         ok = false;
+    }
+    if (!ok) {
+        s_media_sound_held = false;
+        system_sound_resume();
     }
     return ok ? 1 : 0;
 }
@@ -474,6 +491,12 @@ void mk_media_end(void)
 {
     s_media.end();
     if (s_dev) s_dev->io_exp.digitalWrite(HAL_IOEXP_PA_EN, LOW);
+    /* Only resume what mk_media_begin suspended: other services (NES) call
+     * mk_media_end to stop a player and must keep system sound suspended. */
+    if (s_media_sound_held) {
+        s_media_sound_held = false;
+        system_sound_resume();       /* reclaim the codec for system tones */
+    }
 }
 
 void mk_media_cmd(int action, int value)
@@ -519,15 +542,16 @@ int mk_tracker_beep(uint16_t duration_ms)
 {
     if (!s_dev || !duration_ms || duration_ms > 120 || s_media.ready()) return 0;
     if (!s_tracker_audio_ready) {
+        /* Take the codec from system sound; mk_tracker_stop gives it back. */
+        if (!system_sound_suspend()) return 0;
         s_dev->speaker.config().sample_rate = 44100;
         s_dev->speaker.config().bits_per_sample = 16;
         if (!s_dev->speaker.begin(&In_I2C) ||
-            !s_dev->speaker.setMute(false)) {
+            !s_dev->speaker.setMute(false) ||
+            !s_dev->io_exp.digitalWrite(HAL_IOEXP_PA_EN, HIGH)) {
+            s_dev->io_exp.digitalWrite(HAL_IOEXP_PA_EN, LOW);
             s_dev->speaker.end();
-            return 0;
-        }
-        if (!s_dev->io_exp.digitalWrite(HAL_IOEXP_PA_EN, HIGH)) {
-            s_dev->speaker.end();
+            system_sound_resume();
             return 0;
         }
         delay(1);

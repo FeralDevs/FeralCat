@@ -97,7 +97,8 @@ enum imu_t
     
     /* Configuration */
     void setAccelRange(uint8_t range);   // 0=2g, 1=4g, 2=8g, 3=16g
-    void setGyroRange(uint8_t range);    // 0=125dps, 1=250dps, 2=500dps, 3=1000dps, 4=2000dps
+    bool setGyroRange(uint8_t range);    // 0=125dps, 1=250dps, 2=500dps, 3=1000dps, 4=2000dps
+    uint8_t getGyroRange() const;        // 255 means unavailable/read failure.
 
   private:
     I2C_Class* _i2c;
