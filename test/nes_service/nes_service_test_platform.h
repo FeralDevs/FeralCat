@@ -22,6 +22,7 @@ inline std::atomic<bool> holdWrites{false}, writing{false}, failWrites{false};
 inline std::atomic<unsigned> tasks{0}, clockMs{0};
 inline std::map<void*,size_t> allocations;
 inline unsigned allocAttempt=0, failAllocation=0, wifiStops=0, wifiStarts=0;
+inline int soundSuspended=0;
 inline bool failTask=false, msc=false, psram=true, av=false, core=false;
 inline std::vector<uint8_t> ram(8192);
 inline meow_nes_info_t info{};
@@ -133,6 +134,8 @@ inline int ui_wifi_bridge_get_status(){return 0;}
 inline bool usb_msc_is_active(){return service_test::msc;}
 inline void mk_media_end(){}
 inline void mk_tracker_stop(){}
+inline bool system_sound_suspend(){++service_test::soundSuspended;return true;}
+inline bool system_sound_resume(){--service_test::soundSuspended;return true;}
 inline void mk_events_flush(){}
 inline void power_tick(){}
 inline void settings_tick(){}

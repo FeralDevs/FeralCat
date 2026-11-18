@@ -78,6 +78,7 @@ static void asyncSnapshotAndCloseJoin() {
     until([]{return tasks==0;});saved(base,crc,0x33);saved(backup,crc,0x22);
     check(!core&&!s.saveBuffer&&!s.savePending&&!s.saveRunning,"close retained ROM/save worker");
     mk_nes_end();check(allocations.empty()&&wifiStops==1&&wifiStarts==1,"end did not restore resources/radio");
+    check(soundSuspended==0,"end did not resume system sound");
 }
 static void failuresAndRecovery() {
     using namespace service_test;

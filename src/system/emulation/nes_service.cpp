@@ -15,6 +15,7 @@
 #include "../mk_events.h"
 #include "../power_mgmt.h"
 #include "../settings_bridge.h"
+#include "../system_sound.h"
 #include "../usb_msc.h"
 #include "../../ui/ui_wifi_bridge.h"
 #include <SD_MMC.h>
@@ -45,6 +46,7 @@ struct Session {
     uint32_t snapshotCrc = 0;
     char saveMessage[128]{};
     bool hasSavedCrc = false, opened = false, active = false, sound = true;
+    bool systemSoundHeld = false;   // system_sound suspended until mk_nes_end
     bool touching = false, touchEdge = false;
     int touchX = 0, touchY = 0;
     uint8_t raw = 0, held = 0, edge = 0, previous = 0;
@@ -420,7 +422,12 @@ int mk_nes_begin() {
     s.active=true; s.sound=true; s.lastPower=s.lastPek=millis();
     s.message[0]=0; s.input.reset();
     s.dev->Lcd.waitDMA();
-    mk_media_end(); mk_tracker_stop(); s.dev->mic.end(); s.dev->speaker.end();
+    mk_media_end(); mk_tracker_stop();
+    // Boot chime/key tones share the ES8311/I2S: keep them off until mk_nes_end.
+    // mk_media_end/mk_tracker_stop only resume what they suspended themselves.
+    if (!s.systemSoundHeld) s.systemSoundHeld = system_sound_suspend();
+    if (!s.systemSoundHeld) { status("System audio busy; retry NES"); return MK_NES_ERROR; }
+    s.dev->mic.end(); s.dev->speaker.end();
     s.dev->io_exp.digitalWrite(HAL_IOEXP_PA_EN,LOW);
     if (usb_msc_is_active()) { status("Eject USB storage before opening NES"); return MK_NES_ERROR; }
     if (SD_MMC.cardType()==CARD_NONE) { status("SD card missing; ROMs belong in /roms/nes"); return MK_NES_ERROR; }
@@ -447,6 +454,7 @@ void mk_nes_end() {
     s.dev->button.A.hasChanged(); s.dev->button.B.hasChanged();
     s.dev->button.Up.hasChanged(); s.dev->button.Down.hasChanged();
     s.dev->button.Left.hasChanged(); s.dev->button.Right.hasChanged();
+    if (s.systemSoundHeld) { system_sound_resume(); s.systemSoundHeld=false; }
     mk_events_flush(); power_reset_sleep_timer(); s.active=false;
 }
 int mk_nes_catalog_open(const char* path) {
