@@ -4,6 +4,8 @@
  *        loader so native SD apps can call into the firmware.
  */
 #include "app_sdk.h"
+#include "mk_nes_abi.h"
+#include "emulation/nes_service.h"
 #include <Arduino.h>
 #include <cstdarg>
 #include <cstdio>
@@ -652,6 +654,19 @@ static const struct esp_elfsym MK_SDK_SYMS[] = {
     { "mk_delay",         (const void*)&mk_delay },
     { "mk_millis",        (const void*)&mk_millis },
     { "mk_snprintf",      (const void*)&mk_snprintf },
+    { "mk_nes_version", (const void*)&mk_nes_version },
+    { "mk_nes_begin", (const void*)&mk_nes_begin },
+    { "mk_nes_end", (const void*)&mk_nes_end },
+    { "mk_nes_catalog_open", (const void*)&mk_nes_catalog_open },
+    { "mk_nes_catalog_info", (const void*)&mk_nes_catalog_info },
+    { "mk_nes_catalog_entry", (const void*)&mk_nes_catalog_entry },
+    { "mk_nes_open", (const void*)&mk_nes_open },
+    { "mk_nes_run", (const void*)&mk_nes_run },
+    { "mk_nes_command", (const void*)&mk_nes_command },
+    { "mk_nes_state", (const void*)&mk_nes_state },
+    { "mk_nes_error", (const void*)&mk_nes_error },
+    { "mk_nes_poll", (const void*)&mk_nes_poll },
+    { "mk_nes_wait_release", (const void*)&mk_nes_wait_release },
     /* libc helpers the compiler may emit implicitly (e.g. struct copies). */
     { "memcpy",           (const void*)&memcpy },
     { "memset",           (const void*)&memset },
@@ -661,6 +676,7 @@ static const struct esp_elfsym MK_SDK_SYMS[] = {
 void app_sdk_init(DEVICES* dev)
 {
     s_dev = dev;
+    nes_service_attach(dev);
     static bool registered = false;
     if (!registered) {
         if (esp_elf_register_symbol(MK_SDK_SYMS) == 0) registered = true;

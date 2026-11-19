@@ -10,6 +10,7 @@
 #include "esp_elf.h"
 #include "persist.h"
 #include "app_sign.h"
+#include "mk_nes_abi.h"
 
 /* Crash breadcrumb: written to NVS before each risky step so that, after a hard
  * fault reboots the device, ELF Test can show the last step reached. */
@@ -50,7 +51,7 @@ int meow_elf_run_file(const char* path, int argc, char* argv[],
         if (sf) {
             uint8_t sig[64];
             if (sf.size() == 64 && sf.read(sig, 64) == 64)
-                sig_ok = meow_app_verify(buf, sz, sig);
+                sig_ok = meow_app_verify(buf, sz, sig, sizeof(sig));
             sf.close();
         }
     }
@@ -82,6 +83,8 @@ int meow_elf_run_file(const char* path, int argc, char* argv[],
     /* esp_elf_request() discards the entry's return value (always returns 0),
      * so call the relocated entry directly to surface app_main's real result. */
     int rc = elf.entry ? elf.entry(argc, argv) : -100;
+    // Service workers and peripheral ownership must end before app code unloads.
+    mk_nes_end();
     elf_breadcrumb(ELF_ST_DONE);
     Serial.printf("[elf] app returned %d\n", rc);
 
